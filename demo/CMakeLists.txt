@@ -1,4 +1,4 @@
-add_executable(SiggraphAsiaDemo main.cpp)
+add_executable(SiggraphAsiaDemo main.cpp viewport.cpp)
 
 set(DIRS "")
 set(LIBS "")
