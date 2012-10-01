@@ -24,6 +24,9 @@ using namespace std;
 // temporarily including glu
 #include <GL/glu.h>
 
+// CUDA
+#include <cuda.h>
+
 // demo
 #include "viewport.h"
 
@@ -114,10 +117,46 @@ int main(int argc, char **argv)
 	cout << "Siggraph Asia 2012 Demo" << endl;
 	cout << "Author: Laurence Emms" << endl;
 
+	// get cuda device properties
+	cudaDeviceProp properties;
+	int count;
+	cudaGetDeviceCount(&count);
+	if (count <= 0) {
+		std::cerr << "Error: No CUDA devices found." << std::endl;
+		return 1;
+	}
+	for (int i = 0; i < count; ++i) {
+		std::cout << "CUDA Device " << i << ":" << std::endl;
+		cudaGetDeviceProperties(&properties, i);
+		std::cout << "Name: " << properties.name << std::endl;
+		std::cout << "Compute Capability: " \
+		<< properties.major << "." << properties.minor << std::endl;
+		std::cout << "Global Memory: " \
+		<< properties.totalGlobalMem << std::endl;
+		std::cout << "Constant Memory: " \
+		<< properties.totalConstMem << std::endl;
+		std::cout << "Shared Memory: " \
+		<< properties.sharedMemPerBlock << std::endl;
+		std::cout << "Registers: " \
+		<< properties.regsPerBlock << std::endl;
+		std::cout << "Warp Size: " \
+		<< properties.warpSize << std::endl;
+		std::cout << "Max Threads Per Block: " \
+		<< properties.maxThreadsPerBlock << std::endl;
+		std::cout << "Max Threads: (" \
+		<< properties.maxThreadsDim[0] << ", " \
+		<< properties.maxThreadsDim[1] << ", " \
+		<< properties.maxThreadsDim[2] << ")" << std::endl;
+		std::cout << "Max Grid Size: (" \
+		<< properties.maxGridSize[0] << ", " \
+		<< properties.maxGridSize[1] << ", " \
+		<< properties.maxGridSize[2] << ")" << std::endl;
+	}
+
 	// setup GLUT
 	glutInit(&argc, argv);
 #ifdef FREEGLUT
-	cout << "using FreeGLUT" << endl;
+	cout << "Using FreeGLUT" << endl;
 	if (glutGet(GLUT_VERSION) < 20001) {
 		cout << "Sorry, you need freeglut version 2.0.1 or later to \
 			run this program." << endl;
