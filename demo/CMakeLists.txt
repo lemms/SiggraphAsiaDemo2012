@@ -33,6 +33,6 @@ endif (GLUT_FOUND)
 
 include_directories(${DIRS})
 
-cuda_add_executable(SiggraphAsiaDemo main.cpp viewport.cpp)
+cuda_add_executable(SiggraphAsiaDemo main.cu viewport.cu mass.cu spring.cu)
 target_link_libraries (SiggraphAsiaDemo ${LIBS})
 
