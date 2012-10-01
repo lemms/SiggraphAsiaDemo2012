@@ -137,6 +137,18 @@ int main(int argc, char **argv)
 	glutCreateWindow("Siggraph Asia 2012 Mass Spring Demo");
 
 	// initialize GLEW
+	GLenum result = glewInit();
+	if (result != GLEW_OK) {
+		std::cerr << "Error: Failed to initialize GLEW." << std::endl;
+		return 1;
+	}
+	std::cout << "Using GLEW " << glewGetString(GLEW_VERSION) << "." << std::endl;
+	if (!GLEW_VERSION_4_2)
+	{
+		std::cerr << "Error: OpenGL 4.2 not supported." << std::endl;
+		return 1;
+	}
+	std::cout << "Using OpenGL " << glGetString(GL_VERSION) << "." << std::endl;
 
 	// initialize OpenGL
 	glClearColor(0.0, 0.0, 0.0, 0.0);

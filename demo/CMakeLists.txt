@@ -1,7 +1,8 @@
-add_executable(SiggraphAsiaDemo main.cpp viewport.cpp)
-
 set(DIRS "")
 set(LIBS "")
+
+# add CUDA support
+find_package (CUDA)
 
 # add OpenGL support
 find_package (OpenGL)
@@ -31,4 +32,7 @@ if (GLUT_FOUND)
 endif (GLUT_FOUND)
 
 include_directories(${DIRS})
+
+cuda_add_executable(SiggraphAsiaDemo main.cpp viewport.cpp)
 target_link_libraries (SiggraphAsiaDemo ${LIBS})
+
