@@ -114,6 +114,7 @@ void Keys(unsigned char key, int x, int y)
 	if (key == 27 || key == 'q') {
 		// TODO: remove this printout
 		masses.download();
+
 		for (size_t i = 0; i < masses.size(); i++) {
 			SigAsiaDemo::Mass *mass0 = masses.getMass(i);
 			if (mass0) {
@@ -242,7 +243,7 @@ int main(int argc, char **argv)
 	glMatrixMode(GL_MODELVIEW);
 
 	// fill masses
-	for (int i = 0; i < 1000000; i++)
+	for (int i = 0; i < 100; i++)
 		masses.push(SigAsiaDemo::Mass(1.0));
 
 	// register callbacks

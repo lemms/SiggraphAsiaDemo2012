@@ -99,6 +99,7 @@ void SigAsiaDemo::MassList::download()
 data was being used in GPU computations." << std::endl;
 		std::terminate();
 	} else {
+		std::cout << "Download masses" << std::endl;
 		// copy into CPU buffer
 		std::cout << "Copy masses into CPU buffer." << std::endl;
 		cudaMemcpy(
@@ -138,9 +139,9 @@ SigAsiaDemo::Mass *SigAsiaDemo::MassList::getDeviceMasses()
 
 __global__ void deviceUpdate(float dt, int N, SigAsiaDemo::Mass *masses)
 {
-	// add gravity
 	int tid = blockIdx.x;
 	if (tid < N) {
+
 		// TODO: RK2/4
 		masses[tid]._x += masses[tid]._vx * dt;
 		masses[tid]._y += masses[tid]._vy * dt;
@@ -148,7 +149,8 @@ __global__ void deviceUpdate(float dt, int N, SigAsiaDemo::Mass *masses)
 		masses[tid]._vx += masses[tid]._ax * dt * dt;
 		masses[tid]._vy += masses[tid]._ay * dt * dt;
 		masses[tid]._vz += masses[tid]._az * dt * dt;
-		masses[tid]._az = 9.8 / masses[tid]._mass;
+
+		masses[tid]._ay = -9.81; // acceleration due to gravity
 	}
 }
 
