@@ -29,9 +29,13 @@ using namespace std;
 
 // demo
 #include "viewport.h"
+#include "mass.h"
 
 // globals
 SigAsiaDemo::Viewport viewport;
+SigAsiaDemo::MassList masses;
+
+size_t frame = 0;
 
 void ParseArgs(int argc, char **argv)
 {
@@ -64,6 +68,12 @@ void ParseArgs(int argc, char **argv)
 
 void Idle()
 {
+	std::cout << "Frame: " << frame << std::endl;
+	masses.upload();
+	masses.update(0.1);
+	//masses.download();
+
+	frame++;
 }
 
 void Reshape(int width, int height)
@@ -71,9 +81,10 @@ void Reshape(int width, int height)
 	viewport.SetDimensions(width, height);
 	// TODO: remove and swap to programmable pipeline
 	// resize viewport
+	glViewport(0, 0, viewport.GetWidth(), viewport.GetHeight());
+
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	glViewport(0, 0, viewport.GetWidth(), viewport.GetHeight());
 
 	gluPerspective(
 		viewport.GetFieldOfView(),
@@ -81,9 +92,8 @@ void Reshape(int width, int height)
 		viewport.GetNear(),
 		viewport.GetFar());
 
-	// Get Back to the Modelview
+	// Get back to the Modelview
 	glMatrixMode(GL_MODELVIEW);
-	
 }
 
 void Render()
@@ -101,8 +111,31 @@ void Render()
 
 void Keys(unsigned char key, int x, int y)
 {
-	if (key == 27 || key == 'q')
+	if (key == 27 || key == 'q') {
+		// TODO: remove this printout
+		masses.download();
+		for (size_t i = 0; i < masses.size(); i++) {
+			SigAsiaDemo::Mass *mass0 = masses.getMass(i);
+			if (mass0) {
+				std::cout << "Point Mass " << i << std::endl;
+				std::cout << "mass: " << mass0->_mass << std::endl;
+				std::cout << "position: (";
+				std::cout << mass0->_x << ", ";
+				std::cout << mass0->_y << ", ";
+				std::cout << mass0->_z << ")" << std::endl;
+				std::cout << "velocity: (";
+				std::cout << mass0->_vx << ", ";
+				std::cout << mass0->_vy << ", ";
+				std::cout << mass0->_vz << ")" << std::endl;
+				std::cout << "acceleration: (";
+				std::cout << mass0->_ax << ", ";
+				std::cout << mass0->_ay << ", ";
+				std::cout << mass0->_az << ")" << std::endl;
+				std::cout <<std::endl;
+			}
+		}
 		exit(0);
+	}
 }
 void SpecialKeys(int key, int x, int y)
 {
@@ -191,6 +224,26 @@ int main(int argc, char **argv)
 
 	// initialize OpenGL
 	glClearColor(0.0, 0.0, 0.0, 0.0);
+
+	// resize viewport
+	glViewport(0, 0, viewport.GetWidth(), viewport.GetHeight());
+
+	// setup projection
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+
+	gluPerspective(
+		viewport.GetFieldOfView(),
+		viewport.GetAspect(),
+		viewport.GetNear(),
+		viewport.GetFar());
+
+	// Get back to the Modelview
+	glMatrixMode(GL_MODELVIEW);
+
+	// fill masses
+	for (int i = 0; i < 1000000; i++)
+		masses.push(SigAsiaDemo::Mass(1.0));
 
 	// register callbacks
 	glutIdleFunc(Idle);
