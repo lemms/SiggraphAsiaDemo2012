@@ -16,24 +16,18 @@ namespace SigAsiaDemo {
 				float x = 0.0,
 				float y = 0.0,
 				float z = 0.0,
-				float vx = 0.0,
-				float vy = 0.0,
-				float vz = 0.0,
-				float ax = 0.0,
-				float ay = 0.0,
-				float az = 0.0);
+				float fx = 0.0,
+				float fy = 0.0,
+				float fz = 0.0);
 
 			// data
-			float _x;
-			float _y;
-			float _z;
-			float _vx;
-			float _vy;
-			float _vz;
-			float _ax;
-			float _ay;
-			float _az;
 			float _mass;
+			float _x; float _y; float _z;
+			float _fx; float _fy; float _fz;
+			float _k1x; float _k1y; float _k1z;
+			float _k2x; float _k2y; float _k2z;
+			float _k3x; float _k3y; float _k3z;
+			float _k4x; float _k4y; float _k4z;
 	};
 
 	class MassList {
@@ -47,7 +41,11 @@ namespace SigAsiaDemo {
 			Mass *getMass(size_t index);
 			// returns 0 if Mass is uploaded to the GPU
 			Mass *getDeviceMasses();
-			void clearAcceleration();
+			void clearForces();
+			void evaluateK1(float dt);
+			void evaluateK2(float dt);
+			void evaluateK3(float dt);
+			void evaluateK4(float dt);
 			void update(float dt);
 		private:
 			std::vector<Mass> _masses;

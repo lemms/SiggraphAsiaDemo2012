@@ -70,8 +70,53 @@ void Idle()
 {
 	std::cout << "Frame: " << frame << std::endl;
 	masses.upload();
+	masses.clearForces();
+	masses.evaluateK1(0.1);
+	masses.clearForces();
+	masses.evaluateK2(0.1);
+	masses.clearForces();
+	masses.evaluateK3(0.1);
+	masses.clearForces();
+	masses.evaluateK4(0.1);
 	masses.update(0.1);
 	//masses.download();
+
+	/*(
+	// TODO: remove
+	if (frame == 1000) {
+		masses.download();
+
+		for (size_t i = 0; i < masses.size(); i++) {
+			SigAsiaDemo::Mass *mass0 = masses.getMass(i);
+			if (mass0) {
+				std::cout << "Point Mass " << i << std::endl;
+				std::cout << "mass: " << mass0->_mass << std::endl;
+				std::cout << "position: (";
+				std::cout << mass0->_x << ", ";
+				std::cout << mass0->_y << ", ";
+				std::cout << mass0->_z << ")" << std::endl;
+				std::cout << "velocity k1: (";
+				std::cout << mass0->_k1x << ", ";
+				std::cout << mass0->_k1y << ", ";
+				std::cout << mass0->_k1z << ")" << std::endl;
+				std::cout << "velocity k2: (";
+				std::cout << mass0->_k2x << ", ";
+				std::cout << mass0->_k2y << ", ";
+				std::cout << mass0->_k2z << ")" << std::endl;
+				std::cout << "velocity k3: (";
+				std::cout << mass0->_k3x << ", ";
+				std::cout << mass0->_k3y << ", ";
+				std::cout << mass0->_k3z << ")" << std::endl;
+				std::cout << "velocity k4: (";
+				std::cout << mass0->_k4x << ", ";
+				std::cout << mass0->_k4y << ", ";
+				std::cout << mass0->_k4z << ")" << std::endl;
+				std::cout <<std::endl;
+			}
+		}
+		exit(0);
+	}
+	*/
 
 	frame++;
 }
@@ -124,14 +169,22 @@ void Keys(unsigned char key, int x, int y)
 				std::cout << mass0->_x << ", ";
 				std::cout << mass0->_y << ", ";
 				std::cout << mass0->_z << ")" << std::endl;
-				std::cout << "velocity: (";
-				std::cout << mass0->_vx << ", ";
-				std::cout << mass0->_vy << ", ";
-				std::cout << mass0->_vz << ")" << std::endl;
-				std::cout << "acceleration: (";
-				std::cout << mass0->_ax << ", ";
-				std::cout << mass0->_ay << ", ";
-				std::cout << mass0->_az << ")" << std::endl;
+				std::cout << "velocity k1: (";
+				std::cout << mass0->_k1x << ", ";
+				std::cout << mass0->_k1y << ", ";
+				std::cout << mass0->_k1z << ")" << std::endl;
+				std::cout << "velocity k2: (";
+				std::cout << mass0->_k2x << ", ";
+				std::cout << mass0->_k2y << ", ";
+				std::cout << mass0->_k2z << ")" << std::endl;
+				std::cout << "velocity k3: (";
+				std::cout << mass0->_k3x << ", ";
+				std::cout << mass0->_k3y << ", ";
+				std::cout << mass0->_k3z << ")" << std::endl;
+				std::cout << "velocity k4: (";
+				std::cout << mass0->_k4x << ", ";
+				std::cout << mass0->_k4y << ", ";
+				std::cout << mass0->_k4z << ")" << std::endl;
 				std::cout <<std::endl;
 			}
 		}

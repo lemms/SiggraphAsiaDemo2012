@@ -16,22 +16,16 @@ SigAsiaDemo::Mass::Mass(
 	float x,
 	float y,
 	float z,
-	float vx,
-	float vy,
-	float vz,
-	float ax,
-	float ay,
-	float az) :
+	float fx,
+	float fy,
+	float fz) :
 		_mass(mass),
-		_x(x),
-		_y(y),
-		_z(z),
-		_vx(vx),
-		_vy(vy),
-		_vz(vz),
-		_ax(ax),
-		_ay(ay),
-		_az(az)
+		_x(x), _y(y), _z(z),
+		_fx(fx), _fy(fy), _fz(fz),
+		_k1x(0.0), _k1y(0.0), _k1z(0.0),
+		_k2x(0.0), _k2y(0.0), _k2z(0.0),
+		_k3x(0.0), _k3y(0.0), _k3z(0.0),
+		_k4x(0.0), _k4y(0.0), _k4z(0.0)
 {}
 
 SigAsiaDemo::MassList::MassList() :
@@ -75,7 +69,8 @@ void SigAsiaDemo::MassList::upload()
 		}
 
 		// allocate GPU buffer
-		std::cout << "Allocate GPU buffer of size " << _masses.size() << "." << std::endl;
+		std::cout << "Allocate GPU buffer of size " << \
+		_masses.size() << "." << std::endl;
 		cudaMalloc(
 			(void**)&_device_masses,
 			_masses.size()*sizeof(Mass));
@@ -137,20 +132,162 @@ SigAsiaDemo::Mass *SigAsiaDemo::MassList::getDeviceMasses()
 	return _device_masses;
 }
 
+__global__ void deviceClearForces(int N, SigAsiaDemo::Mass *masses)
+{
+	int tid = blockIdx.x;
+	if (tid < N) {
+		masses[tid]._fx = 0.0f;
+		// add gravity
+		masses[tid]._fy = -9.81f * masses[tid]._mass;
+		masses[tid]._fz = 0.0f;
+	}
+}
+
+void SigAsiaDemo::MassList::clearForces()
+{
+	if (_computing) {
+		std::cout << "Clear forces and add gravity (" \
+		<< _masses.size() << ")." << std::endl;
+		deviceClearForces<<<_masses.size(), 1>>>(
+			_masses.size(),
+			_device_masses);
+	}
+}
+
+__global__ void deviceEvaluateK1(float dt, int N, SigAsiaDemo::Mass *masses)
+{
+	int tid = blockIdx.x;
+	if (tid < N) {
+		// update accelerations
+		float inv_mass = 1.0f / masses[tid]._mass;
+		float ax = masses[tid]._fx * inv_mass;
+		float ay = masses[tid]._fy * inv_mass;
+		float az = masses[tid]._fz * inv_mass;
+
+		// evaluate k1
+		masses[tid]._k1x += ax * dt;
+		masses[tid]._k1y += ay * dt;
+		masses[tid]._k1z += az * dt;
+	}
+}
+
+void SigAsiaDemo::MassList::evaluateK1(float dt)
+{
+	if (_computing) {
+		std::cout << "Evaluate K1 (" << _masses.size() << ")." << std::endl;
+		deviceEvaluateK1<<<_masses.size(), 1>>>(
+			dt,
+			_masses.size(),
+			_device_masses);
+	}
+}
+
+__global__ void deviceEvaluateK2(float dt, int N, SigAsiaDemo::Mass *masses)
+{
+	int tid = blockIdx.x;
+	if (tid < N) {
+		// update accelerations
+		float inv_mass = 1.0f / masses[tid]._mass;
+		// forces have been calculated for (t + dt/2, y + k1/2)
+		float ax = masses[tid]._fx * inv_mass;
+		float ay = masses[tid]._fy * inv_mass;
+		float az = masses[tid]._fz * inv_mass;
+
+		// evaluate k2
+		masses[tid]._k2x += ax * dt;
+		masses[tid]._k2y += ay * dt;
+		masses[tid]._k2z += az * dt;
+	}
+}
+
+void SigAsiaDemo::MassList::evaluateK2(float dt)
+{
+	if (_computing) {
+		std::cout << "Evaluate K2 (" << _masses.size() << ")." << std::endl;
+		deviceEvaluateK2<<<_masses.size(), 1>>>(
+			dt,
+			_masses.size(),
+			_device_masses);
+	}
+}
+
+__global__ void deviceEvaluateK3(float dt, int N, SigAsiaDemo::Mass *masses)
+{
+	int tid = blockIdx.x;
+	if (tid < N) {
+		// update accelerations
+		float inv_mass = 1.0f / masses[tid]._mass;
+		// forces have been calculated for (t + dt/2, y + k1/2)
+		float ax = masses[tid]._fx * inv_mass;
+		float ay = masses[tid]._fy * inv_mass;
+		float az = masses[tid]._fz * inv_mass;
+
+		// evaluate k3
+		masses[tid]._k3x += ax * dt;
+		masses[tid]._k3y += ay * dt;
+		masses[tid]._k3z += az * dt;
+	}
+}
+
+void SigAsiaDemo::MassList::evaluateK3(float dt)
+{
+	if (_computing) {
+		std::cout << "Evaluate K3 (" << _masses.size() << ")." << std::endl;
+		deviceEvaluateK3<<<_masses.size(), 1>>>(
+			dt,
+			_masses.size(),
+			_device_masses);
+	}
+}
+
+__global__ void deviceEvaluateK4(float dt, int N, SigAsiaDemo::Mass *masses)
+{
+	int tid = blockIdx.x;
+	if (tid < N) {
+		// update accelerations
+		float inv_mass = 1.0f / masses[tid]._mass;
+		// forces have been calculated for (t + dt/2, y + k1/2)
+		float ax = masses[tid]._fx * inv_mass;
+		float ay = masses[tid]._fy * inv_mass;
+		float az = masses[tid]._fz * inv_mass;
+
+		// evaluate k4
+		masses[tid]._k4x += ax * dt;
+		masses[tid]._k4y += ay * dt;
+		masses[tid]._k4z += az * dt;
+	}
+}
+
+void SigAsiaDemo::MassList::evaluateK4(float dt)
+{
+	if (_computing) {
+		std::cout << "Evaluate K4 (" << _masses.size() << ")." << std::endl;
+		deviceEvaluateK4<<<_masses.size(), 1>>>(
+			dt,
+			_masses.size(),
+			_device_masses);
+	}
+}
+
 __global__ void deviceUpdate(float dt, int N, SigAsiaDemo::Mass *masses)
 {
 	int tid = blockIdx.x;
 	if (tid < N) {
-
-		// TODO: RK2/4
-		masses[tid]._x += masses[tid]._vx * dt;
-		masses[tid]._y += masses[tid]._vy * dt;
-		masses[tid]._z += masses[tid]._vz * dt;
-		masses[tid]._vx += masses[tid]._ax * dt * dt;
-		masses[tid]._vy += masses[tid]._ay * dt * dt;
-		masses[tid]._vz += masses[tid]._az * dt * dt;
-
-		masses[tid]._ay = -9.81; // acceleration due to gravity
+		masses[tid]._x += 0.166666666666667f * (
+			masses[tid]._k1x +
+			2.0f*masses[tid]._k2x +
+			2.0f*masses[tid]._k3x +
+			masses[tid]._k4x);
+		masses[tid]._y += 0.166666666666667f * (
+			masses[tid]._k1y +
+			2.0f*masses[tid]._k2y +
+			2.0f*masses[tid]._k3y +
+			masses[tid]._k4y);
+		masses[tid]._z += 0.166666666666667f * (
+			masses[tid]._k1z +
+			2.0f*masses[tid]._k2z +
+			2.0f*masses[tid]._k3z +
+			masses[tid]._k4z);
 	}
 }
 
