@@ -22,6 +22,7 @@ SigAsiaDemo::Mass::Mass(
 		_mass(mass),
 		_x(x), _y(y), _z(z),
 		_tx(x), _ty(y), _tz(z),
+		_tvx(x), _tvy(y), _tvz(z),
 		_fx(fx), _fy(fy), _fz(fz),
 		_k1x(0.0), _k1y(0.0), _k1z(0.0),
 		_k2x(0.0), _k2y(0.0), _k2z(0.0),
@@ -133,10 +134,14 @@ SigAsiaDemo::Mass *SigAsiaDemo::MassList::getDeviceMasses()
 	return _device_masses;
 }
 
-__global__ void deviceStartFrame(int N, SigAsiaDemo::Mass *masses)
+__global__ void deviceStartFrame(unsigned int N, SigAsiaDemo::Mass *masses)
 {
 	int tid = blockIdx.x;
 	if (tid < N) {
+		// set temporary velocity for k1
+		masses[tid]._tvx = masses[tid]._x - masses[tid]._tx;
+		masses[tid]._tvy = masses[tid]._y - masses[tid]._ty;
+		masses[tid]._tvz = masses[tid]._z - masses[tid]._tz;
 		// set temporary position for k1
 		masses[tid]._tx = masses[tid]._x;
 		masses[tid]._ty = masses[tid]._y;
@@ -155,7 +160,7 @@ void SigAsiaDemo::MassList::startFrame()
 	}
 }
 
-__global__ void deviceClearForces(int N, SigAsiaDemo::Mass *masses)
+__global__ void deviceClearForces(unsigned int N, SigAsiaDemo::Mass *masses)
 {
 	int tid = blockIdx.x;
 	if (tid < N) {
@@ -177,7 +182,7 @@ void SigAsiaDemo::MassList::clearForces()
 	}
 }
 
-__global__ void deviceEvaluateK1(float dt, int N, SigAsiaDemo::Mass *masses)
+__global__ void deviceEvaluateK1(float dt, unsigned int N, SigAsiaDemo::Mass *masses)
 {
 	int tid = blockIdx.x;
 	if (tid < N) {
@@ -192,6 +197,10 @@ __global__ void deviceEvaluateK1(float dt, int N, SigAsiaDemo::Mass *masses)
 		masses[tid]._k1y += ay * dt;
 		masses[tid]._k1z += az * dt;
 
+		// set temporary velocity for k2
+		masses[tid]._tvx = masses[tid]._k1x;
+		masses[tid]._tvy = masses[tid]._k1y;
+		masses[tid]._tvz = masses[tid]._k1z;
 		// set temporary position for k2
 		masses[tid]._tx = masses[tid]._x + masses[tid]._k1x * dt * 0.5f;
 		masses[tid]._ty = masses[tid]._y + masses[tid]._k1y * dt * 0.5f;
@@ -210,7 +219,7 @@ void SigAsiaDemo::MassList::evaluateK1(float dt)
 	}
 }
 
-__global__ void deviceEvaluateK2(float dt, int N, SigAsiaDemo::Mass *masses)
+__global__ void deviceEvaluateK2(float dt, unsigned int N, SigAsiaDemo::Mass *masses)
 {
 	int tid = blockIdx.x;
 	if (tid < N) {
@@ -226,6 +235,10 @@ __global__ void deviceEvaluateK2(float dt, int N, SigAsiaDemo::Mass *masses)
 		masses[tid]._k2y += ay * dt;
 		masses[tid]._k2z += az * dt;
 
+		// set temporary velocity for k3
+		masses[tid]._tvx = masses[tid]._k2x;
+		masses[tid]._tvy = masses[tid]._k2y;
+		masses[tid]._tvz = masses[tid]._k2z;
 		// set temporary position for k3
 		masses[tid]._tx = masses[tid]._x + masses[tid]._k2x * dt * 0.5f;
 		masses[tid]._ty = masses[tid]._y + masses[tid]._k2y * dt * 0.5f;
@@ -244,7 +257,7 @@ void SigAsiaDemo::MassList::evaluateK2(float dt)
 	}
 }
 
-__global__ void deviceEvaluateK3(float dt, int N, SigAsiaDemo::Mass *masses)
+__global__ void deviceEvaluateK3(float dt, unsigned int N, SigAsiaDemo::Mass *masses)
 {
 	int tid = blockIdx.x;
 	if (tid < N) {
@@ -260,6 +273,10 @@ __global__ void deviceEvaluateK3(float dt, int N, SigAsiaDemo::Mass *masses)
 		masses[tid]._k3y += ay * dt;
 		masses[tid]._k3z += az * dt;
 
+		// set temporary velocity for k4
+		masses[tid]._tvx = masses[tid]._k3x;
+		masses[tid]._tvy = masses[tid]._k3y;
+		masses[tid]._tvz = masses[tid]._k3z;
 		// set temporary position for k4
 		masses[tid]._tx = masses[tid]._x + masses[tid]._k3x * dt;
 		masses[tid]._ty = masses[tid]._y + masses[tid]._k3y * dt;
@@ -278,7 +295,7 @@ void SigAsiaDemo::MassList::evaluateK3(float dt)
 	}
 }
 
-__global__ void deviceEvaluateK4(float dt, int N, SigAsiaDemo::Mass *masses)
+__global__ void deviceEvaluateK4(float dt, unsigned int N, SigAsiaDemo::Mass *masses)
 {
 	int tid = blockIdx.x;
 	if (tid < N) {
@@ -307,10 +324,14 @@ void SigAsiaDemo::MassList::evaluateK4(float dt)
 	}
 }
 
-__global__ void deviceUpdate(float dt, int N, SigAsiaDemo::Mass *masses)
+__global__ void deviceUpdate(float dt, unsigned int N, SigAsiaDemo::Mass *masses)
 {
 	int tid = blockIdx.x;
 	if (tid < N) {
+		// set temporary position to previous position
+		masses[tid]._tx = masses[tid]._x;
+		masses[tid]._ty = masses[tid]._y;
+		masses[tid]._tz = masses[tid]._z;
 		masses[tid]._x += 0.166666666666667f * (
 			masses[tid]._k1x +
 			2.0f*masses[tid]._k2x +

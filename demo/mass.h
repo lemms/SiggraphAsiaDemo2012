@@ -1,7 +1,7 @@
 /*
 Siggraph Asia 2012 Demo
 
-Mass vector interface
+Mass vector interface.
 
 Laurence Emms
 */
@@ -22,9 +22,15 @@ namespace SigAsiaDemo {
 
 			// data
 			float _mass;
+			// position
 			float _x; float _y; float _z;
+			// temporary position
 			float _tx; float _ty; float _tz;
+			// temporary velocity
+			float _tvx; float _tvy; float _tvz;
+			// forces
 			float _fx; float _fy; float _fz;
+			// RK4 components
 			float _k1x; float _k1y; float _k1z;
 			float _k2x; float _k2y; float _k2z;
 			float _k3x; float _k3y; float _k3z;
@@ -51,12 +57,12 @@ namespace SigAsiaDemo {
 			void update(float dt);
 		private:
 			std::vector<Mass> _masses;
-			bool _computing;
 			// indicates that the GPU is currently
 			// computing updates for the masses
-			bool _changed;
+			bool _computing;
 			// indicates that the mass list has
 			// changed
+			bool _changed;
 			Mass *_device_masses;
 	};
 }
