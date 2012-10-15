@@ -23,6 +23,7 @@ namespace SigAsiaDemo {
 			// data
 			float _mass;
 			float _x; float _y; float _z;
+			float _tx; float _ty; float _tz;
 			float _fx; float _fy; float _fz;
 			float _k1x; float _k1y; float _k1z;
 			float _k2x; float _k2y; float _k2z;
@@ -41,6 +42,7 @@ namespace SigAsiaDemo {
 			Mass *getMass(size_t index);
 			// returns 0 if Mass is uploaded to the GPU
 			Mass *getDeviceMasses();
+			void startFrame();
 			void clearForces();
 			void evaluateK1(float dt);
 			void evaluateK2(float dt);

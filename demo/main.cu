@@ -70,18 +70,28 @@ void Idle()
 {
 	std::cout << "Frame: " << frame << std::endl;
 	masses.upload();
+	masses.startFrame();
+
 	masses.clearForces();
+	// TODO: add spring and collision forces at temporary position
 	masses.evaluateK1(0.1);
+
 	masses.clearForces();
+	// TODO: add spring and collision forces at temporary position
 	masses.evaluateK2(0.1);
+
 	masses.clearForces();
+	// TODO: add spring and collision forces at temporary position
 	masses.evaluateK3(0.1);
+
 	masses.clearForces();
+	// TODO: add spring and collision forces at temporary position
 	masses.evaluateK4(0.1);
+
 	masses.update(0.1);
 	//masses.download();
 
-	/*(
+	/*
 	// TODO: remove
 	if (frame == 1000) {
 		masses.download();

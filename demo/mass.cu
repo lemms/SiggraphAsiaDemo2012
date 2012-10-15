@@ -21,6 +21,7 @@ SigAsiaDemo::Mass::Mass(
 	float fz) :
 		_mass(mass),
 		_x(x), _y(y), _z(z),
+		_tx(x), _ty(y), _tz(z),
 		_fx(fx), _fy(fy), _fz(fz),
 		_k1x(0.0), _k1y(0.0), _k1z(0.0),
 		_k2x(0.0), _k2y(0.0), _k2z(0.0),
@@ -132,6 +133,28 @@ SigAsiaDemo::Mass *SigAsiaDemo::MassList::getDeviceMasses()
 	return _device_masses;
 }
 
+__global__ void deviceStartFrame(int N, SigAsiaDemo::Mass *masses)
+{
+	int tid = blockIdx.x;
+	if (tid < N) {
+		// set temporary position for k1
+		masses[tid]._tx = masses[tid]._x;
+		masses[tid]._ty = masses[tid]._y;
+		masses[tid]._tz = masses[tid]._z;
+	}
+}
+
+void SigAsiaDemo::MassList::startFrame()
+{
+	if (_computing) {
+		std::cout << "Start frame (" \
+		<< _masses.size() << ")." << std::endl;
+		deviceStartFrame<<<_masses.size(), 1>>>(
+			_masses.size(),
+			_device_masses);
+	}
+}
+
 __global__ void deviceClearForces(int N, SigAsiaDemo::Mass *masses)
 {
 	int tid = blockIdx.x;
@@ -168,6 +191,11 @@ __global__ void deviceEvaluateK1(float dt, int N, SigAsiaDemo::Mass *masses)
 		masses[tid]._k1x += ax * dt;
 		masses[tid]._k1y += ay * dt;
 		masses[tid]._k1z += az * dt;
+
+		// set temporary position for k2
+		masses[tid]._tx = masses[tid]._x + masses[tid]._k1x * dt * 0.5f;
+		masses[tid]._ty = masses[tid]._y + masses[tid]._k1y * dt * 0.5f;
+		masses[tid]._tz = masses[tid]._z + masses[tid]._k1z * dt * 0.5f;
 	}
 }
 
@@ -197,6 +225,11 @@ __global__ void deviceEvaluateK2(float dt, int N, SigAsiaDemo::Mass *masses)
 		masses[tid]._k2x += ax * dt;
 		masses[tid]._k2y += ay * dt;
 		masses[tid]._k2z += az * dt;
+
+		// set temporary position for k3
+		masses[tid]._tx = masses[tid]._x + masses[tid]._k2x * dt * 0.5f;
+		masses[tid]._ty = masses[tid]._y + masses[tid]._k2y * dt * 0.5f;
+		masses[tid]._tz = masses[tid]._z + masses[tid]._k2z * dt * 0.5f;
 	}
 }
 
@@ -226,6 +259,11 @@ __global__ void deviceEvaluateK3(float dt, int N, SigAsiaDemo::Mass *masses)
 		masses[tid]._k3x += ax * dt;
 		masses[tid]._k3y += ay * dt;
 		masses[tid]._k3z += az * dt;
+
+		// set temporary position for k4
+		masses[tid]._tx = masses[tid]._x + masses[tid]._k3x * dt;
+		masses[tid]._ty = masses[tid]._y + masses[tid]._k3y * dt;
+		masses[tid]._tz = masses[tid]._z + masses[tid]._k3z * dt;
 	}
 }
 
