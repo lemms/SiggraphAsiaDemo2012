@@ -42,6 +42,7 @@ namespace SigAsiaDemo {
 			MassList();
 			~MassList();
 			bool push(Mass mass);
+			bool empty() const;
 			size_t size() const;
 			void upload();
 			void download();

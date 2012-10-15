@@ -35,6 +35,7 @@ namespace SigAsiaDemo {
 			SpringList();
 			~SpringList();
 			bool push(Spring spring);
+			bool empty() const;
 			size_t size() const;
 			void upload();
 			void download();

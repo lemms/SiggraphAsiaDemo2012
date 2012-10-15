@@ -73,6 +73,11 @@ bool SigAsiaDemo::SpringList::push(Spring spring)
 	return false;
 }
 
+bool SigAsiaDemo::SpringList::empty() const
+{
+	return _springs.empty();
+}
+
 size_t SigAsiaDemo::SpringList::size() const
 {
 	return _springs.size();
@@ -170,11 +175,15 @@ __global__ void deviceComputeSpringForces(
 			masses[springs[tid]._mass0]._tz - masses[springs[tid]._mass1]._tz;
 		// compute length of v
 		float lv = sqrt(vx*vx + vy*vy + vz*vz);
-		float rcp_lv = 1.0f / lv;
+		float rcp_lv = 1.0f;
+		if (lv != 0.0f) {
+			rcp_lv = 1.0f / lv;
+		}
 		// compute unit v
 		float uvx = vx * rcp_lv;
 		float uvy = vy * rcp_lv;
 		float uvz = vz * rcp_lv;
+
 		// project temporary velocity of mass 0 onto v
 		float dot_tv0_v =
 			masses[springs[tid]._mass0]._tvx * uvx +
@@ -188,12 +197,26 @@ __global__ void deviceComputeSpringForces(
 		springs[tid]._fx0 = extension * uvx - springs[tid]._kd * tv0x;
 		springs[tid]._fy0 = extension * uvy - springs[tid]._kd * tv0y;
 		springs[tid]._fz0 = extension * uvz - springs[tid]._kd * tv0z;
+
+		// project temporary velocity of mass 1 onto -v
+		float dot_tv1_v =
+			masses[springs[tid]._mass1]._tvx * uvx +
+			masses[springs[tid]._mass1]._tvy * uvy +
+			masses[springs[tid]._mass1]._tvz * uvz;
+		float tv1x = -uvx * dot_tv1_v;
+		float tv1y = -uvy * dot_tv1_v;
+		float tv1z = -uvz * dot_tv1_v;
+		// compute force for mass 1 to mass 0
+		extension = springs[tid]._ks * (lv / springs[tid]._l0 - 1.0f);
+		springs[tid]._fx1 = extension * uvx - springs[tid]._kd * tv1x;
+		springs[tid]._fy1 = extension * uvy - springs[tid]._kd * tv1y;
+		springs[tid]._fz1 = extension * uvz - springs[tid]._kd * tv1z;
 	}
 }
 
 void SigAsiaDemo::SpringList::applySpringForces(MassList &masses)
 {
-	if (_computing) {
+	if (_computing && !_springs.empty() && !masses.empty()) {
 		std::cout << "Compute spring forces (" << _springs.size() << ")." \
 		<< std::endl;
 		deviceComputeSpringForces<<<_springs.size(), 1>>>(

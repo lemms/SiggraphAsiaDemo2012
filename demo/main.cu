@@ -30,10 +30,12 @@ using namespace std;
 // demo
 #include "viewport.h"
 #include "mass.h"
+#include "spring.h"
 
 // globals
 SigAsiaDemo::Viewport viewport;
 SigAsiaDemo::MassList masses;
+SigAsiaDemo::SpringList springs;
 
 size_t frame = 0;
 
@@ -70,26 +72,28 @@ void Idle()
 {
 	std::cout << "Frame: " << frame << std::endl;
 	masses.upload();
+	springs.upload();
 	masses.startFrame();
 
 	masses.clearForces();
-	// TODO: add spring and collision forces at temporary position
+	springs.applySpringForces(masses);
 	masses.evaluateK1(0.1);
 
 	masses.clearForces();
-	// TODO: add spring and collision forces at temporary position
+	springs.applySpringForces(masses);
 	masses.evaluateK2(0.1);
 
 	masses.clearForces();
-	// TODO: add spring and collision forces at temporary position
+	springs.applySpringForces(masses);
 	masses.evaluateK3(0.1);
 
 	masses.clearForces();
-	// TODO: add spring and collision forces at temporary position
+	springs.applySpringForces(masses);
 	masses.evaluateK4(0.1);
 
 	masses.update(0.1);
 	//masses.download();
+	//springs.download();
 
 	/*
 	// TODO: remove
@@ -124,6 +128,30 @@ void Idle()
 				std::cout <<std::endl;
 			}
 		}
+
+		springs.download();
+
+		for (size_t i = 0; i < springs.size(); i++) {
+			SigAsiaDemo::Spring *spring0 = springs.getSpring(i);
+			if (spring0) {
+				std::cout << "Spring " << i << std::endl;
+				std::cout << "mass 0: " << spring0->_mass0 << std::endl;
+				std::cout << "mass 1: " << spring0->_mass1 << std::endl;
+				std::cout << "ks: " << spring0->_ks << std::endl;
+				std::cout << "kd: " << spring0->_kd << std::endl;
+				std::cout << "l0: " << spring0->_l0 << std::endl;
+				std::cout << "f0: (";
+				std::cout << spring0->_fx0 << ", ";
+				std::cout << spring0->_fy0 << ", ";
+				std::cout << spring0->_fz0 << ")" << std::endl;
+				std::cout << "f1: (";
+				std::cout << spring0->_fx1 << ", ";
+				std::cout << spring0->_fy1 << ", ";
+				std::cout << spring0->_fz1 << ")" << std::endl;
+				std::cout <<std::endl;
+			}
+		}
+
 		exit(0);
 	}
 	*/
@@ -195,6 +223,29 @@ void Keys(unsigned char key, int x, int y)
 				std::cout << mass0->_k4x << ", ";
 				std::cout << mass0->_k4y << ", ";
 				std::cout << mass0->_k4z << ")" << std::endl;
+				std::cout <<std::endl;
+			}
+		}
+
+		springs.download();
+
+		for (size_t i = 0; i < springs.size(); i++) {
+			SigAsiaDemo::Spring *spring0 = springs.getSpring(i);
+			if (spring0) {
+				std::cout << "Spring " << i << std::endl;
+				std::cout << "mass 0: " << spring0->_mass0 << std::endl;
+				std::cout << "mass 1: " << spring0->_mass1 << std::endl;
+				std::cout << "ks: " << spring0->_ks << std::endl;
+				std::cout << "kd: " << spring0->_kd << std::endl;
+				std::cout << "l0: " << spring0->_l0 << std::endl;
+				std::cout << "f0: (";
+				std::cout << spring0->_fx0 << ", ";
+				std::cout << spring0->_fy0 << ", ";
+				std::cout << spring0->_fz0 << ")" << std::endl;
+				std::cout << "f1: (";
+				std::cout << spring0->_fx1 << ", ";
+				std::cout << spring0->_fy1 << ", ";
+				std::cout << spring0->_fz1 << ")" << std::endl;
 				std::cout <<std::endl;
 			}
 		}
@@ -305,9 +356,13 @@ int main(int argc, char **argv)
 	// Get back to the Modelview
 	glMatrixMode(GL_MODELVIEW);
 
+	// TODO: replace by creators
 	// fill masses
-	for (int i = 0; i < 100; i++)
-		masses.push(SigAsiaDemo::Mass(1.0));
+	for (unsigned int i = 0; i < 100; i++)
+		masses.push(SigAsiaDemo::Mass(1.0, 0.0, static_cast<float>(i*2), 0.0));
+	
+	for (unsigned int i = 0; i < 99; i++)
+		springs.push(SigAsiaDemo::Spring(masses, i, i+1));
 
 	// register callbacks
 	glutIdleFunc(Idle);

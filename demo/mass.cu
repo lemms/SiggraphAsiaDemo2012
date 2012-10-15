@@ -55,6 +55,11 @@ bool SigAsiaDemo::MassList::push(Mass mass)
 	return false;
 }
 
+bool SigAsiaDemo::MassList::empty() const
+{
+	return _masses.empty();
+}
+
 size_t SigAsiaDemo::MassList::size() const
 {
 	return _masses.size();
@@ -151,7 +156,7 @@ __global__ void deviceStartFrame(unsigned int N, SigAsiaDemo::Mass *masses)
 
 void SigAsiaDemo::MassList::startFrame()
 {
-	if (_computing) {
+	if (_computing && !_masses.empty()) {
 		std::cout << "Start frame (" \
 		<< _masses.size() << ")." << std::endl;
 		deviceStartFrame<<<_masses.size(), 1>>>(
@@ -173,7 +178,7 @@ __global__ void deviceClearForces(unsigned int N, SigAsiaDemo::Mass *masses)
 
 void SigAsiaDemo::MassList::clearForces()
 {
-	if (_computing) {
+	if (_computing && !_masses.empty()) {
 		std::cout << "Clear forces and add gravity (" \
 		<< _masses.size() << ")." << std::endl;
 		deviceClearForces<<<_masses.size(), 1>>>(
@@ -210,7 +215,7 @@ __global__ void deviceEvaluateK1(float dt, unsigned int N, SigAsiaDemo::Mass *ma
 
 void SigAsiaDemo::MassList::evaluateK1(float dt)
 {
-	if (_computing) {
+	if (_computing && !_masses.empty()) {
 		std::cout << "Evaluate K1 (" << _masses.size() << ")." << std::endl;
 		deviceEvaluateK1<<<_masses.size(), 1>>>(
 			dt,
@@ -248,7 +253,7 @@ __global__ void deviceEvaluateK2(float dt, unsigned int N, SigAsiaDemo::Mass *ma
 
 void SigAsiaDemo::MassList::evaluateK2(float dt)
 {
-	if (_computing) {
+	if (_computing && !_masses.empty()) {
 		std::cout << "Evaluate K2 (" << _masses.size() << ")." << std::endl;
 		deviceEvaluateK2<<<_masses.size(), 1>>>(
 			dt,
@@ -286,7 +291,7 @@ __global__ void deviceEvaluateK3(float dt, unsigned int N, SigAsiaDemo::Mass *ma
 
 void SigAsiaDemo::MassList::evaluateK3(float dt)
 {
-	if (_computing) {
+	if (_computing && !_masses.empty()) {
 		std::cout << "Evaluate K3 (" << _masses.size() << ")." << std::endl;
 		deviceEvaluateK3<<<_masses.size(), 1>>>(
 			dt,
@@ -315,7 +320,7 @@ __global__ void deviceEvaluateK4(float dt, unsigned int N, SigAsiaDemo::Mass *ma
 
 void SigAsiaDemo::MassList::evaluateK4(float dt)
 {
-	if (_computing) {
+	if (_computing && !_masses.empty()) {
 		std::cout << "Evaluate K4 (" << _masses.size() << ")." << std::endl;
 		deviceEvaluateK4<<<_masses.size(), 1>>>(
 			dt,
@@ -352,7 +357,7 @@ __global__ void deviceUpdate(float dt, unsigned int N, SigAsiaDemo::Mass *masses
 
 void SigAsiaDemo::MassList::update(float dt)
 {
-	if (_computing) {
+	if (_computing && !_masses.empty()) {
 		std::cout << "Update masses (" << _masses.size() << ")." << std::endl;
 		deviceUpdate<<<_masses.size(), 1>>>(dt, _masses.size(), _device_masses);
 	}
