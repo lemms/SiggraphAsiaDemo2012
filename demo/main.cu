@@ -38,6 +38,7 @@ SigAsiaDemo::MassList masses;
 SigAsiaDemo::SpringList springs;
 
 size_t frame = 0;
+float dt = 0.01;
 
 void ParseArgs(int argc, char **argv)
 {
@@ -71,31 +72,33 @@ void ParseArgs(int argc, char **argv)
 void Idle()
 {
 	std::cout << "Frame: " << frame << std::endl;
+	std::cout << "upload masses." << std::endl;
 	masses.upload();
-	springs.upload();
+	std::cout << "upload springs." << std::endl;
+	springs.upload(masses);
 	masses.startFrame();
 
 	masses.clearForces();
 	springs.applySpringForces(masses);
-	masses.evaluateK1(0.1);
+	masses.evaluateK1(dt);
 
 	masses.clearForces();
 	springs.applySpringForces(masses);
-	masses.evaluateK2(0.1);
+	masses.evaluateK2(dt);
 
 	masses.clearForces();
 	springs.applySpringForces(masses);
-	masses.evaluateK3(0.1);
+	masses.evaluateK3(dt);
 
 	masses.clearForces();
 	springs.applySpringForces(masses);
-	masses.evaluateK4(0.1);
+	masses.evaluateK4(dt);
 
-	masses.update(0.1);
+	masses.update(dt);
+
 	//masses.download();
 	//springs.download();
 
-	/*
 	// TODO: remove
 	if (frame == 1000) {
 		masses.download();
@@ -154,7 +157,6 @@ void Idle()
 
 		exit(0);
 	}
-	*/
 
 	frame++;
 }
@@ -329,13 +331,15 @@ int main(int argc, char **argv)
 		std::cerr << "Error: Failed to initialize GLEW." << std::endl;
 		return 1;
 	}
-	std::cout << "Using GLEW " << glewGetString(GLEW_VERSION) << "." << std::endl;
+	std::cout << "Using GLEW " << glewGetString(GLEW_VERSION) \
+	<< "." << std::endl;
 	if (!GLEW_VERSION_4_2)
 	{
 		std::cerr << "Error: OpenGL 4.2 not supported." << std::endl;
 		return 1;
 	}
-	std::cout << "Using OpenGL " << glGetString(GL_VERSION) << "." << std::endl;
+	std::cout << "Using OpenGL " << glGetString(GL_VERSION) << "." \
+	<< std::endl;
 
 	// initialize OpenGL
 	glClearColor(0.0, 0.0, 0.0, 0.0);
@@ -363,6 +367,7 @@ int main(int argc, char **argv)
 	
 	for (unsigned int i = 0; i < 99; i++)
 		springs.push(SigAsiaDemo::Spring(masses, i, i+1));
+
 
 	// register callbacks
 	glutIdleFunc(Idle);

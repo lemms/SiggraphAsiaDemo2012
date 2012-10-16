@@ -49,6 +49,7 @@ namespace SigAsiaDemo {
 			Mass *getMass(size_t index);
 			// returns 0 if Mass is uploaded to the GPU
 			Mass *getDeviceMasses();
+			bool getChanged() const;
 			void startFrame();
 			void clearForces();
 			void evaluateK1(float dt);

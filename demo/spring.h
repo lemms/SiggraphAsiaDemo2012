@@ -37,14 +37,17 @@ namespace SigAsiaDemo {
 			bool push(Spring spring);
 			bool empty() const;
 			size_t size() const;
-			void upload();
+			void upload(MassList &masses);
 			void download();
 			Spring *getSpring(size_t index);
 			// returns 0 if Spring is uploaded to the GPU
 			Spring *getDeviceSprings();
+			bool getChanged() const;
 			void applySpringForces(MassList &masses);
 		private:
 			std::vector<Spring> _springs;
+			std::vector<unsigned int> _mass_spring_counts;
+			std::vector<unsigned int> _mass_spring_indices;
 			// indicates that the GPU is currently
 			// computing updates for the springss
 			bool _computing;
@@ -52,5 +55,7 @@ namespace SigAsiaDemo {
 			// changed
 			bool _changed;
 			Spring *_device_springs;
+			unsigned int *_device_mass_spring_counts;
+			unsigned int *_device_mass_spring_indices;
 	};
 }

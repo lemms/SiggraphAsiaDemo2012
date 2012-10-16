@@ -7,6 +7,7 @@ Laurence Emms
 */
 
 #include <iostream>
+#include <iomanip>
 #include <vector>
 #include <cuda.h>
 #include "mass.h"
@@ -41,7 +42,10 @@ SigAsiaDemo::MassList::MassList(
 SigAsiaDemo::MassList::~MassList()
 {
 	if (_device_masses) {
+		cudaThreadSynchronize();
+		std::cout << "Free masses." << std::endl;
 		cudaFree(_device_masses);
+		_device_masses = 0;
 	}
 }
 
@@ -69,20 +73,33 @@ size_t SigAsiaDemo::MassList::size() const
 
 void SigAsiaDemo::MassList::upload()
 {
+	if (_computing) {
+		// do nothing if computing
+		return;
+	}
+
 	if (_changed) {
-		std::cout << "Upload masses" << std::endl;
+		std::cout << "Upload masses." << std::endl;
 		_changed = false;
 		if (_device_masses) {
+			cudaThreadSynchronize();
 			std::cout << "Free masses." << std::endl;
 			cudaFree(_device_masses);
+			_device_masses = 0;
 		}
 
 		// allocate GPU buffer
-		std::cout << "Allocate GPU buffer of size " << \
-		_masses.size() << "." << std::endl;
-		cudaMalloc(
+		std::cout << std::fixed << std::setprecision(8) \
+		<< "Allocate GPU buffer of size " << \
+		_masses.size()*sizeof(Mass)/1073741824.0 \
+		<< " GB." << std::endl;
+		cudaError_t result = cudaMalloc(
 			(void**)&_device_masses,
 			_masses.size()*sizeof(Mass));
+		if (result != cudaSuccess) {
+			std::cout << "Error: CUDA failed to malloc memory." << std::endl;
+			std::terminate();
+		}
 
 		// copy into GPU buffer
 		std::cout << "Copy masses into GPU buffer." << std::endl;
@@ -122,11 +139,6 @@ SigAsiaDemo::Mass *SigAsiaDemo::MassList::getMass(size_t index)
 empty mass list." << std::endl;
 		return 0;
 	}
-	if (_computing) {
-		std::cout << "Warning: getMass called while \
-mass list is uploaded to the GPU." << std::endl;
-		return 0;
-	}
 	if (index >= _masses.size()) {
 		std::cout << "Warning: getMass called on index \
 out of bounds." << std::endl;
@@ -139,6 +151,11 @@ out of bounds." << std::endl;
 SigAsiaDemo::Mass *SigAsiaDemo::MassList::getDeviceMasses()
 {
 	return _device_masses;
+}
+
+bool SigAsiaDemo::MassList::getChanged() const
+{
+	return _changed;
 }
 
 __global__ void deviceStartFrame(unsigned int N, SigAsiaDemo::Mass *masses)
@@ -160,6 +177,7 @@ void SigAsiaDemo::MassList::startFrame()
 		deviceStartFrame<<<_masses.size(), 1>>>(
 			_masses.size(),
 			_device_masses);
+		cudaThreadSynchronize();
 	}
 }
 
@@ -182,10 +200,12 @@ void SigAsiaDemo::MassList::clearForces()
 		deviceClearForces<<<_masses.size(), 1>>>(
 			_masses.size(),
 			_device_masses);
+		cudaThreadSynchronize();
 	}
 }
 
-__global__ void deviceEvaluateK1(float dt, unsigned int N, SigAsiaDemo::Mass *masses)
+__global__ void deviceEvaluateK1(
+	float dt, unsigned int N, SigAsiaDemo::Mass *masses)
 {
 	int tid = blockIdx.x;
 	if (tid < N) {
@@ -219,10 +239,12 @@ void SigAsiaDemo::MassList::evaluateK1(float dt)
 			dt,
 			_masses.size(),
 			_device_masses);
+		cudaThreadSynchronize();
 	}
 }
 
-__global__ void deviceEvaluateK2(float dt, unsigned int N, SigAsiaDemo::Mass *masses)
+__global__ void deviceEvaluateK2(
+	float dt, unsigned int N, SigAsiaDemo::Mass *masses)
 {
 	int tid = blockIdx.x;
 	if (tid < N) {
@@ -257,10 +279,12 @@ void SigAsiaDemo::MassList::evaluateK2(float dt)
 			dt,
 			_masses.size(),
 			_device_masses);
+		cudaThreadSynchronize();
 	}
 }
 
-__global__ void deviceEvaluateK3(float dt, unsigned int N, SigAsiaDemo::Mass *masses)
+__global__ void deviceEvaluateK3(
+	float dt, unsigned int N, SigAsiaDemo::Mass *masses)
 {
 	int tid = blockIdx.x;
 	if (tid < N) {
@@ -295,10 +319,12 @@ void SigAsiaDemo::MassList::evaluateK3(float dt)
 			dt,
 			_masses.size(),
 			_device_masses);
+		cudaThreadSynchronize();
 	}
 }
 
-__global__ void deviceEvaluateK4(float dt, unsigned int N, SigAsiaDemo::Mass *masses)
+__global__ void deviceEvaluateK4(
+	float dt, unsigned int N, SigAsiaDemo::Mass *masses)
 {
 	int tid = blockIdx.x;
 	if (tid < N) {
@@ -324,10 +350,15 @@ void SigAsiaDemo::MassList::evaluateK4(float dt)
 			dt,
 			_masses.size(),
 			_device_masses);
+		cudaThreadSynchronize();
 	}
 }
 
-__global__ void deviceUpdate(float dt, float coeff_restitution, unsigned int N, SigAsiaDemo::Mass *masses)
+__global__ void deviceUpdate(
+	float dt,
+	float coeff_restitution,
+	unsigned int N,
+	SigAsiaDemo::Mass *masses)
 {
 	int tid = blockIdx.x;
 	if (tid < N) {
@@ -357,8 +388,8 @@ __global__ void deviceUpdate(float dt, float coeff_restitution, unsigned int N, 
 		masses[tid]._tvz = masses[tid]._z - masses[tid]._tz;
 
 		// enforce ground collision
-		if (masses[tid]._y < 0.0) {
-			masses[tid]._y = 0.0;
+		if (masses[tid]._y < 0.0f) {
+			masses[tid]._y = 0.0f;
 			masses[tid]._tvy = -masses[tid]._tvy * coeff_restitution;
 		}
 	}
@@ -368,6 +399,8 @@ void SigAsiaDemo::MassList::update(float dt)
 {
 	if (_computing && !_masses.empty()) {
 		std::cout << "Update masses (" << _masses.size() << ")." << std::endl;
-		deviceUpdate<<<_masses.size(), 1>>>(dt, _coeff_restitution, _masses.size(), _device_masses);
+		deviceUpdate<<<_masses.size(), 1>>>(
+			dt, _coeff_restitution, _masses.size(), _device_masses);
+		cudaThreadSynchronize();
 	}
 }
