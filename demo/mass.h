@@ -39,7 +39,7 @@ namespace SigAsiaDemo {
 
 	class MassList {
 		public:
-			MassList();
+			MassList(float coeff_restitution = 0.2);
 			~MassList();
 			bool push(Mass mass);
 			bool empty() const;
@@ -64,6 +64,7 @@ namespace SigAsiaDemo {
 			// indicates that the mass list has
 			// changed
 			bool _changed;
+			float _coeff_restitution;
 			Mass *_device_masses;
 	};
 }

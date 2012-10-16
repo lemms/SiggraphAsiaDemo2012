@@ -30,9 +30,11 @@ SigAsiaDemo::Mass::Mass(
 		_k4x(0.0), _k4y(0.0), _k4z(0.0)
 {}
 
-SigAsiaDemo::MassList::MassList() :
+SigAsiaDemo::MassList::MassList(
+	float coeff_restitution) :
 	_computing(false),
 	_changed(false),
+	_coeff_restitution(coeff_restitution),
 	_device_masses(0)
 {}
 
@@ -143,10 +145,6 @@ __global__ void deviceStartFrame(unsigned int N, SigAsiaDemo::Mass *masses)
 {
 	int tid = blockIdx.x;
 	if (tid < N) {
-		// set temporary velocity for k1
-		masses[tid]._tvx = masses[tid]._x - masses[tid]._tx;
-		masses[tid]._tvy = masses[tid]._y - masses[tid]._ty;
-		masses[tid]._tvz = masses[tid]._z - masses[tid]._tz;
 		// set temporary position for k1
 		masses[tid]._tx = masses[tid]._x;
 		masses[tid]._ty = masses[tid]._y;
@@ -329,7 +327,7 @@ void SigAsiaDemo::MassList::evaluateK4(float dt)
 	}
 }
 
-__global__ void deviceUpdate(float dt, unsigned int N, SigAsiaDemo::Mass *masses)
+__global__ void deviceUpdate(float dt, float coeff_restitution, unsigned int N, SigAsiaDemo::Mass *masses)
 {
 	int tid = blockIdx.x;
 	if (tid < N) {
@@ -352,6 +350,17 @@ __global__ void deviceUpdate(float dt, unsigned int N, SigAsiaDemo::Mass *masses
 			2.0f*masses[tid]._k2z +
 			2.0f*masses[tid]._k3z +
 			masses[tid]._k4z);
+
+		// set temporary velocity for k1
+		masses[tid]._tvx = masses[tid]._x - masses[tid]._tx;
+		masses[tid]._tvy = masses[tid]._y - masses[tid]._ty;
+		masses[tid]._tvz = masses[tid]._z - masses[tid]._tz;
+
+		// enforce ground collision
+		if (masses[tid]._y < 0.0) {
+			masses[tid]._y = 0.0;
+			masses[tid]._tvy = -masses[tid]._tvy * coeff_restitution;
+		}
 	}
 }
 
@@ -359,6 +368,6 @@ void SigAsiaDemo::MassList::update(float dt)
 {
 	if (_computing && !_masses.empty()) {
 		std::cout << "Update masses (" << _masses.size() << ")." << std::endl;
-		deviceUpdate<<<_masses.size(), 1>>>(dt, _masses.size(), _device_masses);
+		deviceUpdate<<<_masses.size(), 1>>>(dt, _coeff_restitution, _masses.size(), _device_masses);
 	}
 }
