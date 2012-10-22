@@ -19,6 +19,7 @@ namespace SigAsiaDemo {
 				float fx = 0.0,
 				float fy = 0.0,
 				float fz = 0.0,
+				int state = 0,
 				float radius = 1.0);
 
 			// data
@@ -37,6 +38,10 @@ namespace SigAsiaDemo {
 			float _k3x; float _k3y; float _k3z;
 			float _k4x; float _k4y; float _k4z;
 			float _radius;
+			// states:
+			// 0 - unconstrained
+			// 1 - held
+			int _state;
 	};
 
 	class MassList {
@@ -59,7 +64,8 @@ namespace SigAsiaDemo {
 			void evaluateK3(float dt);
 			void evaluateK4(float dt);
 			void update(float dt);
-			void render() const;
+			bool loadShaders();
+			void render(float *ModelView, float *Projection) const;
 		private:
 			// vertex buffer object with (position, radius)
 			std::vector<Mass> _masses;
@@ -73,5 +79,13 @@ namespace SigAsiaDemo {
 			bool _changed;
 			float _coeff_restitution;
 			Mass *_device_masses;
+
+			// shaders
+			unsigned int _vertex_shader;
+			unsigned int _geometry_shader;
+			unsigned int _fragment_shader;
+			unsigned int _program;
+			unsigned int _ModelViewLocation;
+			unsigned int _ProjectionLocation;
 	};
 }

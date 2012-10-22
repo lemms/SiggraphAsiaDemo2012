@@ -1,7 +1,7 @@
 /*
 Siggraph Asia 2012 Demo
 
-Spring vector implementation
+Spring vector implementation.
 
 Laurence Emms
 */

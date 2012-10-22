@@ -1,7 +1,7 @@
 /*
 Siggraph Asia 2012 Demo
 
-Mass vector implementation
+Mass vector implementation.
 
 Laurence Emms
 */
@@ -9,6 +9,9 @@ Laurence Emms
 #include <iostream>
 #include <iomanip>
 #include <vector>
+#include <fstream>
+#include <iterator>
+
 #include <GL/glew.h>
 #include <cuda.h>
 #include <cuda_gl_interop.h>
@@ -23,6 +26,7 @@ SigAsiaDemo::Mass::Mass(
 	float fx,
 	float fy,
 	float fz,
+	int state,
 	float radius) :
 		_mass(mass),
 		_x(x), _y(y), _z(z),
@@ -33,7 +37,8 @@ SigAsiaDemo::Mass::Mass(
 		_k2x(0.0), _k2y(0.0), _k2z(0.0),
 		_k3x(0.0), _k3y(0.0), _k3z(0.0),
 		_k4x(0.0), _k4y(0.0), _k4z(0.0),
-		_radius(radius)
+		_radius(radius),
+		_state(state)
 {}
 
 SigAsiaDemo::MassList::MassList(
@@ -42,7 +47,13 @@ SigAsiaDemo::MassList::MassList(
 	_computing(false),
 	_changed(false),
 	_coeff_restitution(coeff_restitution),
-	_device_masses(0)
+	_device_masses(0),
+	_vertex_shader(0),
+	_geometry_shader(0),
+	_fragment_shader(0),
+	_program(0),
+	_ModelViewLocation(0),
+	_ProjectionLocation(0)
 {}
 
 SigAsiaDemo::MassList::~MassList()
@@ -168,6 +179,8 @@ __global__ void deviceStartFrame(unsigned int N, SigAsiaDemo::Mass *masses)
 {
 	int tid = blockIdx.x;
 	if (tid < N) {
+		if (masses[tid]._state == 1)
+			return;
 		// set temporary position for k1
 		masses[tid]._tx = masses[tid]._x;
 		masses[tid]._ty = masses[tid]._y;
@@ -191,6 +204,8 @@ __global__ void deviceClearForces(unsigned int N, SigAsiaDemo::Mass *masses)
 {
 	int tid = blockIdx.x;
 	if (tid < N) {
+		if (masses[tid]._state == 1)
+			return;
 		masses[tid]._fx = 0.0f;
 		// add gravity
 		masses[tid]._fy = -9.81f * masses[tid]._mass;
@@ -215,6 +230,8 @@ __global__ void deviceEvaluateK1(
 {
 	int tid = blockIdx.x;
 	if (tid < N) {
+		if (masses[tid]._state == 1)
+			return;
 		// update accelerations
 		float inv_mass = 1.0f / masses[tid]._mass;
 		float ax = masses[tid]._fx * inv_mass;
@@ -254,6 +271,8 @@ __global__ void deviceEvaluateK2(
 {
 	int tid = blockIdx.x;
 	if (tid < N) {
+		if (masses[tid]._state == 1)
+			return;
 		// update accelerations
 		float inv_mass = 1.0f / masses[tid]._mass;
 		// forces have been calculated for (t + dt/2, y + k1/2)
@@ -294,6 +313,8 @@ __global__ void deviceEvaluateK3(
 {
 	int tid = blockIdx.x;
 	if (tid < N) {
+		if (masses[tid]._state == 1)
+			return;
 		// update accelerations
 		float inv_mass = 1.0f / masses[tid]._mass;
 		// forces have been calculated for (t + dt/2, y + k1/2)
@@ -334,6 +355,8 @@ __global__ void deviceEvaluateK4(
 {
 	int tid = blockIdx.x;
 	if (tid < N) {
+		if (masses[tid]._state == 1)
+			return;
 		// update accelerations
 		float inv_mass = 1.0f / masses[tid]._mass;
 		// forces have been calculated for (t + dt/2, y + k1/2)
@@ -369,6 +392,8 @@ __global__ void deviceUpdate(
 {
 	int tid = blockIdx.x;
 	if (tid < N) {
+		if (masses[tid]._state == 1)
+			return;
 		// set temporary position to previous position
 		masses[tid]._tx = masses[tid]._x;
 		masses[tid]._ty = masses[tid]._y;
@@ -468,7 +493,189 @@ void SigAsiaDemo::MassList::update(float dt)
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void SigAsiaDemo::MassList::render() const
+bool verifyCompilation(unsigned int shader, const char *type)
 {
-	// TODO
+	GLint result = 0;
+	glGetShaderiv(
+		shader,
+		GL_COMPILE_STATUS,
+		&result);
+	if (result == GL_FALSE) {
+		std::cerr << "Error: Failed to compile " << type \
+		<< " shader." << std::endl;
+		GLint length = 0;
+		glGetShaderiv(
+			shader,
+			GL_INFO_LOG_LENGTH,
+			&length);
+		if (length > 0) {
+			GLint length_written = 0;
+			char *log = new char[length];
+			glGetShaderInfoLog(
+				shader,
+				length,
+				&length_written,
+				log);
+			std::cerr << "Log:" << std::endl;
+			std::cerr << log << std::endl;
+			delete[] log;
+		}
+		return false;
+	}
+	return true;
+}
+
+bool verifyLinking(unsigned int program)
+{
+	GLint result = 0;
+	glGetProgramiv(
+		program,
+		GL_LINK_STATUS,
+		&result);
+	if (result == GL_FALSE) {
+		std::cerr << "Error: Failed to compile shader program." \
+		<< std::endl;
+		GLint length = 0;
+		glGetProgramiv(
+			program,
+			GL_INFO_LOG_LENGTH,
+			&length);
+		if (length > 0) {
+			GLint length_written = 0;
+			char *log = new char[length];
+			glGetProgramInfoLog(
+				program,
+				length,
+				&length_written,
+				log);
+			std::cerr << "Log:" << std::endl;
+			std::cerr << log << std::endl;
+			delete[] log;
+		}
+		return false;
+	}
+	return true;
+}
+
+bool SigAsiaDemo::MassList::loadShaders()
+{
+	// load shaders
+	if (_program == 0) {
+		// create shaders
+		_vertex_shader = glCreateShader(GL_VERTEX_SHADER);
+		if (_vertex_shader == 0) {
+			std::cerr << "Error: Failed to create vertex shader." \
+			<< std::endl;
+			return false;
+		}
+
+		_geometry_shader = glCreateShader(GL_GEOMETRY_SHADER);
+		if (_geometry_shader == 0) {
+			std::cerr << "Error: Failed to create geometry shader." \
+			<< std::endl;
+			return false;
+		}
+
+		_fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
+		if (_fragment_shader == 0) {
+			std::cerr << "Error: Failed to create fragment shader." \
+			<< std::endl;
+			return false;
+		}
+
+		// read shaders
+		std::ifstream vs_file("massVS.glsl");
+		std::string vs_string(
+			(std::istreambuf_iterator<char>(vs_file)),
+			std::istreambuf_iterator<char>());
+		const char *vs_char = vs_string.c_str();
+		glShaderSource(_vertex_shader, 1, &vs_char, NULL);
+
+		std::ifstream gs_file("massGS.glsl");
+		std::string gs_string(
+			(std::istreambuf_iterator<char>(gs_file)),
+			std::istreambuf_iterator<char>());
+		const char *gs_char = gs_string.c_str();
+		glShaderSource(_geometry_shader, 1, &gs_char, NULL);
+
+		std::ifstream fs_file("massFS.glsl");
+		std::string fs_string(
+			(std::istreambuf_iterator<char>(fs_file)),
+			std::istreambuf_iterator<char>());
+		const char *fs_char = fs_string.c_str();
+		glShaderSource(_fragment_shader, 1, &fs_char, NULL);
+
+		// compile shaders
+		glCompileShader(_vertex_shader);
+		if (verifyCompilation(_vertex_shader, "vertex") == false)
+			return false;
+
+		glCompileShader(_geometry_shader);
+		if (verifyCompilation(_geometry_shader, "geometry") == false)
+			return false;
+
+		glCompileShader(_fragment_shader);
+		if (verifyCompilation(_fragment_shader, "fragment") == false)
+			return false;
+
+		// create program
+		_program = glCreateProgram();
+		if (_program == 0) {
+			std::cerr << "Error: Failed to create shader program." \
+			<< std::endl;
+			return false;
+		}
+
+		// attach shaders
+		glAttachShader(_program, _vertex_shader);
+		glAttachShader(_program, _geometry_shader);
+		glAttachShader(_program, _fragment_shader);
+
+		// link program
+		glLinkProgram(_program);
+		if (verifyLinking(_program) == false)
+			return false;
+
+		// get uniforms
+		_ModelViewLocation = glGetUniformLocation(_program, "ModelView");
+		if (_ModelViewLocation == 0) {
+			std::cerr << "Error: Failed to get ModelView location." \
+			<< std::endl;
+			return false;
+		}
+
+		_ProjectionLocation = glGetUniformLocation(_program, "Projection");
+		if (_ProjectionLocation == 0) {
+			std::cerr << "Error: Failed to get Projection location." \
+			<< std::endl;
+			return false;
+		}
+	}
+
+	return true;
+}
+
+void SigAsiaDemo::MassList::render(
+	float *ModelView,
+	float *Projection) const
+{
+	// bind shader
+	glUseProgram(_program);
+
+	// setup uniforms
+	glUniformMatrix4fv(
+		_ModelViewLocation,
+		1, GL_FALSE,
+		ModelView);
+	glUniformMatrix4fv(
+		_ProjectionLocation,
+		1, GL_FALSE,
+		Projection);
+
+	glBindBuffer(GL_ARRAY_BUFFER, _masses_buffer);
+	glDrawArrays(GL_POINTS, 0, _masses.size());
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	// unbind shader
+	glUseProgram(0);
 }
