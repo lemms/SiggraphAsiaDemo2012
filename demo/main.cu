@@ -26,6 +26,7 @@ using namespace std;
 
 // CUDA
 #include <cuda.h>
+#include <cuda_gl_interop.h>
 
 // demo
 #include "viewport.h"
@@ -275,6 +276,9 @@ int main(int argc, char **argv)
 		std::cerr << "Error: No CUDA devices found." << std::endl;
 		return 1;
 	}
+	int device = 0;
+	int max_major = 0;
+	int max_minor = 0;
 	for (int i = 0; i < count; ++i) {
 		std::cout << "CUDA Device " << i << ":" << std::endl;
 		cudaGetDeviceProperties(&properties, i);
@@ -301,7 +305,26 @@ int main(int argc, char **argv)
 		<< properties.maxGridSize[0] << ", " \
 		<< properties.maxGridSize[1] << ", " \
 		<< properties.maxGridSize[2] << ")" << std::endl;
+
+		// get the device with the highest compute cabability
+		if (properties.major > max_major) {
+			device = i;
+			max_major = properties.major;
+			max_minor = properties.minor;
+		} else if (	properties.major == max_major &&
+					properties.minor > max_minor) {
+			device = i;
+			max_major = properties.major;
+			max_minor = properties.minor;
+		}
 	}
+	if (max_major < 1) {
+		std::cerr << "Error: CUDA version >= 1.0 required." << std::endl;
+		return 1;
+	}
+
+	// set device
+	cudaSetDevice(device);
 
 	// setup GLUT
 	glutInit(&argc, argv);
@@ -340,6 +363,9 @@ int main(int argc, char **argv)
 	}
 	std::cout << "Using OpenGL " << glGetString(GL_VERSION) << "." \
 	<< std::endl;
+
+	// set CUDA/OpenGL device
+	cudaGLSetGLDevice(device);
 
 	// initialize OpenGL
 	glClearColor(0.0, 0.0, 0.0, 0.0);

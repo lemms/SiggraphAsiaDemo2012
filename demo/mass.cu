@@ -9,7 +9,10 @@ Laurence Emms
 #include <iostream>
 #include <iomanip>
 #include <vector>
+#include <GL/glew.h>
 #include <cuda.h>
+#include <cuda_gl_interop.h>
+
 #include "mass.h"
 
 SigAsiaDemo::Mass::Mass(
@@ -19,7 +22,8 @@ SigAsiaDemo::Mass::Mass(
 	float z,
 	float fx,
 	float fy,
-	float fz) :
+	float fz,
+	float radius) :
 		_mass(mass),
 		_x(x), _y(y), _z(z),
 		_tx(x), _ty(y), _tz(z),
@@ -28,11 +32,13 @@ SigAsiaDemo::Mass::Mass(
 		_k1x(0.0), _k1y(0.0), _k1z(0.0),
 		_k2x(0.0), _k2y(0.0), _k2z(0.0),
 		_k3x(0.0), _k3y(0.0), _k3z(0.0),
-		_k4x(0.0), _k4y(0.0), _k4z(0.0)
+		_k4x(0.0), _k4y(0.0), _k4z(0.0),
+		_radius(radius)
 {}
 
 SigAsiaDemo::MassList::MassList(
 	float coeff_restitution) :
+	_masses_buffer(0),
 	_computing(false),
 	_changed(false),
 	_coeff_restitution(coeff_restitution),
@@ -358,7 +364,8 @@ __global__ void deviceUpdate(
 	float dt,
 	float coeff_restitution,
 	unsigned int N,
-	SigAsiaDemo::Mass *masses)
+	SigAsiaDemo::Mass *masses,
+	float *masses_buffer)
 {
 	int tid = blockIdx.x;
 	if (tid < N) {
@@ -392,15 +399,76 @@ __global__ void deviceUpdate(
 			masses[tid]._y = 0.0f;
 			masses[tid]._tvy = -masses[tid]._tvy * coeff_restitution;
 		}
+		
+		// copy into CUDA buffer
+		masses_buffer[tid*4]   = masses[tid]._x;
+		masses_buffer[tid*4+1] = masses[tid]._y;
+		masses_buffer[tid*4+2] = masses[tid]._z;
+		masses_buffer[tid*4+3] = masses[tid]._radius;
 	}
 }
 
 void SigAsiaDemo::MassList::update(float dt)
 {
+	if (_changed && _masses_buffer != 0) {
+		// unregister GL buffer
+		cudaGraphicsUnregisterResource(_cuda_masses_resource);
+		_cuda_masses_resource = 0;
+		// clear GL buffer
+		glDeleteBuffers(1, &_masses_buffer);
+		_masses_buffer = 0;
+	}
+	if (_masses_buffer == 0) {
+		// generate GL buffer
+		glGenBuffers(1, &_masses_buffer);
+		glBindBuffer(GL_ARRAY_BUFFER, _masses_buffer);
+		// allocate space for (position, radius);
+		glBufferData(
+			GL_ARRAY_BUFFER,
+			_masses.size()*4*sizeof(float),
+			NULL,
+			GL_DYNAMIC_DRAW);
+		// register GL buffer
+		cudaGraphicsGLRegisterBuffer(
+			&_cuda_masses_resource,
+			_masses_buffer,
+			cudaGraphicsMapFlagsNone);
+		if (_cuda_masses_resource == 0) {
+			std::cerr << "Error: Failed to register GL buffer." << std::endl;
+			return;
+		}
+	}
+
+	// map CUDA resource
+	size_t buffer_size = 0;
+	float *masses_buffer = 0;
+	cudaGraphicsMapResources(1, &_cuda_masses_resource, NULL);
+	cudaGraphicsResourceGetMappedPointer(
+		(void**)&masses_buffer,
+		&buffer_size,
+		_cuda_masses_resource);
+		
+
+	// update positions and upload to GL
 	if (_computing && !_masses.empty()) {
 		std::cout << "Update masses (" << _masses.size() << ")." << std::endl;
 		deviceUpdate<<<_masses.size(), 1>>>(
-			dt, _coeff_restitution, _masses.size(), _device_masses);
+			dt,
+			_coeff_restitution,
+			_masses.size(),
+			_device_masses,
+			masses_buffer);
 		cudaThreadSynchronize();
 	}
+
+	// unmap CUDA resource
+	cudaGraphicsUnmapResources(1, &_cuda_masses_resource, NULL);
+
+	// unbind buffer
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+void SigAsiaDemo::MassList::render() const
+{
+	// TODO
 }
