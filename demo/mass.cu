@@ -16,6 +16,12 @@ Laurence Emms
 #include <cuda.h>
 #include <cuda_gl_interop.h>
 
+// GLM
+#define GLM_FORCE_CUDA
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
 #include "mass.h"
 
 SigAsiaDemo::Mass::Mass(
@@ -656,8 +662,8 @@ bool SigAsiaDemo::MassList::loadShaders()
 }
 
 void SigAsiaDemo::MassList::render(
-	float *ModelView,
-	float *Projection) const
+	glm::mat4 ModelView,
+	glm::mat4 Projection) const
 {
 	// bind shader
 	glUseProgram(_program);
@@ -666,11 +672,11 @@ void SigAsiaDemo::MassList::render(
 	glUniformMatrix4fv(
 		_ModelViewLocation,
 		1, GL_FALSE,
-		ModelView);
+		glm::value_ptr(ModelView));
 	glUniformMatrix4fv(
 		_ProjectionLocation,
 		1, GL_FALSE,
-		Projection);
+		glm::value_ptr(Projection));
 
 	glBindBuffer(GL_ARRAY_BUFFER, _masses_buffer);
 	glDrawArrays(GL_POINTS, 0, _masses.size());

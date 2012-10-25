@@ -16,7 +16,7 @@ SigAsiaDemo::Viewport::Viewport(
 	ComputeAspect();
 } 
 
-void SigAsiaDemo::Viewport::SetDimensions(
+void SigAsiaDemo::Viewport::ResizeWindow(
 	unsigned int width,
 	unsigned int height)
 {

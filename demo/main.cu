@@ -20,19 +20,22 @@ using namespace std;
 #include <GL/freeglut_ext.h>
 #endif
 
-// TODO: remove and swap to programmable pipeline
-// temporarily including glu
-#include <GL/glu.h>
-
+// GLM
+#define GLM_FORCE_CUDA
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 // demo
 #include "device.h"
 #include "viewport.h"
 #include "mass.h"
 #include "spring.h"
+#include "camera.h"
 
 // globals
 SigAsiaDemo::Viewport viewport;
+SigAsiaDemo::Camera camera;
 SigAsiaDemo::MassList masses;
 SigAsiaDemo::SpringList springs;
 
@@ -64,7 +67,8 @@ void ParseArgs(int argc, char **argv)
 			std::cout << stream.str() << std::endl;
 			stream >> height;
 		}
-		viewport.SetDimensions(width, height);
+		viewport.ResizeWindow(width, height);
+		camera.ResizeWindow(width, height);
 	}
 }
 
@@ -162,30 +166,15 @@ void Idle()
 
 void Reshape(int width, int height)
 {
-	viewport.SetDimensions(width, height);
-	// TODO: remove and swap to programmable pipeline
-	// resize viewport
-	glViewport(0, 0, viewport.GetWidth(), viewport.GetHeight());
-
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-
-	gluPerspective(
-		viewport.GetFieldOfView(),
-		viewport.GetAspect(),
-		viewport.GetNear(),
-		viewport.GetFar());
-
-	// Get back to the Modelview
-	glMatrixMode(GL_MODELVIEW);
+	viewport.ResizeWindow(width, height);
+	camera.ResizeWindow(width, height);
 }
 
 void Render()
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	// TODO
-	// get projection matrix from camera
+	masses.render(camera.GetModelView(), camera.GetProjection());
 
 	glBegin(GL_TRIANGLES);
 	glVertex3f(-0.5,-0.5,0.0);
@@ -317,24 +306,14 @@ int main(int argc, char **argv)
 	// set CUDA/OpenGL device
 	SigAsiaDemo::setGLDevice(device);
 
+	// load shaders
+	masses.loadShaders();
+
 	// initialize OpenGL
 	glClearColor(0.0, 0.0, 0.0, 0.0);
 
 	// resize viewport
 	glViewport(0, 0, viewport.GetWidth(), viewport.GetHeight());
-
-	// setup projection
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-
-	gluPerspective(
-		viewport.GetFieldOfView(),
-		viewport.GetAspect(),
-		viewport.GetNear(),
-		viewport.GetFar());
-
-	// Get back to the Modelview
-	glMatrixMode(GL_MODELVIEW);
 
 	// TODO: replace by creators
 	// fill masses

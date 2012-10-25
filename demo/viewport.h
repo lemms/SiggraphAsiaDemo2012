@@ -10,13 +10,13 @@ namespace SigAsiaDemo {
 	class Viewport {
 		public:
 			Viewport(
-				unsigned int width=1024,
-				unsigned int height=768,
+				unsigned int width = 1024,
+				unsigned int height = 768,
 				float near = 0.1,
 				float far = 10000.0,
 				float fov = 45.0);
 
-			void SetDimensions(
+			void ResizeWindow(
 				unsigned int width,
 				unsigned int height);
 			void SetDistances(

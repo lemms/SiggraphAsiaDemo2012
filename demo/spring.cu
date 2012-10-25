@@ -10,6 +10,13 @@ Laurence Emms
 #include <iomanip>
 #include <vector>
 #include <cmath>
+
+// GLM
+#define GLM_FORCE_CUDA
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
 #include "mass.h"
 #include "spring.h"
 

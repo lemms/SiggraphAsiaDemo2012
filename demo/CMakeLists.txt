@@ -1,5 +1,3 @@
-#TODO
-#project(DemoCamera)
 set(DIRS "")
 set(LIBS "")
 
@@ -42,10 +40,6 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/massGS.glsl
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/massFS.glsl
 	${CMAKE_CURRENT_BINARY_DIR}/massFS.glsl COPYONLY)
 
-#TODO: add Camera
-# camera as separate library to allow glm
-#add_library(DemoCamera camera.cpp)
-cuda_add_executable(SiggraphAsiaDemo main.cu viewport.cu mass.cu spring.cu device.cu)
-#target_link_libraries (SiggraphAsiaDemo DemoCamera)
+cuda_add_executable(SiggraphAsiaDemo main.cu viewport.cu mass.cu spring.cu device.cu camera.cu)
 target_link_libraries (SiggraphAsiaDemo ${LIBS})
 

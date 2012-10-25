@@ -65,7 +65,7 @@ namespace SigAsiaDemo {
 			void evaluateK4(float dt);
 			void update(float dt);
 			bool loadShaders();
-			void render(float *ModelView, float *Projection) const;
+			void render(glm::mat4 ModelView, glm::mat4 Projection) const;
 		private:
 			// vertex buffer object with (position, radius)
 			std::vector<Mass> _masses;
