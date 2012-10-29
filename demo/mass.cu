@@ -479,10 +479,10 @@ void SigAsiaDemo::MassList::update(float dt)
 		// allocate space for (position, radius);
 		float _axes_data[] = 
 			{
-				0.0, 0.0, 0.0, 1.0,
-				1.0, 0.0, 0.0, 1.0,
-				0.0, 1.0, 0.0, 1.0,
-				0.0, 0.0, 1.0, 1.0
+				0.0, 0.0, 0.0, 0.1,
+				1.0, 0.0, 0.0, 0.1,
+				0.0, 1.0, 0.0, 0.1,
+				0.0, 0.0, 1.0, 0.1
 			};
 		glBufferData(
 			GL_ARRAY_BUFFER,
@@ -515,8 +515,8 @@ void SigAsiaDemo::MassList::update(float dt)
 		glEnableVertexAttribArray(0);
 
 		glBindBuffer(GL_ARRAY_BUFFER, _axes_buffer);
-		glVertexAttribPointer(0, 4, GL_UNSIGNED_BYTE, GL_FALSE, 0, NULL);
-		glBindVertexArray(0);
+		glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, NULL);
+		//glBindVertexArray(0);
 	}
 
 	// map CUDA resource
@@ -756,12 +756,12 @@ void SigAsiaDemo::MassList::render(
 		1, GL_FALSE,
 		glm::value_ptr(Projection));
 
-	//glBindVertexArray(_masses_array);
-	//glDrawArrays(GL_POINTS, 0, _masses.size());
-	//glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(_masses_array);
+	glDrawArrays(GL_POINTS, 0, _masses.size());
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	glBindVertexArray(_axes_array);
-	glDrawArrays(GL_POINTS, 0, 16);
+	glDrawArrays(GL_POINTS, 0, 4);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	// unbind shader

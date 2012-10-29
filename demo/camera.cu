@@ -28,7 +28,7 @@ SigAsiaDemo::Camera::Camera(
 		_far(far)
 {
 	_l.x = 0.0; _l.y = 0.0; _l.z = 0.0;
-	_p.x = 0.0; _p.y = 0.0; _p.z = -1.0;
+	_p.x = 0.0; _p.y = 0.0; _p.z = 10.0;
 	_u.x = 0.0; _u.y = 1.0; _u.z = 0.0;
 }
 
@@ -91,5 +91,5 @@ glm::mat4 SigAsiaDemo::Camera::GetProjection()
 
 glm::mat4 SigAsiaDemo::Camera::GetModelView()
 {
-	return glm::lookAt(_l, _p, _u);
+	return glm::lookAt(_p, _l, _u);
 }

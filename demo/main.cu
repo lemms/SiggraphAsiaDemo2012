@@ -72,11 +72,8 @@ void ParseArgs(int argc, char **argv)
 	}
 }
 
-void Idle()
+void Step()
 {
-	// TODO: come up with a better metric
-	if (frame % 100 == 0)
-		glutPostRedisplay();
 	//std::cout << "Frame: " << frame << std::endl;
 	//std::cout << "upload masses." << std::endl;
 	masses.upload();
@@ -104,6 +101,15 @@ void Idle()
 
 	//masses.download();
 	//springs.download();
+}
+
+void Idle()
+{
+	// TODO: come up with a better metric
+	//if (frame % 100 == 0)
+		//glutPostRedisplay();
+
+	//Step();
 
 	// TODO: remove
 	/*
@@ -166,7 +172,7 @@ void Idle()
 	}
 	*/
 
-	frame++;
+	//frame++;
 }
 
 void Reshape(int width, int height)
@@ -194,20 +200,6 @@ void Render()
 	std::cout << "[" << P[12] << " " << P[13] <<  " " << P[14] <<  " " << P[15] <<  std::endl;
 	masses.render(camera.GetModelView(), camera.GetProjection());
 
-	/*
-	glBegin(GL_LINES);
-	glColor3f(1.0, 0.0, 0.0);
-	glVertex3f(0.0, 0.0, 0.0);
-	glVertex3f(1.0, 0.0, 0.0);
-	glColor3f(0.0, 1.0, 0.0);
-	glVertex3f(0.0, 0.0, 0.0);
-	glVertex3f(0.0, 1.0, 0.0);
-	glColor3f(0.0, 0.0, 1.0);
-	glVertex3f(0.0, 0.0, 0.0);
-	glVertex3f(0.0, 0.0, 1.0);
-	glEnd();
-	*/
-
 	glutSwapBuffers();
 }
 
@@ -215,18 +207,25 @@ void Keys(unsigned char key, int x, int y)
 {
 	float px = 0.0, py = 0.0, pz = 0.0;
 	//float lx = 0.0, ly = 0.0, lz = 0.0;
-	if (key == 'q') px = 1.0;
-	if (key == 'a') px = -1.0;
-	if (key == 'd') py = 1.0;
-	if (key == 's') py = -1.0;
-	if (key == 'r') pz = 1.0;
-	if (key == 'h') pz = -1.0;
+	if (key == 'q') px = 10.0;
+	if (key == 'a') px = -10.0;
+	if (key == 'w') py = 10.0;
+	if (key == 's') py = -10.0;
+	if (key == 'e') pz = 10.0;
+	if (key == 'd') pz = -10.0;
 	if (px != 0.0 || py != 0.0 || pz != 0.0) {
 		std::cout << "Move camera: " << px << ", " << py << ", " << pz \
 		<< std::endl;
 		glutPostRedisplay();
 	}
 	camera.MovePosition(px, py, pz);
+
+	if (key == 'i') {
+		frame++;
+		Step();
+		glutPostRedisplay();
+	}
+
 	if (key == 27) {
 		// TODO: remove this printout
 		masses.download();
@@ -369,14 +368,14 @@ int main(int argc, char **argv)
 			0.0, static_cast<float>(i*2), 0.0,
 			0.0, 0.0, 0.0,
 			0,
-			10.0));
+			1.0));
 	
 	std::cout << "Fill springs." << std::endl;
 	for (unsigned int i = 0; i < 99; i++)
 		springs.push(SigAsiaDemo::Spring(masses, i, i+1));
 
 	std::cout << "Initialize masses." << std::endl;
-	masses.update(0.0);
+	Step();
 
 	// register callbacks
 	std::cout << "Register callbacks." << std::endl;
