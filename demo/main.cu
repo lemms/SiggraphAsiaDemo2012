@@ -74,10 +74,13 @@ void ParseArgs(int argc, char **argv)
 
 void Idle()
 {
-	std::cout << "Frame: " << frame << std::endl;
-	std::cout << "upload masses." << std::endl;
+	// TODO: come up with a better metric
+	if (frame % 100 == 0)
+		glutPostRedisplay();
+	//std::cout << "Frame: " << frame << std::endl;
+	//std::cout << "upload masses." << std::endl;
 	masses.upload();
-	std::cout << "upload springs." << std::endl;
+	//std::cout << "upload springs." << std::endl;
 	springs.upload(masses);
 	masses.startFrame();
 
@@ -103,6 +106,7 @@ void Idle()
 	//springs.download();
 
 	// TODO: remove
+	/*
 	if (frame == 1000) {
 		masses.download();
 
@@ -160,6 +164,7 @@ void Idle()
 
 		exit(0);
 	}
+	*/
 
 	frame++;
 }
@@ -172,22 +177,57 @@ void Reshape(int width, int height)
 
 void Render()
 {
+	std::cout << "Render" << std::endl;
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+	const float *MV = glm::value_ptr(camera.GetModelView());
+	const float *P = glm::value_ptr(camera.GetProjection());
+	std::cout << "MV:" << std::endl;
+	std::cout << "[" << MV[0]  << " " << MV[1]  <<  " " << MV[2]  <<  " " << MV[3]  <<  std::endl;
+	std::cout << "[" << MV[4]  << " " << MV[5]  <<  " " << MV[6]  <<  " " << MV[7]  <<  std::endl;
+	std::cout << "[" << MV[8]  << " " << MV[9]  <<  " " << MV[10] <<  " " << MV[11] <<  std::endl;
+	std::cout << "[" << MV[12] << " " << MV[13] <<  " " << MV[14] <<  " " << MV[15] <<  std::endl;
+	std::cout << "P:" << std::endl;
+	std::cout << "[" << P[0]  << " " << P[1]  <<  " " << P[2]  <<  " " << P[3]  <<  std::endl;
+	std::cout << "[" << P[4]  << " " << P[5]  <<  " " << P[6]  <<  " " << P[7]  <<  std::endl;
+	std::cout << "[" << P[8]  << " " << P[9]  <<  " " << P[10] <<  " " << P[11] <<  std::endl;
+	std::cout << "[" << P[12] << " " << P[13] <<  " " << P[14] <<  " " << P[15] <<  std::endl;
 	masses.render(camera.GetModelView(), camera.GetProjection());
 
-	glBegin(GL_TRIANGLES);
-	glVertex3f(-0.5,-0.5,0.0);
-	glVertex3f(0.5,0.0,0.0);
-	glVertex3f(0.0,0.5,0.0);
+	/*
+	glBegin(GL_LINES);
+	glColor3f(1.0, 0.0, 0.0);
+	glVertex3f(0.0, 0.0, 0.0);
+	glVertex3f(1.0, 0.0, 0.0);
+	glColor3f(0.0, 1.0, 0.0);
+	glVertex3f(0.0, 0.0, 0.0);
+	glVertex3f(0.0, 1.0, 0.0);
+	glColor3f(0.0, 0.0, 1.0);
+	glVertex3f(0.0, 0.0, 0.0);
+	glVertex3f(0.0, 0.0, 1.0);
 	glEnd();
+	*/
 
 	glutSwapBuffers();
 }
 
 void Keys(unsigned char key, int x, int y)
 {
-	if (key == 27 || key == 'q') {
+	float px = 0.0, py = 0.0, pz = 0.0;
+	//float lx = 0.0, ly = 0.0, lz = 0.0;
+	if (key == 'q') px = 1.0;
+	if (key == 'a') px = -1.0;
+	if (key == 'd') py = 1.0;
+	if (key == 's') py = -1.0;
+	if (key == 'r') pz = 1.0;
+	if (key == 'h') pz = -1.0;
+	if (px != 0.0 || py != 0.0 || pz != 0.0) {
+		std::cout << "Move camera: " << px << ", " << py << ", " << pz \
+		<< std::endl;
+		glutPostRedisplay();
+	}
+	camera.MovePosition(px, py, pz);
+	if (key == 27) {
 		// TODO: remove this printout
 		masses.download();
 
@@ -303,28 +343,43 @@ int main(int argc, char **argv)
 	std::cout << "Using OpenGL " << glGetString(GL_VERSION) << "." \
 	<< std::endl;
 
+
 	// set CUDA/OpenGL device
+	std::cout << "Set CUDA/OpenGL device." << std::endl;
 	SigAsiaDemo::setGLDevice(device);
 
 	// load shaders
+	std::cout << "Load shaders." << std::endl;
 	masses.loadShaders();
 
 	// initialize OpenGL
+	std::cout << "Initialize OpenGL." << std::endl;
 	glClearColor(0.0, 0.0, 0.0, 0.0);
 
 	// resize viewport
+	std::cout << "Resize viewport." << std::endl;
 	glViewport(0, 0, viewport.GetWidth(), viewport.GetHeight());
 
 	// TODO: replace by creators
 	// fill masses
+	std::cout << "Fill masses." << std::endl;
 	for (unsigned int i = 0; i < 100; i++)
-		masses.push(SigAsiaDemo::Mass(1.0, 0.0, static_cast<float>(i*2), 0.0));
+		masses.push(SigAsiaDemo::Mass(
+			1.0,
+			0.0, static_cast<float>(i*2), 0.0,
+			0.0, 0.0, 0.0,
+			0,
+			10.0));
 	
+	std::cout << "Fill springs." << std::endl;
 	for (unsigned int i = 0; i < 99; i++)
 		springs.push(SigAsiaDemo::Spring(masses, i, i+1));
 
+	std::cout << "Initialize masses." << std::endl;
+	masses.update(0.0);
 
 	// register callbacks
+	std::cout << "Register callbacks." << std::endl;
 	glutIdleFunc(Idle);
 	glutDisplayFunc(Render);
 	glutReshapeFunc(Reshape);
@@ -332,6 +387,7 @@ int main(int argc, char **argv)
 	glutSpecialFunc(SpecialKeys);
 
 	// enter GLUT event processing cycle
+	std::cout << "Enter GLUT event processing cycle." << std::endl;
 	glutMainLoop();
 
 	return 0;

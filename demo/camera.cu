@@ -40,12 +40,28 @@ void SigAsiaDemo::Camera::SetLook(
 	_l.z = z;
 }
 
+void SigAsiaDemo::Camera::MoveLook(
+	float x, float y, float z)
+{
+	_l.x += x;
+	_l.y += y;
+	_l.z += z;
+}
+
 void SigAsiaDemo::Camera::SetPosition(
 	float x, float y, float z)
 {
 	_p.x = x;
 	_p.y = y;
 	_p.z = z;
+}
+
+void SigAsiaDemo::Camera::MovePosition(
+	float x, float y, float z)
+{
+	_p.x += x;
+	_p.y += y;
+	_p.z += z;
 }
 
 void SigAsiaDemo::Camera::SetUp(

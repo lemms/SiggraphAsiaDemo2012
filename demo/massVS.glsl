@@ -19,7 +19,9 @@ uniform mat4 Projection;
 void main()
 {
 	// pass through data
-	radius_v = position.w;
+	// TODO
+	//radius_v = position.w;
+	radius_v = 1.0;
 
 	// vertex position
 	gl_Position = ModelView*vec4(position.xyz, 1.0);

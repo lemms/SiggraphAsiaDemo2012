@@ -17,7 +17,11 @@ namespace SigAsiaDemo {
 				float far = 10000.0);
 			void SetLook(
 				float x, float y, float z);
+			void MoveLook(
+				float x, float y, float z);
 			void SetPosition(
+				float x, float y, float z);
+			void MovePosition(
 				float x, float y, float z);
 			void SetUp(
 				float x, float y, float z);

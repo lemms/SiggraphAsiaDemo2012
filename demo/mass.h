@@ -69,6 +69,7 @@ namespace SigAsiaDemo {
 		private:
 			// vertex buffer object with (position, radius)
 			std::vector<Mass> _masses;
+			unsigned int _masses_array;
 			unsigned int _masses_buffer;
 			cudaGraphicsResource *_cuda_masses_resource;
 			// indicates that the GPU is currently
@@ -80,12 +81,15 @@ namespace SigAsiaDemo {
 			float _coeff_restitution;
 			Mass *_device_masses;
 
+			unsigned int _axes_array;
+			unsigned int _axes_buffer;
+
 			// shaders
-			unsigned int _vertex_shader;
-			unsigned int _geometry_shader;
-			unsigned int _fragment_shader;
-			unsigned int _program;
-			unsigned int _ModelViewLocation;
-			unsigned int _ProjectionLocation;
+			int _vertex_shader;
+			int _geometry_shader;
+			int _fragment_shader;
+			int _program;
+			int _ModelViewLocation;
+			int _ProjectionLocation;
 	};
 }

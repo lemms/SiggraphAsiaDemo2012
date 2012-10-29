@@ -49,11 +49,14 @@ SigAsiaDemo::Mass::Mass(
 
 SigAsiaDemo::MassList::MassList(
 	float coeff_restitution) :
+	_masses_array(0),
 	_masses_buffer(0),
 	_computing(false),
 	_changed(false),
 	_coeff_restitution(coeff_restitution),
 	_device_masses(0),
+	_axes_array(0),
+	_axes_buffer(0),
 	_vertex_shader(0),
 	_geometry_shader(0),
 	_fragment_shader(0),
@@ -66,7 +69,7 @@ SigAsiaDemo::MassList::~MassList()
 {
 	if (_device_masses) {
 		cudaThreadSynchronize();
-		std::cout << "Free masses." << std::endl;
+		//std::cout << "Free masses." << std::endl;
 		cudaFree(_device_masses);
 		_device_masses = 0;
 	}
@@ -102,17 +105,17 @@ void SigAsiaDemo::MassList::upload()
 	}
 
 	if (_changed) {
-		std::cout << "Upload masses." << std::endl;
+		//std::cout << "Upload masses." << std::endl;
 		_changed = false;
 		if (_device_masses) {
 			cudaThreadSynchronize();
-			std::cout << "Free masses." << std::endl;
+			//std::cout << "Free masses." << std::endl;
 			cudaFree(_device_masses);
 			_device_masses = 0;
 		}
 
 		// allocate GPU buffer
-		std::cout << std::fixed << std::setprecision(8) \
+		//std::cout << std::fixed << std::setprecision(8) \
 		<< "Allocate GPU buffer of size " << \
 		_masses.size()*sizeof(Mass)/1073741824.0 \
 		<< " GB." << std::endl;
@@ -120,12 +123,12 @@ void SigAsiaDemo::MassList::upload()
 			(void**)&_device_masses,
 			_masses.size()*sizeof(Mass));
 		if (result != cudaSuccess) {
-			std::cout << "Error: CUDA failed to malloc memory." << std::endl;
+			std::cerr << "Error: CUDA failed to malloc memory." << std::endl;
 			std::terminate();
 		}
 
 		// copy into GPU buffer
-		std::cout << "Copy masses into GPU buffer." << std::endl;
+		//std::cout << "Copy masses into GPU buffer." << std::endl;
 		cudaMemcpy(
 			_device_masses,
 			&_masses[0],
@@ -143,9 +146,9 @@ void SigAsiaDemo::MassList::download()
 data was being used in GPU computations." << std::endl;
 		std::terminate();
 	} else {
-		std::cout << "Download masses" << std::endl;
+		//std::cout << "Download masses" << std::endl;
 		// copy into CPU buffer
-		std::cout << "Copy masses into CPU buffer." << std::endl;
+		//std::cout << "Copy masses into CPU buffer." << std::endl;
 		cudaMemcpy(
 			&_masses[0],
 			_device_masses,
@@ -158,12 +161,12 @@ data was being used in GPU computations." << std::endl;
 SigAsiaDemo::Mass *SigAsiaDemo::MassList::getMass(size_t index)
 {
 	if (_masses.empty()) {
-		std::cout << "Warning: getMass called on \
+		std::cerr << "Warning: getMass called on \
 empty mass list." << std::endl;
 		return 0;
 	}
 	if (index >= _masses.size()) {
-		std::cout << "Warning: getMass called on index \
+		std::cerr << "Warning: getMass called on index \
 out of bounds." << std::endl;
 		return 0;
 	}
@@ -197,7 +200,7 @@ __global__ void deviceStartFrame(unsigned int N, SigAsiaDemo::Mass *masses)
 void SigAsiaDemo::MassList::startFrame()
 {
 	if (_computing && !_masses.empty()) {
-		std::cout << "Start frame (" \
+		//std::cout << "Start frame (" \
 		<< _masses.size() << ")." << std::endl;
 		deviceStartFrame<<<_masses.size(), 1>>>(
 			_masses.size(),
@@ -222,7 +225,7 @@ __global__ void deviceClearForces(unsigned int N, SigAsiaDemo::Mass *masses)
 void SigAsiaDemo::MassList::clearForces()
 {
 	if (_computing && !_masses.empty()) {
-		std::cout << "Clear forces and add gravity (" \
+		//std::cout << "Clear forces and add gravity (" \
 		<< _masses.size() << ")." << std::endl;
 		deviceClearForces<<<_masses.size(), 1>>>(
 			_masses.size(),
@@ -263,7 +266,7 @@ __global__ void deviceEvaluateK1(
 void SigAsiaDemo::MassList::evaluateK1(float dt)
 {
 	if (_computing && !_masses.empty()) {
-		std::cout << "Evaluate K1 (" << _masses.size() << ")." << std::endl;
+		//std::cout << "Evaluate K1 (" << _masses.size() << ")." << std::endl;
 		deviceEvaluateK1<<<_masses.size(), 1>>>(
 			dt,
 			_masses.size(),
@@ -305,7 +308,7 @@ __global__ void deviceEvaluateK2(
 void SigAsiaDemo::MassList::evaluateK2(float dt)
 {
 	if (_computing && !_masses.empty()) {
-		std::cout << "Evaluate K2 (" << _masses.size() << ")." << std::endl;
+		//std::cout << "Evaluate K2 (" << _masses.size() << ")." << std::endl;
 		deviceEvaluateK2<<<_masses.size(), 1>>>(
 			dt,
 			_masses.size(),
@@ -347,7 +350,7 @@ __global__ void deviceEvaluateK3(
 void SigAsiaDemo::MassList::evaluateK3(float dt)
 {
 	if (_computing && !_masses.empty()) {
-		std::cout << "Evaluate K3 (" << _masses.size() << ")." << std::endl;
+		//std::cout << "Evaluate K3 (" << _masses.size() << ")." << std::endl;
 		deviceEvaluateK3<<<_masses.size(), 1>>>(
 			dt,
 			_masses.size(),
@@ -380,7 +383,7 @@ __global__ void deviceEvaluateK4(
 void SigAsiaDemo::MassList::evaluateK4(float dt)
 {
 	if (_computing && !_masses.empty()) {
-		std::cout << "Evaluate K4 (" << _masses.size() << ")." << std::endl;
+		//std::cout << "Evaluate K4 (" << _masses.size() << ")." << std::endl;
 		deviceEvaluateK4<<<_masses.size(), 1>>>(
 			dt,
 			_masses.size(),
@@ -469,6 +472,52 @@ void SigAsiaDemo::MassList::update(float dt)
 			return;
 		}
 	}
+	if (_axes_buffer == 0) {
+		std::cout << "Generate axes_buffer." << std::endl;
+		glGenBuffers(1, &_axes_buffer);
+		glBindBuffer(GL_ARRAY_BUFFER, _axes_buffer);
+		// allocate space for (position, radius);
+		float _axes_data[] = 
+			{
+				0.0, 0.0, 0.0, 1.0,
+				1.0, 0.0, 0.0, 1.0,
+				0.0, 1.0, 0.0, 1.0,
+				0.0, 0.0, 1.0, 1.0
+			};
+		glBufferData(
+			GL_ARRAY_BUFFER,
+			16*sizeof(float),
+			_axes_data,
+			GL_DYNAMIC_DRAW);
+	}
+
+	// generate arrays
+	if (_masses_buffer != 0) {
+		if (_masses_array == 0)
+			glGenVertexArrays(1, &_masses_array);
+		glBindVertexArray(_masses_array);
+
+		glEnableVertexAttribArray(0);
+
+		glBindBuffer(GL_ARRAY_BUFFER, _masses_buffer);
+		glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, NULL);
+		glBindVertexArray(0);
+	}
+
+	if (_axes_buffer != 0) {
+		//std::cout << "Bind axes array." << std::endl;
+		if (_axes_array == 0) {
+			std::cout << "Generate vertex arrays." << std::endl;
+			glGenVertexArrays(1, &_axes_array);
+		}
+		glBindVertexArray(_axes_array);
+
+		glEnableVertexAttribArray(0);
+
+		glBindBuffer(GL_ARRAY_BUFFER, _axes_buffer);
+		glVertexAttribPointer(0, 4, GL_UNSIGNED_BYTE, GL_FALSE, 0, NULL);
+		glBindVertexArray(0);
+	}
 
 	// map CUDA resource
 	size_t buffer_size = 0;
@@ -482,7 +531,7 @@ void SigAsiaDemo::MassList::update(float dt)
 
 	// update positions and upload to GL
 	if (_computing && !_masses.empty()) {
-		std::cout << "Update masses (" << _masses.size() << ")." << std::endl;
+		//std::cout << "Update masses (" << _masses.size() << ")." << std::endl;
 		deviceUpdate<<<_masses.size(), 1>>>(
 			dt,
 			_coeff_restitution,
@@ -499,7 +548,7 @@ void SigAsiaDemo::MassList::update(float dt)
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-bool verifyCompilation(unsigned int shader, const char *type)
+bool verifyCompilation(unsigned int shader, const char *text, const char *type)
 {
 	GLint result = 0;
 	glGetShaderiv(
@@ -522,6 +571,8 @@ bool verifyCompilation(unsigned int shader, const char *type)
 				length,
 				&length_written,
 				log);
+			std::cerr << "Shader: " << std::endl;
+			std::cerr << text << std::endl;
 			std::cerr << "Log:" << std::endl;
 			std::cerr << log << std::endl;
 			delete[] log;
@@ -567,13 +618,25 @@ bool SigAsiaDemo::MassList::loadShaders()
 {
 	// load shaders
 	if (_program == 0) {
-		// create shaders
+		// read and compile shaders
 		_vertex_shader = glCreateShader(GL_VERTEX_SHADER);
 		if (_vertex_shader == 0) {
 			std::cerr << "Error: Failed to create vertex shader." \
 			<< std::endl;
 			return false;
 		}
+		std::ifstream vs_file("massVS.glsl");
+		std::string vs_string(
+			(std::istreambuf_iterator<char>(vs_file)),
+			std::istreambuf_iterator<char>());
+		const char *vs_char = vs_string.c_str();
+		glShaderSource(_vertex_shader, 1, &vs_char, NULL);
+		glCompileShader(_vertex_shader);
+		if (verifyCompilation(
+				_vertex_shader,
+				vs_string.c_str(),
+				"vertex") == false)
+			return false;
 
 		_geometry_shader = glCreateShader(GL_GEOMETRY_SHADER);
 		if (_geometry_shader == 0) {
@@ -581,6 +644,18 @@ bool SigAsiaDemo::MassList::loadShaders()
 			<< std::endl;
 			return false;
 		}
+		std::ifstream gs_file("massGS.glsl");
+		std::string gs_string(
+			(std::istreambuf_iterator<char>(gs_file)),
+			std::istreambuf_iterator<char>());
+		const char *gs_char = gs_string.c_str();
+		glShaderSource(_geometry_shader, 1, &gs_char, NULL);
+		glCompileShader(_geometry_shader);
+		if (verifyCompilation(
+				_geometry_shader,
+				gs_string.c_str(),
+				"geometry") == false)
+			return false;
 
 		_fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
 		if (_fragment_shader == 0) {
@@ -588,40 +663,17 @@ bool SigAsiaDemo::MassList::loadShaders()
 			<< std::endl;
 			return false;
 		}
-
-		// read shaders
-		std::ifstream vs_file("massVS.glsl");
-		std::string vs_string(
-			(std::istreambuf_iterator<char>(vs_file)),
-			std::istreambuf_iterator<char>());
-		const char *vs_char = vs_string.c_str();
-		glShaderSource(_vertex_shader, 1, &vs_char, NULL);
-
-		std::ifstream gs_file("massGS.glsl");
-		std::string gs_string(
-			(std::istreambuf_iterator<char>(gs_file)),
-			std::istreambuf_iterator<char>());
-		const char *gs_char = gs_string.c_str();
-		glShaderSource(_geometry_shader, 1, &gs_char, NULL);
-
 		std::ifstream fs_file("massFS.glsl");
 		std::string fs_string(
 			(std::istreambuf_iterator<char>(fs_file)),
 			std::istreambuf_iterator<char>());
 		const char *fs_char = fs_string.c_str();
 		glShaderSource(_fragment_shader, 1, &fs_char, NULL);
-
-		// compile shaders
-		glCompileShader(_vertex_shader);
-		if (verifyCompilation(_vertex_shader, "vertex") == false)
-			return false;
-
-		glCompileShader(_geometry_shader);
-		if (verifyCompilation(_geometry_shader, "geometry") == false)
-			return false;
-
 		glCompileShader(_fragment_shader);
-		if (verifyCompilation(_fragment_shader, "fragment") == false)
+		if (verifyCompilation(
+				_fragment_shader,
+				fs_string.c_str(),
+				"fragment") == false)
 			return false;
 
 		// create program
@@ -637,25 +689,30 @@ bool SigAsiaDemo::MassList::loadShaders()
 		glAttachShader(_program, _geometry_shader);
 		glAttachShader(_program, _fragment_shader);
 
+		// bind attributes
+		glBindAttribLocation(_program, 0, "position");
+
 		// link program
 		glLinkProgram(_program);
 		if (verifyLinking(_program) == false)
 			return false;
 
+		glUseProgram(_program);
 		// get uniforms
 		_ModelViewLocation = glGetUniformLocation(_program, "ModelView");
-		if (_ModelViewLocation == 0) {
+		if (_ModelViewLocation == -1) {
 			std::cerr << "Error: Failed to get ModelView location." \
 			<< std::endl;
 			return false;
 		}
 
 		_ProjectionLocation = glGetUniformLocation(_program, "Projection");
-		if (_ProjectionLocation == 0) {
+		if (_ProjectionLocation == -1) {
 			std::cerr << "Error: Failed to get Projection location." \
 			<< std::endl;
 			return false;
 		}
+		glUseProgram(0);
 	}
 
 	return true;
@@ -665,6 +722,27 @@ void SigAsiaDemo::MassList::render(
 	glm::mat4 ModelView,
 	glm::mat4 Projection) const
 {
+	if (_ModelViewLocation == -1) {
+		std::cerr << "Warning: _ModelViewLocation not set." \
+		<< std::endl;
+		return;
+	}
+	if (_ProjectionLocation == -1) {
+		std::cerr << "Warning: _ProjectionLocation not set." \
+		<< std::endl;
+		return;
+	}
+	if (_masses_array == 0) {
+		std::cerr << "Warning: _masses_array not set." \
+		<< std::endl;
+		return;
+	}
+	if (_axes_array == 0) {
+		std::cerr << "Warning: _axes_array not set." \
+		<< std::endl;
+		return;
+	}
+
 	// bind shader
 	glUseProgram(_program);
 
@@ -678,8 +756,12 @@ void SigAsiaDemo::MassList::render(
 		1, GL_FALSE,
 		glm::value_ptr(Projection));
 
-	glBindBuffer(GL_ARRAY_BUFFER, _masses_buffer);
-	glDrawArrays(GL_POINTS, 0, _masses.size());
+	//glBindVertexArray(_masses_array);
+	//glDrawArrays(GL_POINTS, 0, _masses.size());
+	//glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	glBindVertexArray(_axes_array);
+	glDrawArrays(GL_POINTS, 0, 16);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	// unbind shader
