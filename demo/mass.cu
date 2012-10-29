@@ -401,37 +401,37 @@ __global__ void deviceUpdate(
 {
 	int tid = blockIdx.x;
 	if (tid < N) {
-		if (masses[tid]._state == 1)
-			return;
-		// set temporary position to previous position
-		masses[tid]._tx = masses[tid]._x;
-		masses[tid]._ty = masses[tid]._y;
-		masses[tid]._tz = masses[tid]._z;
-		masses[tid]._x += 0.166666666666667f * (
-			masses[tid]._k1x +
-			2.0f*masses[tid]._k2x +
-			2.0f*masses[tid]._k3x +
-			masses[tid]._k4x);
-		masses[tid]._y += 0.166666666666667f * (
-			masses[tid]._k1y +
-			2.0f*masses[tid]._k2y +
-			2.0f*masses[tid]._k3y +
-			masses[tid]._k4y);
-		masses[tid]._z += 0.166666666666667f * (
-			masses[tid]._k1z +
-			2.0f*masses[tid]._k2z +
-			2.0f*masses[tid]._k3z +
-			masses[tid]._k4z);
+		if (masses[tid]._state == 0) {
+			// set temporary position to previous position
+			masses[tid]._tx = masses[tid]._x;
+			masses[tid]._ty = masses[tid]._y;
+			masses[tid]._tz = masses[tid]._z;
+			masses[tid]._x += 0.166666666666667f * (
+				masses[tid]._k1x +
+				2.0f*masses[tid]._k2x +
+				2.0f*masses[tid]._k3x +
+				masses[tid]._k4x);
+			masses[tid]._y += 0.166666666666667f * (
+				masses[tid]._k1y +
+				2.0f*masses[tid]._k2y +
+				2.0f*masses[tid]._k3y +
+				masses[tid]._k4y);
+			masses[tid]._z += 0.166666666666667f * (
+				masses[tid]._k1z +
+				2.0f*masses[tid]._k2z +
+				2.0f*masses[tid]._k3z +
+				masses[tid]._k4z);
 
-		// set temporary velocity for k1
-		masses[tid]._tvx = masses[tid]._x - masses[tid]._tx;
-		masses[tid]._tvy = masses[tid]._y - masses[tid]._ty;
-		masses[tid]._tvz = masses[tid]._z - masses[tid]._tz;
+			// set temporary velocity for k1
+			masses[tid]._tvx = masses[tid]._x - masses[tid]._tx;
+			masses[tid]._tvy = masses[tid]._y - masses[tid]._ty;
+			masses[tid]._tvz = masses[tid]._z - masses[tid]._tz;
 
-		// enforce ground collision
-		if (masses[tid]._y < 0.0f) {
-			masses[tid]._y = 0.0f;
-			masses[tid]._tvy = -masses[tid]._tvy * coeff_restitution;
+			// enforce ground collision
+			if (masses[tid]._y < 0.0f) {
+				masses[tid]._y = 0.0f;
+				masses[tid]._tvy = -masses[tid]._tvy * coeff_restitution;
+			}
 		}
 		
 		// copy into CUDA buffer

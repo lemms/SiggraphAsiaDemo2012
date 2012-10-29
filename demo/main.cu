@@ -41,6 +41,7 @@ SigAsiaDemo::SpringList springs;
 
 size_t frame = 0;
 float dt = 0.01;
+bool play = false;
 
 void ParseArgs(int argc, char **argv)
 {
@@ -101,15 +102,19 @@ void Step()
 
 	//masses.download();
 	//springs.download();
+
+	frame++;
 }
 
 void Idle()
 {
-	// TODO: come up with a better metric
-	//if (frame % 100 == 0)
-		//glutPostRedisplay();
-
-	//Step();
+	if (play) {
+		Step();
+		std::cout << "Stepping, frame: " << frame << std::endl;
+		// TODO: come up with a better metric
+		if (frame % 100 == 0)
+			glutPostRedisplay();
+	}
 
 	// TODO: remove
 	/*
@@ -171,8 +176,6 @@ void Idle()
 		exit(0);
 	}
 	*/
-
-	//frame++;
 }
 
 void Reshape(int width, int height)
@@ -183,9 +186,10 @@ void Reshape(int width, int height)
 
 void Render()
 {
-	std::cout << "Render" << std::endl;
+	//std::cout << "Render" << std::endl;
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
+	
+	/*
 	const float *MV = glm::value_ptr(camera.GetModelView());
 	const float *P = glm::value_ptr(camera.GetProjection());
 	std::cout << "MV:" << std::endl;
@@ -198,6 +202,7 @@ void Render()
 	std::cout << "[" << P[4]  << " " << P[5]  <<  " " << P[6]  <<  " " << P[7]  <<  std::endl;
 	std::cout << "[" << P[8]  << " " << P[9]  <<  " " << P[10] <<  " " << P[11] <<  std::endl;
 	std::cout << "[" << P[12] << " " << P[13] <<  " " << P[14] <<  " " << P[15] <<  std::endl;
+	*/
 	masses.render(camera.GetModelView(), camera.GetProjection());
 
 	glutSwapBuffers();
@@ -220,9 +225,14 @@ void Keys(unsigned char key, int x, int y)
 	}
 	camera.MovePosition(px, py, pz);
 
-	if (key == 'i') {
-		frame++;
+	if (key == 'c')
+		play = true;
+	if (key == 'v')
+		play = false;
+
+	if (key == 'z') {
 		Step();
+		std::cout << "Stepping, frame: " << frame << std::endl;
 		glutPostRedisplay();
 	}
 
@@ -360,6 +370,7 @@ int main(int argc, char **argv)
 	glViewport(0, 0, viewport.GetWidth(), viewport.GetHeight());
 
 	// TODO: replace by creators
+	/*
 	// fill masses
 	std::cout << "Fill masses." << std::endl;
 	for (unsigned int i = 0; i < 100; i++)
@@ -373,6 +384,28 @@ int main(int argc, char **argv)
 	std::cout << "Fill springs." << std::endl;
 	for (unsigned int i = 0; i < 99; i++)
 		springs.push(SigAsiaDemo::Spring(masses, i, i+1));
+	*/
+
+	masses.push(
+		SigAsiaDemo::Mass(
+			1.0,
+			0.0, 10.0, 0.0,
+			0.0, 0.0, 0.0,
+			1,
+			0.1));
+	masses.push(
+		SigAsiaDemo::Mass(
+			1.0,
+			2.0, 10.0, 0.0,
+			0.0, 0.0, 0.0,
+			0,
+			0.1));
+
+	springs.push(
+		SigAsiaDemo::Spring(
+			masses,
+			0, 1,
+			0.2, 0.2)); // ks, kd
 
 	std::cout << "Initialize masses." << std::endl;
 	Step();
