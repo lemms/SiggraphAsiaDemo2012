@@ -352,6 +352,8 @@ __global__ void deviceComputeSpringForces(
 		float uvy = vy * rcp_lv;
 		float uvz = vz * rcp_lv;
 
+                // TODO: fix
+
 		// project temporary velocity of mass 0 onto v
 		float dot_tv0_v =
 			masses[springs[tid]._mass0]._tvx * uvx +

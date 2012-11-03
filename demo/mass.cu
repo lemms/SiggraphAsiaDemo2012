@@ -37,7 +37,7 @@ SigAsiaDemo::Mass::Mass(
 		_mass(mass),
 		_x(x), _y(y), _z(z),
 		_tx(x), _ty(y), _tz(z),
-		_tvx(x), _tvy(y), _tvz(z),
+		_tvx(0.0), _tvy(0.0), _tvz(0.0),
 		_fx(fx), _fy(fy), _fz(fz),
 		_k1x(0.0), _k1y(0.0), _k1z(0.0),
 		_k2x(0.0), _k2y(0.0), _k2z(0.0),
@@ -217,7 +217,9 @@ __global__ void deviceClearForces(unsigned int N, SigAsiaDemo::Mass *masses)
 			return;
 		masses[tid]._fx = 0.0f;
 		// add gravity
-		masses[tid]._fy = -9.81f * masses[tid]._mass;
+		//masses[tid]._fy = -9.81f * masses[tid]._mass;
+                // TODO: fix
+		masses[tid]._fy = 0.0f;
 		masses[tid]._fz = 0.0f;
 	}
 }
@@ -248,18 +250,18 @@ __global__ void deviceEvaluateK1(
 		float az = masses[tid]._fz * inv_mass;
 
 		// evaluate k1
-		masses[tid]._k1x += ax * dt;
-		masses[tid]._k1y += ay * dt;
-		masses[tid]._k1z += az * dt;
+		masses[tid]._k1x = masses[tid]._vx + ax * dt;
+		masses[tid]._k1y = masses[tid]._vy + ay * dt;
+		masses[tid]._k1z = masses[tid]._vz + az * dt;
 
 		// set temporary velocity for k2
 		masses[tid]._tvx = masses[tid]._k1x;
 		masses[tid]._tvy = masses[tid]._k1y;
 		masses[tid]._tvz = masses[tid]._k1z;
 		// set temporary position for k2
-		masses[tid]._tx = masses[tid]._x + masses[tid]._k1x * dt * 0.5f;
-		masses[tid]._ty = masses[tid]._y + masses[tid]._k1y * dt * 0.5f;
-		masses[tid]._tz = masses[tid]._z + masses[tid]._k1z * dt * 0.5f;
+		masses[tid]._tx = masses[tid]._x + masses[tid]._tvx * dt * 0.5f;
+		masses[tid]._ty = masses[tid]._y + masses[tid]._tvy * dt * 0.5f;
+		masses[tid]._tz = masses[tid]._z + masses[tid]._tvz * dt * 0.5f;
 	}
 }
 
@@ -290,18 +292,18 @@ __global__ void deviceEvaluateK2(
 		float az = masses[tid]._fz * inv_mass;
 
 		// evaluate k2
-		masses[tid]._k2x += ax * dt;
-		masses[tid]._k2y += ay * dt;
-		masses[tid]._k2z += az * dt;
+		masses[tid]._k2x = masses[tid]._vx + ax * dt;
+		masses[tid]._k2y = masses[tid]._vy + ay * dt;
+		masses[tid]._k2z = masses[tid]._vz + az * dt;
 
 		// set temporary velocity for k3
 		masses[tid]._tvx = masses[tid]._k2x;
 		masses[tid]._tvy = masses[tid]._k2y;
 		masses[tid]._tvz = masses[tid]._k2z;
 		// set temporary position for k3
-		masses[tid]._tx = masses[tid]._x + masses[tid]._k2x * dt * 0.5f;
-		masses[tid]._ty = masses[tid]._y + masses[tid]._k2y * dt * 0.5f;
-		masses[tid]._tz = masses[tid]._z + masses[tid]._k2z * dt * 0.5f;
+		masses[tid]._tx = masses[tid]._x + masses[tid]._tvx * dt * 0.5f;
+		masses[tid]._ty = masses[tid]._y + masses[tid]._tvy * dt * 0.5f;
+		masses[tid]._tz = masses[tid]._z + masses[tid]._tvz * dt * 0.5f;
 	}
 }
 
@@ -332,18 +334,18 @@ __global__ void deviceEvaluateK3(
 		float az = masses[tid]._fz * inv_mass;
 
 		// evaluate k3
-		masses[tid]._k3x += ax * dt;
-		masses[tid]._k3y += ay * dt;
-		masses[tid]._k3z += az * dt;
+		masses[tid]._k3x = ax * dt;
+		masses[tid]._k3y = ay * dt;
+		masses[tid]._k3z = az * dt;
 
 		// set temporary velocity for k4
-		masses[tid]._tvx = masses[tid]._k3x;
-		masses[tid]._tvy = masses[tid]._k3y;
-		masses[tid]._tvz = masses[tid]._k3z;
+		masses[tid]._tvx = masses[tid]._vx + masses[tid]._k3x;
+		masses[tid]._tvy = masses[tid]._vy + masses[tid]._k3y;
+		masses[tid]._tvz = masses[tid]._vz + masses[tid]._k3z;
 		// set temporary position for k4
-		masses[tid]._tx = masses[tid]._x + masses[tid]._k3x * dt;
-		masses[tid]._ty = masses[tid]._y + masses[tid]._k3y * dt;
-		masses[tid]._tz = masses[tid]._z + masses[tid]._k3z * dt;
+		masses[tid]._tx = masses[tid]._x + masses[tid]._tvx * dt;
+		masses[tid]._ty = masses[tid]._y + masses[tid]._tvy * dt;
+		masses[tid]._tz = masses[tid]._z + masses[tid]._tvz * dt;
 	}
 }
 
@@ -374,9 +376,9 @@ __global__ void deviceEvaluateK4(
 		float az = masses[tid]._fz * inv_mass;
 
 		// evaluate k4
-		masses[tid]._k4x += ax * dt;
-		masses[tid]._k4y += ay * dt;
-		masses[tid]._k4z += az * dt;
+		masses[tid]._k4x = masses[tid]._vx + ax * dt;
+		masses[tid]._k4y = masses[tid]._vy + ay * dt;
+		masses[tid]._k4z = masses[tid]._vz + az * dt;
 	}
 }
 
@@ -406,20 +408,22 @@ __global__ void deviceUpdate(
 			masses[tid]._tx = masses[tid]._x;
 			masses[tid]._ty = masses[tid]._y;
 			masses[tid]._tz = masses[tid]._z;
+
+                        // update positions
 			masses[tid]._x += 0.166666666666667f * (
 				masses[tid]._k1x +
-				2.0f*masses[tid]._k2x +
-				2.0f*masses[tid]._k3x +
+				masses[tid]._k2x*2.0f +
+				masses[tid]._k3x*2.0f +
 				masses[tid]._k4x);
 			masses[tid]._y += 0.166666666666667f * (
 				masses[tid]._k1y +
-				2.0f*masses[tid]._k2y +
-				2.0f*masses[tid]._k3y +
+				masses[tid]._k2y*2.0f +
+				masses[tid]._k3y*2.0f +
 				masses[tid]._k4y);
 			masses[tid]._z += 0.166666666666667f * (
 				masses[tid]._k1z +
-				2.0f*masses[tid]._k2z +
-				2.0f*masses[tid]._k3z +
+				masses[tid]._k2z*2.0f +
+				masses[tid]._k3z*2.0f +
 				masses[tid]._k4z);
 
 			// set temporary velocity for k1
@@ -427,11 +431,13 @@ __global__ void deviceUpdate(
 			masses[tid]._tvy = masses[tid]._y - masses[tid]._ty;
 			masses[tid]._tvz = masses[tid]._z - masses[tid]._tz;
 
+                        /*
 			// enforce ground collision
 			if (masses[tid]._y < 0.0f) {
 				masses[tid]._y = 0.0f;
 				masses[tid]._tvy = -masses[tid]._tvy * coeff_restitution;
 			}
+                        */
 		}
 		
 		// copy into CUDA buffer
