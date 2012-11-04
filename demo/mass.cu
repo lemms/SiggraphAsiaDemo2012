@@ -243,7 +243,10 @@ void SigAsiaDemo::MassList::clearForces(
 }
 
 __global__ void deviceEvaluateK1(
-	float dt, unsigned int N, SigAsiaDemo::Mass *masses)
+	float dt,
+	float coeff_restitution,
+	unsigned int N, SigAsiaDemo::Mass *masses,
+	bool ground_collision = true)
 {
 	int tid = blockIdx.x;
 	if (tid < N) {
@@ -268,23 +271,35 @@ __global__ void deviceEvaluateK1(
 		masses[tid]._tx = masses[tid]._x + masses[tid]._tvx * dt * 0.5f;
 		masses[tid]._ty = masses[tid]._y + masses[tid]._tvy * dt * 0.5f;
 		masses[tid]._tz = masses[tid]._z + masses[tid]._tvz * dt * 0.5f;
+
+		if (ground_collision && masses[tid]._ty < 0.0f) {
+			masses[tid]._ty = 0.0f;
+			masses[tid]._tvy = -masses[tid]._tvy * coeff_restitution;
+		}
 	}
 }
 
-void SigAsiaDemo::MassList::evaluateK1(float dt)
+void SigAsiaDemo::MassList::evaluateK1(
+	float dt,
+	bool ground_collision)
 {
 	if (_computing && !_masses.empty()) {
 		//std::cout << "Evaluate K1 (" << _masses.size() << ")." << std::endl;
 		deviceEvaluateK1<<<_masses.size(), 1>>>(
 			dt,
+			_coeff_restitution,
 			_masses.size(),
-			_device_masses);
+			_device_masses,
+			ground_collision);
 		cudaThreadSynchronize();
 	}
 }
 
 __global__ void deviceEvaluateK2(
-	float dt, unsigned int N, SigAsiaDemo::Mass *masses)
+	float dt,
+	float coeff_restitution,
+	unsigned int N, SigAsiaDemo::Mass *masses,
+	bool ground_collision = true)
 {
 	int tid = blockIdx.x;
 	if (tid < N) {
@@ -310,23 +325,35 @@ __global__ void deviceEvaluateK2(
 		masses[tid]._tx = masses[tid]._x + masses[tid]._tvx * dt * 0.5f;
 		masses[tid]._ty = masses[tid]._y + masses[tid]._tvy * dt * 0.5f;
 		masses[tid]._tz = masses[tid]._z + masses[tid]._tvz * dt * 0.5f;
+
+		if (ground_collision && masses[tid]._ty < 0.0f) {
+			masses[tid]._ty = 0.0f;
+			masses[tid]._tvy = -masses[tid]._tvy * coeff_restitution;
+		}
 	}
 }
 
-void SigAsiaDemo::MassList::evaluateK2(float dt)
+void SigAsiaDemo::MassList::evaluateK2(
+	float dt,
+	bool ground_collision)
 {
 	if (_computing && !_masses.empty()) {
 		//std::cout << "Evaluate K2 (" << _masses.size() << ")." << std::endl;
 		deviceEvaluateK2<<<_masses.size(), 1>>>(
 			dt,
+			_coeff_restitution,
 			_masses.size(),
-			_device_masses);
+			_device_masses,
+			ground_collision);
 		cudaThreadSynchronize();
 	}
 }
 
 __global__ void deviceEvaluateK3(
-	float dt, unsigned int N, SigAsiaDemo::Mass *masses)
+	float dt,
+	float coeff_restitution,
+	unsigned int N, SigAsiaDemo::Mass *masses,
+	bool ground_collision = true)
 {
 	int tid = blockIdx.x;
 	if (tid < N) {
@@ -352,15 +379,23 @@ __global__ void deviceEvaluateK3(
 		masses[tid]._tx = masses[tid]._x + masses[tid]._tvx * dt;
 		masses[tid]._ty = masses[tid]._y + masses[tid]._tvy * dt;
 		masses[tid]._tz = masses[tid]._z + masses[tid]._tvz * dt;
+
+		if (ground_collision && masses[tid]._ty < 0.0f) {
+			masses[tid]._ty = 0.0f;
+			masses[tid]._tvy = -masses[tid]._tvy * coeff_restitution;
+		}
 	}
 }
 
-void SigAsiaDemo::MassList::evaluateK3(float dt)
+void SigAsiaDemo::MassList::evaluateK3(
+	float dt,
+	bool ground_collision)
 {
 	if (_computing && !_masses.empty()) {
 		//std::cout << "Evaluate K3 (" << _masses.size() << ")." << std::endl;
 		deviceEvaluateK3<<<_masses.size(), 1>>>(
 			dt,
+			_coeff_restitution,
 			_masses.size(),
 			_device_masses);
 		cudaThreadSynchronize();
@@ -368,7 +403,10 @@ void SigAsiaDemo::MassList::evaluateK3(float dt)
 }
 
 __global__ void deviceEvaluateK4(
-	float dt, unsigned int N, SigAsiaDemo::Mass *masses)
+	float dt,
+	float coeff_restitution,
+	unsigned int N, SigAsiaDemo::Mass *masses,
+	bool ground_collision = true)
 {
 	int tid = blockIdx.x;
 	if (tid < N) {
@@ -388,14 +426,18 @@ __global__ void deviceEvaluateK4(
 	}
 }
 
-void SigAsiaDemo::MassList::evaluateK4(float dt)
+void SigAsiaDemo::MassList::evaluateK4(
+	float dt,
+	bool ground_collision)
 {
 	if (_computing && !_masses.empty()) {
 		//std::cout << "Evaluate K4 (" << _masses.size() << ")." << std::endl;
 		deviceEvaluateK4<<<_masses.size(), 1>>>(
 			dt,
+			_coeff_restitution,
 			_masses.size(),
-			_device_masses);
+			_device_masses,
+			ground_collision);
 		cudaThreadSynchronize();
 	}
 }
@@ -446,6 +488,8 @@ __global__ void deviceUpdate(
 			// enforce ground collision
 			if (ground_collision && masses[tid]._y < 0.0f) {
 				masses[tid]._y = 0.0f;
+				masses[tid]._ty = 0.0f;
+				masses[tid]._vy = -masses[tid]._vy * coeff_restitution;
 				masses[tid]._tvy = -masses[tid]._tvy * coeff_restitution;
 			}
 		}
@@ -458,7 +502,9 @@ __global__ void deviceUpdate(
 	}
 }
 
-void SigAsiaDemo::MassList::update(float dt)
+void SigAsiaDemo::MassList::update(
+	float dt,
+	bool ground_collision)
 {
 	if (_changed && _masses_buffer != 0) {
 		// unregister GL buffer
@@ -553,7 +599,8 @@ void SigAsiaDemo::MassList::update(float dt)
 			_coeff_restitution,
 			_masses.size(),
 			_device_masses,
-			masses_buffer);
+			masses_buffer,
+			ground_collision);
 		cudaThreadSynchronize();
 	}
 

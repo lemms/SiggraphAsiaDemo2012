@@ -63,11 +63,21 @@ namespace SigAsiaDemo {
 			void clearForces(
 				float fx = 0.0, float fy = 0.0, float fz = 0.0,
 				float gravity = -9.8);
-			void evaluateK1(float dt);
-			void evaluateK2(float dt);
-			void evaluateK3(float dt);
-			void evaluateK4(float dt);
-			void update(float dt);
+			void evaluateK1(
+				float dt,
+				bool ground_collision = true);
+			void evaluateK2(
+				float dt,
+				bool ground_collision = true);
+			void evaluateK3(
+				float dt,
+				bool ground_collision = true);
+			void evaluateK4(
+				float dt,
+				bool ground_collision = true);
+			void update(
+				float dt,
+				bool ground_collision = true);
 			bool loadShaders();
 			void render(glm::mat4 ModelView, glm::mat4 Projection) const;
 		private:

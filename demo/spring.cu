@@ -380,9 +380,9 @@ __global__ void deviceComputeSpringForces(
 		springs[tid]._fz1 = force * udz;
 
 		// compute force for mass 0
-		springs[tid]._fx0 = -springs[tid]._fx0;
-		springs[tid]._fy0 = -springs[tid]._fy0;
-		springs[tid]._fz0 = -springs[tid]._fz0;
+		springs[tid]._fx0 = -springs[tid]._fx1;
+		springs[tid]._fy0 = -springs[tid]._fy1;
+		springs[tid]._fz0 = -springs[tid]._fz1;
 	}
 }
 

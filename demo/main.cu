@@ -40,8 +40,9 @@ SigAsiaDemo::MassList masses;
 SigAsiaDemo::SpringList springs;
 
 size_t frame = 0;
-float dt = 1e-3;
+float dt = 1e-4;
 bool play = false;
+bool ground_collision = true;
 
 void ParseArgs(int argc, char **argv)
 {
@@ -71,39 +72,6 @@ void ParseArgs(int argc, char **argv)
 		viewport.ResizeWindow(width, height);
 		camera.ResizeWindow(width, height);
 	}
-}
-
-void Step()
-{
-	//std::cout << "Frame: " << frame << std::endl;
-	//std::cout << "upload masses." << std::endl;
-	masses.upload();
-	//std::cout << "upload springs." << std::endl;
-	springs.upload(masses);
-	masses.startFrame();
-
-	masses.clearForces();
-	springs.applySpringForces(masses);
-	masses.evaluateK1(dt);
-
-	masses.clearForces();
-	springs.applySpringForces(masses);
-	masses.evaluateK2(dt);
-
-	masses.clearForces();
-	springs.applySpringForces(masses);
-	masses.evaluateK3(dt);
-
-	masses.clearForces();
-	springs.applySpringForces(masses);
-	masses.evaluateK4(dt);
-
-	masses.update(dt);
-
-	//masses.download();
-	//springs.download();
-
-	frame++;
 }
 
 void PrintMassesAndSprings()
@@ -179,6 +147,44 @@ void PrintMassesAndSprings()
 			std::cout <<std::endl;
 		}
 	}
+}
+
+void Step()
+{
+	//std::cout << "Frame: " << frame << std::endl;
+	//std::cout << "upload masses." << std::endl;
+	masses.upload();
+	//std::cout << "upload springs." << std::endl;
+	springs.upload(masses);
+
+	//std::cout << "start frame." << std::endl;
+	masses.startFrame();
+
+	masses.clearForces();
+	springs.applySpringForces(masses);
+	//std::cout << "evaluate k1." << std::endl;
+	masses.evaluateK1(dt, ground_collision);
+
+	masses.clearForces();
+	springs.applySpringForces(masses);
+	//std::cout << "evaluate k2." << std::endl;
+	masses.evaluateK2(dt, ground_collision);
+
+	masses.clearForces();
+	springs.applySpringForces(masses);
+	//std::cout << "evaluate k3." << std::endl;
+	masses.evaluateK3(dt, ground_collision);
+
+	masses.clearForces();
+	springs.applySpringForces(masses);
+	//std::cout << "evaluate k4." << std::endl;
+	masses.evaluateK4(dt, ground_collision);
+
+	masses.update(dt, ground_collision);
+
+	//PrintMassesAndSprings();
+
+	frame++;
 }
 
 void Idle()
@@ -341,22 +347,34 @@ int main(int argc, char **argv)
 	glViewport(0, 0, viewport.GetWidth(), viewport.GetHeight());
 
 	// TODO: replace by creators
-	/*
 	// fill masses
 	std::cout << "Fill masses." << std::endl;
-	for (unsigned int i = 0; i < 100; i++)
-		masses.push(SigAsiaDemo::Mass(
-			1.0,
-			0.0, static_cast<float>(i*2), 0.0,
-			0.0, 0.0, 0.0,
-			0,
-			1.0));
+	float offset = 20.0f;
+	unsigned int m = 20;
+	for (unsigned int i = 0; i < m; i++) {
+		if (i == m-1) {
+			masses.push(SigAsiaDemo::Mass(
+				1.0,
+				0.0, static_cast<float>(i*2) + offset, 0.0,
+				0.0, 0.0, 0.0,
+				0,
+				1.0));
+		} else {
+			masses.push(SigAsiaDemo::Mass(
+				1.0,
+				0.0, static_cast<float>(i*2) + offset, 0.0,
+				0.0, 0.0, 0.0,
+				0,
+				1.0));
+		}
+	}
 	
 	std::cout << "Fill springs." << std::endl;
-	for (unsigned int i = 0; i < 99; i++)
-		springs.push(SigAsiaDemo::Spring(masses, i, i+1));
-	*/
+	for (unsigned int i = 0; i < m-1; i++) {
+		springs.push(SigAsiaDemo::Spring(masses, i, i+1, 10000.0, 1000.0));
+	}
 
+	/*
 	masses.push(
 		SigAsiaDemo::Mass(
 			10.0,
@@ -379,6 +397,7 @@ int main(int argc, char **argv)
 			69.0, 0.2)); // ks, kd
 	SigAsiaDemo::Spring *spring0 = springs.getSpring(0);
 	spring0->_l0 = 2.0f;
+	*/
 
 	std::cout << "Initialize masses." << std::endl;
 	Step();
