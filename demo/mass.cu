@@ -36,6 +36,7 @@ SigAsiaDemo::Mass::Mass(
 	float radius) :
 		_mass(mass),
 		_x(x), _y(y), _z(z),
+		_vx(0.0), _vy(0.0), _vz(0.0),
 		_tx(x), _ty(y), _tz(z),
 		_tvx(0.0), _tvy(0.0), _tvz(0.0),
 		_fx(fx), _fy(fy), _fz(fz),
@@ -190,10 +191,6 @@ __global__ void deviceStartFrame(unsigned int N, SigAsiaDemo::Mass *masses)
 	if (tid < N) {
 		if (masses[tid]._state == 1)
 			return;
-		// set temporary position for k1
-		masses[tid]._tx = masses[tid]._x;
-		masses[tid]._ty = masses[tid]._y;
-		masses[tid]._tz = masses[tid]._z;
 	}
 }
 
@@ -217,9 +214,7 @@ __global__ void deviceClearForces(unsigned int N, SigAsiaDemo::Mass *masses)
 			return;
 		masses[tid]._fx = 0.0f;
 		// add gravity
-		//masses[tid]._fy = -9.81f * masses[tid]._mass;
-                // TODO: fix
-		masses[tid]._fy = 0.0f;
+		masses[tid]._fy = -9.81f * masses[tid]._mass;
 		masses[tid]._fz = 0.0f;
 	}
 }
@@ -334,14 +329,14 @@ __global__ void deviceEvaluateK3(
 		float az = masses[tid]._fz * inv_mass;
 
 		// evaluate k3
-		masses[tid]._k3x = ax * dt;
-		masses[tid]._k3y = ay * dt;
-		masses[tid]._k3z = az * dt;
+		masses[tid]._k3x = masses[tid]._vx +  ax * dt;
+		masses[tid]._k3y = masses[tid]._vy +  ay * dt;
+		masses[tid]._k3z = masses[tid]._vz +  az * dt;
 
 		// set temporary velocity for k4
-		masses[tid]._tvx = masses[tid]._vx + masses[tid]._k3x;
-		masses[tid]._tvy = masses[tid]._vy + masses[tid]._k3y;
-		masses[tid]._tvz = masses[tid]._vz + masses[tid]._k3z;
+		masses[tid]._tvx = masses[tid]._k3x;
+		masses[tid]._tvy = masses[tid]._k3y;
+		masses[tid]._tvz = masses[tid]._k3z;
 		// set temporary position for k4
 		masses[tid]._tx = masses[tid]._x + masses[tid]._tvx * dt;
 		masses[tid]._ty = masses[tid]._y + masses[tid]._tvy * dt;
@@ -404,12 +399,7 @@ __global__ void deviceUpdate(
 	int tid = blockIdx.x;
 	if (tid < N) {
 		if (masses[tid]._state == 0) {
-			// set temporary position to previous position
-			masses[tid]._tx = masses[tid]._x;
-			masses[tid]._ty = masses[tid]._y;
-			masses[tid]._tz = masses[tid]._z;
-
-                        // update positions
+			// update position
 			masses[tid]._x += 0.166666666666667f * (
 				masses[tid]._k1x +
 				masses[tid]._k2x*2.0f +
@@ -426,18 +416,28 @@ __global__ void deviceUpdate(
 				masses[tid]._k3z*2.0f +
 				masses[tid]._k4z);
 
-			// set temporary velocity for k1
-			masses[tid]._tvx = masses[tid]._x - masses[tid]._tx;
-			masses[tid]._tvy = masses[tid]._y - masses[tid]._ty;
-			masses[tid]._tvz = masses[tid]._z - masses[tid]._tz;
+			// update velocity
+			// NOTE: (_tx, _ty, _tz) contains previous positions
+			// using backward difference
+			masses[tid]._vx = (masses[tid]._x - masses[tid]._tx);
+			masses[tid]._vy = (masses[tid]._y - masses[tid]._ty);
+			masses[tid]._vz = (masses[tid]._z - masses[tid]._tz);
 
-                        /*
+			// set temporary position to current position and velocity
+			masses[tid]._tx = masses[tid]._x;
+			masses[tid]._ty = masses[tid]._y;
+			masses[tid]._tz = masses[tid]._z;
+			masses[tid]._tvx = masses[tid]._vx;
+			masses[tid]._tvy = masses[tid]._vy;
+			masses[tid]._tvz = masses[tid]._vz;
+
+			/*
 			// enforce ground collision
 			if (masses[tid]._y < 0.0f) {
-				masses[tid]._y = 0.0f;
-				masses[tid]._tvy = -masses[tid]._tvy * coeff_restitution;
+			masses[tid]._y = 0.0f;
+			masses[tid]._tvy = -masses[tid]._tvy * coeff_restitution;
 			}
-                        */
+			 */
 		}
 		
 		// copy into CUDA buffer

@@ -40,7 +40,7 @@ SigAsiaDemo::MassList masses;
 SigAsiaDemo::SpringList springs;
 
 size_t frame = 0;
-float dt = 0.01;
+float dt = 1e-5;
 bool play = false;
 
 void ParseArgs(int argc, char **argv)
@@ -106,6 +106,81 @@ void Step()
 	frame++;
 }
 
+void PrintMassesAndSprings()
+{
+	masses.download();
+
+	for (size_t i = 0; i < masses.size(); i++) {
+		SigAsiaDemo::Mass *mass = masses.getMass(i);
+		if (mass) {
+			std::cout << "Point Mass " << i << std::endl;
+			std::cout << "mass: " << mass->_mass << std::endl;
+			std::cout << "position: (";
+			std::cout << mass->_x << ", ";
+			std::cout << mass->_y << ", ";
+			std::cout << mass->_z << ")" << std::endl;
+			std::cout << "velocity: (";
+			std::cout << mass->_vx << ", ";
+			std::cout << mass->_vy << ", ";
+			std::cout << mass->_vz << ")" << std::endl;
+			std::cout << "temporary position: (";
+			std::cout << mass->_tx << ", ";
+			std::cout << mass->_ty << ", ";
+			std::cout << mass->_tz << ")" << std::endl;
+			std::cout << "temporary velocity: (";
+			std::cout << mass->_tvx << ", ";
+			std::cout << mass->_tvy << ", ";
+			std::cout << mass->_tvz << ")" << std::endl;
+			std::cout << "velocity k1: (";
+			std::cout << mass->_k1x << ", ";
+			std::cout << mass->_k1y << ", ";
+			std::cout << mass->_k1z << ")" << std::endl;
+			std::cout << "velocity k2: (";
+			std::cout << mass->_k2x << ", ";
+			std::cout << mass->_k2y << ", ";
+			std::cout << mass->_k2z << ")" << std::endl;
+			std::cout << "velocity k3: (";
+			std::cout << mass->_k3x << ", ";
+			std::cout << mass->_k3y << ", ";
+			std::cout << mass->_k3z << ")" << std::endl;
+			std::cout << "velocity k4: (";
+			std::cout << mass->_k4x << ", ";
+			std::cout << mass->_k4y << ", ";
+			std::cout << mass->_k4z << ")" << std::endl;
+			std::cout << "force: (";
+			std::cout << mass->_fx << ", ";
+			std::cout << mass->_fy << ", ";
+			std::cout << mass->_fz << ")" << std::endl;
+			std::cout << "radius: ";
+			std::cout << mass->_radius << std::endl;
+			std::cout <<std::endl;
+		}
+	}
+
+	springs.download();
+
+	for (size_t i = 0; i < springs.size(); i++) {
+		SigAsiaDemo::Spring *spring0 = springs.getSpring(i);
+		if (spring0) {
+			std::cout << "Spring " << i << std::endl;
+			std::cout << "mass 0: " << spring0->_mass0 << std::endl;
+			std::cout << "mass 1: " << spring0->_mass1 << std::endl;
+			std::cout << "ks: " << spring0->_ks << std::endl;
+			std::cout << "kd: " << spring0->_kd << std::endl;
+			std::cout << "l0: " << spring0->_l0 << std::endl;
+			std::cout << "f0: (";
+			std::cout << spring0->_fx0 << ", ";
+			std::cout << spring0->_fy0 << ", ";
+			std::cout << spring0->_fz0 << ")" << std::endl;
+			std::cout << "f1: (";
+			std::cout << spring0->_fx1 << ", ";
+			std::cout << spring0->_fy1 << ", ";
+			std::cout << spring0->_fz1 << ")" << std::endl;
+			std::cout <<std::endl;
+		}
+	}
+}
+
 void Idle()
 {
 	if (play) {
@@ -119,59 +194,7 @@ void Idle()
 	// TODO: remove
 	/*
 	if (frame == 1000) {
-		masses.download();
-
-		for (size_t i = 0; i < masses.size(); i++) {
-			SigAsiaDemo::Mass *mass0 = masses.getMass(i);
-			if (mass0) {
-				std::cout << "Point Mass " << i << std::endl;
-				std::cout << "mass: " << mass0->_mass << std::endl;
-				std::cout << "position: (";
-				std::cout << mass0->_x << ", ";
-				std::cout << mass0->_y << ", ";
-				std::cout << mass0->_z << ")" << std::endl;
-				std::cout << "velocity k1: (";
-				std::cout << mass0->_k1x << ", ";
-				std::cout << mass0->_k1y << ", ";
-				std::cout << mass0->_k1z << ")" << std::endl;
-				std::cout << "velocity k2: (";
-				std::cout << mass0->_k2x << ", ";
-				std::cout << mass0->_k2y << ", ";
-				std::cout << mass0->_k2z << ")" << std::endl;
-				std::cout << "velocity k3: (";
-				std::cout << mass0->_k3x << ", ";
-				std::cout << mass0->_k3y << ", ";
-				std::cout << mass0->_k3z << ")" << std::endl;
-				std::cout << "velocity k4: (";
-				std::cout << mass0->_k4x << ", ";
-				std::cout << mass0->_k4y << ", ";
-				std::cout << mass0->_k4z << ")" << std::endl;
-				std::cout <<std::endl;
-			}
-		}
-
-		springs.download();
-
-		for (size_t i = 0; i < springs.size(); i++) {
-			SigAsiaDemo::Spring *spring0 = springs.getSpring(i);
-			if (spring0) {
-				std::cout << "Spring " << i << std::endl;
-				std::cout << "mass 0: " << spring0->_mass0 << std::endl;
-				std::cout << "mass 1: " << spring0->_mass1 << std::endl;
-				std::cout << "ks: " << spring0->_ks << std::endl;
-				std::cout << "kd: " << spring0->_kd << std::endl;
-				std::cout << "l0: " << spring0->_l0 << std::endl;
-				std::cout << "f0: (";
-				std::cout << spring0->_fx0 << ", ";
-				std::cout << spring0->_fy0 << ", ";
-				std::cout << spring0->_fz0 << ")" << std::endl;
-				std::cout << "f1: (";
-				std::cout << spring0->_fx1 << ", ";
-				std::cout << spring0->_fy1 << ", ";
-				std::cout << spring0->_fz1 << ")" << std::endl;
-				std::cout <<std::endl;
-			}
-		}
+		PrintMassesAndSprings();
 
 		exit(0);
 	}
@@ -237,60 +260,8 @@ void Keys(unsigned char key, int x, int y)
 	}
 
 	if (key == 27) {
-		// TODO: remove this printout
-		masses.download();
+		PrintMassesAndSprings();
 
-		for (size_t i = 0; i < masses.size(); i++) {
-			SigAsiaDemo::Mass *mass0 = masses.getMass(i);
-			if (mass0) {
-				std::cout << "Point Mass " << i << std::endl;
-				std::cout << "mass: " << mass0->_mass << std::endl;
-				std::cout << "position: (";
-				std::cout << mass0->_x << ", ";
-				std::cout << mass0->_y << ", ";
-				std::cout << mass0->_z << ")" << std::endl;
-				std::cout << "velocity k1: (";
-				std::cout << mass0->_k1x << ", ";
-				std::cout << mass0->_k1y << ", ";
-				std::cout << mass0->_k1z << ")" << std::endl;
-				std::cout << "velocity k2: (";
-				std::cout << mass0->_k2x << ", ";
-				std::cout << mass0->_k2y << ", ";
-				std::cout << mass0->_k2z << ")" << std::endl;
-				std::cout << "velocity k3: (";
-				std::cout << mass0->_k3x << ", ";
-				std::cout << mass0->_k3y << ", ";
-				std::cout << mass0->_k3z << ")" << std::endl;
-				std::cout << "velocity k4: (";
-				std::cout << mass0->_k4x << ", ";
-				std::cout << mass0->_k4y << ", ";
-				std::cout << mass0->_k4z << ")" << std::endl;
-				std::cout <<std::endl;
-			}
-		}
-
-		springs.download();
-
-		for (size_t i = 0; i < springs.size(); i++) {
-			SigAsiaDemo::Spring *spring0 = springs.getSpring(i);
-			if (spring0) {
-				std::cout << "Spring " << i << std::endl;
-				std::cout << "mass 0: " << spring0->_mass0 << std::endl;
-				std::cout << "mass 1: " << spring0->_mass1 << std::endl;
-				std::cout << "ks: " << spring0->_ks << std::endl;
-				std::cout << "kd: " << spring0->_kd << std::endl;
-				std::cout << "l0: " << spring0->_l0 << std::endl;
-				std::cout << "f0: (";
-				std::cout << spring0->_fx0 << ", ";
-				std::cout << spring0->_fy0 << ", ";
-				std::cout << spring0->_fz0 << ")" << std::endl;
-				std::cout << "f1: (";
-				std::cout << spring0->_fx1 << ", ";
-				std::cout << spring0->_fy1 << ", ";
-				std::cout << spring0->_fz1 << ")" << std::endl;
-				std::cout <<std::endl;
-			}
-		}
 		exit(0);
 	}
 }
@@ -401,11 +372,13 @@ int main(int argc, char **argv)
 			0,
 			0.1));
 
+	/*
 	springs.push(
 		SigAsiaDemo::Spring(
 			masses,
 			0, 1,
 			0.2, 0.2)); // ks, kd
+			*/
 
 	std::cout << "Initialize masses." << std::endl;
 	Step();

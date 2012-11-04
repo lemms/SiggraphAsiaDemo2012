@@ -335,52 +335,50 @@ __global__ void deviceComputeSpringForces(
 	if (tid < springs_size) {
 		// v is the vector from mass 1 to mass 0
 		// we're operating on the temporary position
-		float vx =
+		float dx =
 			masses[springs[tid]._mass0]._tx - masses[springs[tid]._mass1]._tx;
-		float vy =
+		float dy =
 			masses[springs[tid]._mass0]._ty - masses[springs[tid]._mass1]._ty;
-		float vz =
+		float dz =
 			masses[springs[tid]._mass0]._tz - masses[springs[tid]._mass1]._tz;
+
+		float dvx =
+			masses[springs[tid]._mass0]._tvx -
+			masses[springs[tid]._mass1]._tvx;
+		float dvy =
+			masses[springs[tid]._mass0]._tvy -
+			masses[springs[tid]._mass1]._tvy;
+		float dvz =
+			masses[springs[tid]._mass0]._tvz -
+			masses[springs[tid]._mass1]._tvz;
 		// compute length of v
-		float lv = sqrt(vx*vx + vy*vy + vz*vz);
+		float lv = sqrt(dx*dx + dy*dy + dz*dz);
 		float rcp_lv = 1.0f;
 		if (lv != 0.0f) {
 			rcp_lv = 1.0f / lv;
 		}
 		// compute unit v
-		float uvx = vx * rcp_lv;
-		float uvy = vy * rcp_lv;
-		float uvz = vz * rcp_lv;
-
-                // TODO: fix
+		float udx = dx * rcp_lv;
+		float udy = dy * rcp_lv;
+		float udz = dz * rcp_lv;
 
 		// project temporary velocity of mass 0 onto v
-		float dot_tv0_v =
-			masses[springs[tid]._mass0]._tvx * uvx +
-			masses[springs[tid]._mass0]._tvy * uvy +
-			masses[springs[tid]._mass0]._tvz * uvz;
-		float tv0x = uvx * dot_tv0_v;
-		float tv0y = uvy * dot_tv0_v;
-		float tv0z = uvz * dot_tv0_v;
+		float dot_dv_v =
+			dvx * udx +
+			dvy * udy +
+			dvz * udz;
 		// compute force for mass 0 to mass 1
-		float extension = -springs[tid]._ks * (lv / springs[tid]._l0 - 1.0f);
-		springs[tid]._fx0 = extension * uvx - springs[tid]._kd * tv0x;
-		springs[tid]._fy0 = extension * uvy - springs[tid]._kd * tv0y;
-		springs[tid]._fz0 = extension * uvz - springs[tid]._kd * tv0z;
+		float force =
+			-springs[tid]._ks * (lv / springs[tid]._l0 - 1.0f)
+			-springs[tid]._kd * dot_dv_v;
+		springs[tid]._fx0 = force * udx;
+		springs[tid]._fy0 = force * udy;
+		springs[tid]._fz0 = force * udz;
 
-		// project temporary velocity of mass 1 onto -v
-		float dot_tv1_v =
-			masses[springs[tid]._mass1]._tvx * uvx +
-			masses[springs[tid]._mass1]._tvy * uvy +
-			masses[springs[tid]._mass1]._tvz * uvz;
-		float tv1x = -uvx * dot_tv1_v;
-		float tv1y = -uvy * dot_tv1_v;
-		float tv1z = -uvz * dot_tv1_v;
 		// compute force for mass 1 to mass 0
-		extension = springs[tid]._ks * (lv / springs[tid]._l0 - 1.0f);
-		springs[tid]._fx1 = extension * uvx - springs[tid]._kd * tv1x;
-		springs[tid]._fy1 = extension * uvy - springs[tid]._kd * tv1y;
-		springs[tid]._fz1 = extension * uvz - springs[tid]._kd * tv1z;
+		springs[tid]._fx1 = -springs[tid]._fx0;
+		springs[tid]._fy1 = -springs[tid]._fy0;
+		springs[tid]._fz1 = -springs[tid]._fz0;
 	}
 }
 

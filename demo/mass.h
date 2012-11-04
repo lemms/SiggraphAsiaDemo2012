@@ -26,12 +26,14 @@ namespace SigAsiaDemo {
 			float _mass;
 			// position
 			float _x; float _y; float _z;
+			// velocity
+			float _vx; float _vy; float _vz;
+			// force
+			float _fx; float _fy; float _fz;
 			// temporary position
 			float _tx; float _ty; float _tz;
 			// temporary velocity
 			float _tvx; float _tvy; float _tvz;
-			// forces
-			float _fx; float _fy; float _fz;
 			// RK4 components
 			float _k1x; float _k1y; float _k1z;
 			float _k2x; float _k2y; float _k2z;
