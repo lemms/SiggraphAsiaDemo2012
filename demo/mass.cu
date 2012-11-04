@@ -206,26 +206,37 @@ void SigAsiaDemo::MassList::startFrame()
 	}
 }
 
-__global__ void deviceClearForces(unsigned int N, SigAsiaDemo::Mass *masses)
+__global__ void deviceClearForces(
+	unsigned int N,
+	float fx,
+	float fy,
+	float fz,
+	float gravity,
+	SigAsiaDemo::Mass *masses)
 {
 	int tid = blockIdx.x;
 	if (tid < N) {
 		if (masses[tid]._state == 1)
 			return;
-		masses[tid]._fx = 0.0f;
-		// add gravity
-		masses[tid]._fy = -9.81f * masses[tid]._mass;
-		masses[tid]._fz = 0.0f;
+		masses[tid]._fx = fx;
+		masses[tid]._fy = fy + gravity * masses[tid]._mass;
+		masses[tid]._fz = fz;
 	}
 }
 
-void SigAsiaDemo::MassList::clearForces()
+void SigAsiaDemo::MassList::clearForces(
+	float fx,	// force
+	float fy,
+	float fz,
+	float gravity)
 {
 	if (_computing && !_masses.empty()) {
 		//std::cout << "Clear forces and add gravity (" \
 		<< _masses.size() << ")." << std::endl;
 		deviceClearForces<<<_masses.size(), 1>>>(
 			_masses.size(),
+			fx, fy, fz,
+			gravity,
 			_device_masses);
 		cudaThreadSynchronize();
 	}
@@ -394,7 +405,8 @@ __global__ void deviceUpdate(
 	float coeff_restitution,
 	unsigned int N,
 	SigAsiaDemo::Mass *masses,
-	float *masses_buffer)
+	float *masses_buffer,
+	bool ground_collision = true)
 {
 	int tid = blockIdx.x;
 	if (tid < N) {
@@ -431,13 +443,11 @@ __global__ void deviceUpdate(
 			masses[tid]._tvy = masses[tid]._vy;
 			masses[tid]._tvz = masses[tid]._vz;
 
-			/*
 			// enforce ground collision
-			if (masses[tid]._y < 0.0f) {
-			masses[tid]._y = 0.0f;
-			masses[tid]._tvy = -masses[tid]._tvy * coeff_restitution;
+			if (ground_collision && masses[tid]._y < 0.0f) {
+				masses[tid]._y = 0.0f;
+				masses[tid]._tvy = -masses[tid]._tvy * coeff_restitution;
 			}
-			 */
 		}
 		
 		// copy into CUDA buffer

@@ -333,52 +333,56 @@ __global__ void deviceComputeSpringForces(
 {
 	int tid = blockIdx.x;
 	if (tid < springs_size) {
-		// v is the vector from mass 1 to mass 0
+		// d is the vector from mass 0 to mass 1
 		// we're operating on the temporary position
-		float dx =
-			masses[springs[tid]._mass0]._tx - masses[springs[tid]._mass1]._tx;
-		float dy =
-			masses[springs[tid]._mass0]._ty - masses[springs[tid]._mass1]._ty;
-		float dz =
-			masses[springs[tid]._mass0]._tz - masses[springs[tid]._mass1]._tz;
 
+		// position delta
+		float dx =
+			masses[springs[tid]._mass1]._tx - masses[springs[tid]._mass0]._tx;
+		float dy =
+			masses[springs[tid]._mass1]._ty - masses[springs[tid]._mass0]._ty;
+		float dz =
+			masses[springs[tid]._mass1]._tz - masses[springs[tid]._mass0]._tz;
+
+		// velocity delta
 		float dvx =
-			masses[springs[tid]._mass0]._tvx -
-			masses[springs[tid]._mass1]._tvx;
+			masses[springs[tid]._mass1]._tvx -
+			masses[springs[tid]._mass0]._tvx;
 		float dvy =
-			masses[springs[tid]._mass0]._tvy -
-			masses[springs[tid]._mass1]._tvy;
+			masses[springs[tid]._mass1]._tvy -
+			masses[springs[tid]._mass0]._tvy;
 		float dvz =
-			masses[springs[tid]._mass0]._tvz -
-			masses[springs[tid]._mass1]._tvz;
-		// compute length of v
+			masses[springs[tid]._mass1]._tvz -
+			masses[springs[tid]._mass0]._tvz;
+
+		// compute length of d
 		float lv = sqrt(dx*dx + dy*dy + dz*dz);
 		float rcp_lv = 1.0f;
 		if (lv != 0.0f) {
 			rcp_lv = 1.0f / lv;
 		}
-		// compute unit v
+		// compute unit d
 		float udx = dx * rcp_lv;
 		float udy = dy * rcp_lv;
 		float udz = dz * rcp_lv;
 
-		// project temporary velocity of mass 0 onto v
+		// project velocity delta onto unit d
 		float dot_dv_v =
 			dvx * udx +
 			dvy * udy +
 			dvz * udz;
-		// compute force for mass 0 to mass 1
+		// compute force for mass 1
 		float force =
 			-springs[tid]._ks * (lv / springs[tid]._l0 - 1.0f)
 			-springs[tid]._kd * dot_dv_v;
-		springs[tid]._fx0 = force * udx;
-		springs[tid]._fy0 = force * udy;
-		springs[tid]._fz0 = force * udz;
+		springs[tid]._fx1 = force * udx;
+		springs[tid]._fy1 = force * udy;
+		springs[tid]._fz1 = force * udz;
 
-		// compute force for mass 1 to mass 0
-		springs[tid]._fx1 = -springs[tid]._fx0;
-		springs[tid]._fy1 = -springs[tid]._fy0;
-		springs[tid]._fz1 = -springs[tid]._fz0;
+		// compute force for mass 0
+		springs[tid]._fx0 = -springs[tid]._fx0;
+		springs[tid]._fy0 = -springs[tid]._fy0;
+		springs[tid]._fz0 = -springs[tid]._fz0;
 	}
 }
 

@@ -40,7 +40,7 @@ SigAsiaDemo::MassList masses;
 SigAsiaDemo::SpringList springs;
 
 size_t frame = 0;
-float dt = 1e-5;
+float dt = 1e-3;
 bool play = false;
 
 void ParseArgs(int argc, char **argv)
@@ -160,22 +160,22 @@ void PrintMassesAndSprings()
 	springs.download();
 
 	for (size_t i = 0; i < springs.size(); i++) {
-		SigAsiaDemo::Spring *spring0 = springs.getSpring(i);
-		if (spring0) {
+		SigAsiaDemo::Spring *spring = springs.getSpring(i);
+		if (spring) {
 			std::cout << "Spring " << i << std::endl;
-			std::cout << "mass 0: " << spring0->_mass0 << std::endl;
-			std::cout << "mass 1: " << spring0->_mass1 << std::endl;
-			std::cout << "ks: " << spring0->_ks << std::endl;
-			std::cout << "kd: " << spring0->_kd << std::endl;
-			std::cout << "l0: " << spring0->_l0 << std::endl;
+			std::cout << "mass 0: " << spring->_mass0 << std::endl;
+			std::cout << "mass 1: " << spring->_mass1 << std::endl;
+			std::cout << "ks: " << spring->_ks << std::endl;
+			std::cout << "kd: " << spring->_kd << std::endl;
+			std::cout << "l0: " << spring->_l0 << std::endl;
 			std::cout << "f0: (";
-			std::cout << spring0->_fx0 << ", ";
-			std::cout << spring0->_fy0 << ", ";
-			std::cout << spring0->_fz0 << ")" << std::endl;
+			std::cout << spring->_fx0 << ", ";
+			std::cout << spring->_fy0 << ", ";
+			std::cout << spring->_fz0 << ")" << std::endl;
 			std::cout << "f1: (";
-			std::cout << spring0->_fx1 << ", ";
-			std::cout << spring0->_fy1 << ", ";
-			std::cout << spring0->_fz1 << ")" << std::endl;
+			std::cout << spring->_fx1 << ", ";
+			std::cout << spring->_fy1 << ", ";
+			std::cout << spring->_fz1 << ")" << std::endl;
 			std::cout <<std::endl;
 		}
 	}
@@ -359,26 +359,26 @@ int main(int argc, char **argv)
 
 	masses.push(
 		SigAsiaDemo::Mass(
-			1.0,
+			10.0,
 			0.0, 10.0, 0.0,
 			0.0, 0.0, 0.0,
 			1,
 			0.1));
 	masses.push(
 		SigAsiaDemo::Mass(
-			1.0,
-			2.0, 10.0, 0.0,
+			10.0,
+			5.0, 10.0, 0.0,
 			0.0, 0.0, 0.0,
 			0,
 			0.1));
 
-	/*
 	springs.push(
 		SigAsiaDemo::Spring(
 			masses,
 			0, 1,
-			0.2, 0.2)); // ks, kd
-			*/
+			69.0, 0.2)); // ks, kd
+	SigAsiaDemo::Spring *spring0 = springs.getSpring(0);
+	spring0->_l0 = 2.0f;
 
 	std::cout << "Initialize masses." << std::endl;
 	Step();
