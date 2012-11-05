@@ -49,12 +49,14 @@ SigAsiaDemo::Mass::Mass(
 {}
 
 SigAsiaDemo::MassList::MassList(
+	float coeff_friction,
 	float coeff_restitution,
 	unsigned int threads) :
 	_masses_array(0),
 	_masses_buffer(0),
 	_computing(false),
 	_changed(false),
+	_coeff_friction(coeff_friction),
 	_coeff_restitution(coeff_restitution),
 	_device_masses(0),
 	_axes_array(0),
@@ -246,6 +248,7 @@ void SigAsiaDemo::MassList::clearForces(
 
 __global__ void deviceEvaluateK1(
 	float dt,
+	float coeff_friction,
 	float coeff_restitution,
 	unsigned int N, SigAsiaDemo::Mass *masses,
 	bool ground_collision = true)
@@ -274,9 +277,12 @@ __global__ void deviceEvaluateK1(
 		masses[tid]._ty = masses[tid]._y + masses[tid]._tvy * dt * 0.5f;
 		masses[tid]._tz = masses[tid]._z + masses[tid]._tvz * dt * 0.5f;
 
-		if (ground_collision && masses[tid]._ty < 0.0f) {
-			masses[tid]._ty = 0.0f;
+		if (ground_collision && masses[tid]._ty < masses[tid]._radius) {
+			masses[tid]._ty = masses[tid]._radius;
+			// no slip condition
+			masses[tid]._tvx =  masses[tid]._tvx * coeff_friction;
 			masses[tid]._tvy = -masses[tid]._tvy * coeff_restitution;
+			masses[tid]._tvz =  masses[tid]._tvz * coeff_friction;
 		}
 	}
 }
@@ -289,6 +295,7 @@ void SigAsiaDemo::MassList::evaluateK1(
 		//std::cout << "Evaluate K1 (" << _masses.size() << ")." << std::endl;
 		deviceEvaluateK1<<<(_masses.size()+_threads-1)/_threads, _threads>>>(
 			dt,
+			_coeff_friction,
 			_coeff_restitution,
 			_masses.size(),
 			_device_masses,
@@ -299,6 +306,7 @@ void SigAsiaDemo::MassList::evaluateK1(
 
 __global__ void deviceEvaluateK2(
 	float dt,
+	float coeff_friction,
 	float coeff_restitution,
 	unsigned int N, SigAsiaDemo::Mass *masses,
 	bool ground_collision = true)
@@ -328,9 +336,12 @@ __global__ void deviceEvaluateK2(
 		masses[tid]._ty = masses[tid]._y + masses[tid]._tvy * dt * 0.5f;
 		masses[tid]._tz = masses[tid]._z + masses[tid]._tvz * dt * 0.5f;
 
-		if (ground_collision && masses[tid]._ty < 0.0f) {
-			masses[tid]._ty = 0.0f;
+		if (ground_collision && masses[tid]._ty < masses[tid]._radius) {
+			masses[tid]._ty = masses[tid]._radius;
+			// no slip condition
+			masses[tid]._tvx =  masses[tid]._tvx * coeff_friction;
 			masses[tid]._tvy = -masses[tid]._tvy * coeff_restitution;
+			masses[tid]._tvz =  masses[tid]._tvz * coeff_friction;
 		}
 	}
 }
@@ -343,6 +354,7 @@ void SigAsiaDemo::MassList::evaluateK2(
 		//std::cout << "Evaluate K2 (" << _masses.size() << ")." << std::endl;
 		deviceEvaluateK2<<<(_masses.size()+_threads-1)/_threads, _threads>>>(
 			dt,
+			_coeff_friction,
 			_coeff_restitution,
 			_masses.size(),
 			_device_masses,
@@ -353,6 +365,7 @@ void SigAsiaDemo::MassList::evaluateK2(
 
 __global__ void deviceEvaluateK3(
 	float dt,
+	float coeff_friction,
 	float coeff_restitution,
 	unsigned int N, SigAsiaDemo::Mass *masses,
 	bool ground_collision = true)
@@ -382,9 +395,12 @@ __global__ void deviceEvaluateK3(
 		masses[tid]._ty = masses[tid]._y + masses[tid]._tvy * dt;
 		masses[tid]._tz = masses[tid]._z + masses[tid]._tvz * dt;
 
-		if (ground_collision && masses[tid]._ty < 0.0f) {
-			masses[tid]._ty = 0.0f;
+		if (ground_collision && masses[tid]._ty < masses[tid]._radius) {
+			masses[tid]._ty = masses[tid]._radius;
+			// no slip condition
+			masses[tid]._tvx =  masses[tid]._tvx * coeff_friction;
 			masses[tid]._tvy = -masses[tid]._tvy * coeff_restitution;
+			masses[tid]._tvz =  masses[tid]._tvz * coeff_friction;
 		}
 	}
 }
@@ -397,6 +413,7 @@ void SigAsiaDemo::MassList::evaluateK3(
 		//std::cout << "Evaluate K3 (" << _masses.size() << ")." << std::endl;
 		deviceEvaluateK3<<<(_masses.size()+_threads-1)/_threads, _threads>>>(
 			dt,
+			_coeff_friction,
 			_coeff_restitution,
 			_masses.size(),
 			_device_masses);
@@ -406,9 +423,7 @@ void SigAsiaDemo::MassList::evaluateK3(
 
 __global__ void deviceEvaluateK4(
 	float dt,
-	float coeff_restitution,
-	unsigned int N, SigAsiaDemo::Mass *masses,
-	bool ground_collision = true)
+	unsigned int N, SigAsiaDemo::Mass *masses)
 {
 	int tid = threadIdx.x + blockIdx.x * blockDim.x;
 	if (tid < N) {
@@ -436,16 +451,15 @@ void SigAsiaDemo::MassList::evaluateK4(
 		//std::cout << "Evaluate K4 (" << _masses.size() << ")." << std::endl;
 		deviceEvaluateK4<<<(_masses.size()+_threads-1)/_threads, _threads>>>(
 			dt,
-			_coeff_restitution,
 			_masses.size(),
-			_device_masses,
-			ground_collision);
+			_device_masses);
 		cudaThreadSynchronize();
 	}
 }
 
 __global__ void deviceUpdate(
 	float dt,
+	float coeff_friction,
 	float coeff_restitution,
 	unsigned int N,
 	SigAsiaDemo::Mass *masses,
@@ -488,11 +502,17 @@ __global__ void deviceUpdate(
 			masses[tid]._tvz = masses[tid]._vz;
 
 			// enforce ground collision
-			if (ground_collision && masses[tid]._y < 0.0f) {
-				masses[tid]._y = 0.0f;
-				masses[tid]._ty = 0.0f;
+			if (ground_collision && masses[tid]._y < masses[tid]._radius) {
+				masses[tid]._y = masses[tid]._radius;
+				masses[tid]._ty = masses[tid]._radius;
+
+				// no slip condition
+				masses[tid]._vx =  masses[tid]._vx * coeff_friction;
 				masses[tid]._vy = -masses[tid]._vy * coeff_restitution;
+				masses[tid]._vz =  masses[tid]._vz * coeff_friction;
+				masses[tid]._tvx =  masses[tid]._tvx * coeff_friction;
 				masses[tid]._tvy = -masses[tid]._tvy * coeff_restitution;
+				masses[tid]._tvz =  masses[tid]._tvz * coeff_friction;
 			}
 		}
 		
@@ -598,6 +618,7 @@ void SigAsiaDemo::MassList::update(
 		//std::cout << "Update masses (" << _masses.size() << ")." << std::endl;
 		deviceUpdate<<<(_masses.size()+_threads-1)/_threads, _threads>>>(
 			dt,
+			_coeff_friction,
 			_coeff_restitution,
 			_masses.size(),
 			_device_masses,

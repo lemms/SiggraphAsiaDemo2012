@@ -49,6 +49,7 @@ namespace SigAsiaDemo {
 	class MassList {
 		public:
 			MassList(
+				float coeff_friction = 0.2,
 				float coeff_restitution = 0.2,
 				unsigned int threads = 128);
 			~MassList();
@@ -94,6 +95,7 @@ namespace SigAsiaDemo {
 			// indicates that the mass list has
 			// changed
 			bool _changed;
+			float _coeff_friction;
 			float _coeff_restitution;
 			Mass *_device_masses;
 

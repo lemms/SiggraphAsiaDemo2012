@@ -248,7 +248,7 @@ void SigAsiaDemo::Cube::create(
 
 				// add planar springs
 				// front plane
-				if (right >= 0 && down >= 0) {
+				if (right_down >= 0) {
 					springs.push(SigAsiaDemo::Spring(
 						masses,
 						index,
@@ -260,7 +260,7 @@ void SigAsiaDemo::Cube::create(
 				}
 
 				// left plane
-				if (back >= 0 && down >= 0) {
+				if (back_down >= 0) {
 					springs.push(SigAsiaDemo::Spring(
 						masses,
 						index,
@@ -272,7 +272,7 @@ void SigAsiaDemo::Cube::create(
 				}
 
 				// top plane
-				if (back >= 0 && right >= 0) {
+				if (back_right >= 0) {
 					springs.push(SigAsiaDemo::Spring(
 						masses,
 						index,
@@ -313,6 +313,24 @@ void SigAsiaDemo::Cube::create(
 						masses,
 						back_down,
 						right_down));
+
+					// add core springs
+					springs.push(SigAsiaDemo::Spring(
+						masses,
+						index,
+						back_right_down));
+					springs.push(SigAsiaDemo::Spring(
+						masses,
+						back,
+						right_down));
+					springs.push(SigAsiaDemo::Spring(
+						masses,
+						back_right,
+						down));
+					springs.push(SigAsiaDemo::Spring(
+						masses,
+						right,
+						back_down));
 				}
 			}
 		}

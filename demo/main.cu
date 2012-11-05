@@ -74,6 +74,7 @@ void ParseArgs(int argc, char **argv)
 		}
 		viewport.ResizeWindow(width, height);
 		camera.ResizeWindow(width, height);
+		glViewport(0, 0, viewport.GetWidth(), viewport.GetHeight());
 	}
 }
 
@@ -225,6 +226,7 @@ void Reshape(int width, int height)
 {
 	viewport.ResizeWindow(width, height);
 	camera.ResizeWindow(width, height);
+	glViewport(0, 0, viewport.GetWidth(), viewport.GetHeight());
 }
 
 void Render()
