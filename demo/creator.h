@@ -12,9 +12,6 @@ namespace SigAsiaDemo {
 	class Creator {
 		public:
 			virtual void create(
-				float x,	// position
-				float y,
-				float z,
 				MassList &masses,
 				SpringList &springs) = 0;
 	};

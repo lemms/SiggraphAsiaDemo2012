@@ -28,17 +28,23 @@ Laurence Emms
 #include "cube.h"
 
 SigAsiaDemo::Cube::Cube(
-	size_t x, // multiple of 2
-	size_t y,
-	size_t z,
+	float x,
+	float y,
+	float z,
+	size_t size_x, // multiple of 2
+	size_t size_y,
+	size_t size_z,
 	float spacing,
 	float mass,
 	float radius) :
 		_start(0),
 		_end(0),
-		_half_x(static_cast<int>(x/2)),
-		_half_y(static_cast<int>(y/2)),
-		_half_z(static_cast<int>(z/2)),
+		_x(x),
+		_y(y),
+		_z(z),
+		_half_x(static_cast<int>(size_x/2)),
+		_half_y(static_cast<int>(size_y/2)),
+		_half_z(static_cast<int>(size_z/2)),
 		_spacing(spacing),
 		_mass(mass),
 		_radius(radius)
@@ -48,9 +54,6 @@ SigAsiaDemo::Cube::~Cube()
 {} 
 
 void SigAsiaDemo::Cube::create(
-	float x,
-	float y,
-	float z,
 	MassList &masses,
 	SpringList &springs)
 {
@@ -67,9 +70,9 @@ void SigAsiaDemo::Cube::create(
 			for (int k = -_half_z; k <= _half_z; ++k) {
 				masses.push(SigAsiaDemo::Mass(
 					_mass,
-					static_cast<float>(i)*_spacing + x,
-					static_cast<float>(j)*_spacing + y,
-					static_cast<float>(k)*_spacing + z,
+					static_cast<float>(i)*_spacing + _x,
+					static_cast<float>(j)*_spacing + _y,
+					static_cast<float>(k)*_spacing + _z,
 					0.0, 0.0, 0.0,
 					0,
 					_radius));
@@ -314,4 +317,40 @@ void SigAsiaDemo::Cube::create(
 			}
 		}
 	}
+}
+
+SigAsiaDemo::CubeList::CubeList(
+	unsigned int threads) :
+		_threads(threads)
+{}
+
+void SigAsiaDemo::CubeList::push(
+	Cube cube)
+{
+	_cubes.push_back(cube);
+}
+
+bool SigAsiaDemo::CubeList::empty() const
+{
+	return _cubes.empty();
+}
+
+size_t SigAsiaDemo::CubeList::size() const
+{
+	return _cubes.size();
+}
+
+void SigAsiaDemo::CubeList::create(
+	MassList &masses,
+	SpringList &springs)
+{
+	for (std::vector<Cube>::iterator i = _cubes.begin();
+		i != _cubes.end(); i++) {
+		i->create(masses, springs);
+	}
+}
+
+void SigAsiaDemo::CubeList::computeBounds()
+{
+	// TODO
 }

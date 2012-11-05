@@ -40,6 +40,7 @@ SigAsiaDemo::Viewport viewport;
 SigAsiaDemo::Camera camera;
 SigAsiaDemo::MassList masses;
 SigAsiaDemo::SpringList springs;
+SigAsiaDemo::CubeList cubes;
 
 size_t frame = 0;
 float dt = 1e-5;
@@ -206,7 +207,7 @@ void Idle()
 		Step();
 		//std::cout << "Stepping, frame: " << frame << std::endl;
 		// TODO: come up with a better metric
-		if (frame % 10 == 0)
+		if (frame % 5 == 0)
 			glutPostRedisplay();
 	}
 
@@ -363,7 +364,7 @@ int main(int argc, char **argv)
 	// fill masses
 	std::cout << "Fill masses." << std::endl;
 
-	springs.setConstants(10000.0, 10000.0);
+	springs.setConstants(10000.0, 1000.0);
 
 	/*
 	// TODO: replace by creators
@@ -394,29 +395,45 @@ int main(int argc, char **argv)
 	*/
 
 	std::cout << "Setup cube." << std::endl;
-	SigAsiaDemo::Cube cube(
+
+	cubes.push(SigAsiaDemo::Cube(
+		-40.0, 20.0, 0.0,	// position
+		10, 10, 10,			// size
+		1.0,				// spacing
+		4.0,				// mass
+		1.0					// radius
+		));
+	cubes.push(SigAsiaDemo::Cube(
+		-20.0, 30.0, 0.0,	// position
+		10, 10, 10,			// size
+		1.0,				// spacing
+		4.0,				// mass
+		1.0					// radius
+		));
+	cubes.push(SigAsiaDemo::Cube(
+		0.0, 40.0, 0.0,	// position
 		10, 10, 10,		// size
 		1.0,			// spacing
-		10.0,			// mass
+		4.0,			// mass
 		1.0				// radius
-		);
+		));
+	cubes.push(SigAsiaDemo::Cube(
+		20.0, 50.0, 0.0,	// position
+		10, 10, 10,			// size
+		1.0,				// spacing
+		4.0,				// mass
+		1.0					// radius
+		));
+	cubes.push(SigAsiaDemo::Cube(
+		40.0, 80.0, 0.0,	// position
+		10, 10, 10,			// size
+		1.0,				// spacing
+		4.0,				// mass
+		1.0					// radius
+		));
 
-	std::cout << "Create cube." << std::endl;
-	cube.create(
-		-40.0, 30.0, 0.0,	// position
-		masses, springs);
-	cube.create(
-		-20.0, 30.0, 0.0,	// position
-		masses, springs);
-	cube.create(
-		0.0, 30.0, 0.0,	// position
-		masses, springs);
-	cube.create(
-		20.0, 30.0, 0.0,	// position
-		masses, springs);
-	cube.create(
-		40.0, 30.0, 0.0,	// position
-		masses, springs);
+	std::cout << "Create cubes." << std::endl;
+	cubes.create(masses, springs);
 
 	/*
 	masses.push(
