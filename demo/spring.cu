@@ -367,15 +367,15 @@ __global__ void deviceComputeSpringForces(
 			masses[springs[tid]._mass0]._tvz;
 
 		// compute length of d
-		float lv = sqrt(dx*dx + dy*dy + dz*dz);
-		float rcp_lv = 1.0f;
-		if (lv != 0.0f) {
-			rcp_lv = 1.0f / lv;
+		float ld = sqrt(dx*dx + dy*dy + dz*dz);
+		float rcp_ld = 1.0f;
+		if (ld != 0.0f) {
+			rcp_ld = 1.0f / ld;
 		}
 		// compute unit d
-		float udx = dx * rcp_lv;
-		float udy = dy * rcp_lv;
-		float udz = dz * rcp_lv;
+		float udx = dx * rcp_ld;
+		float udy = dy * rcp_ld;
+		float udz = dz * rcp_ld;
 
 		// project velocity delta onto unit d
 		float dot_dv_v =
@@ -384,7 +384,7 @@ __global__ void deviceComputeSpringForces(
 			dvz * udz;
 		// compute force for mass 1
 		float force =
-			-ks * (lv / springs[tid]._l0 - 1.0f)
+			-ks * (ld / springs[tid]._l0 - 1.0f)
 			-kd * dot_dv_v;
 		springs[tid]._fx1 = force * udx;
 		springs[tid]._fy1 = force * udy;

@@ -43,7 +43,7 @@ SigAsiaDemo::SpringList springs;
 SigAsiaDemo::CubeList cubes;
 
 size_t frame = 0;
-float dt = 1e-5;
+float dt = 1e-4;
 bool play = false;
 bool ground_collision = true;
 
@@ -154,6 +154,25 @@ void PrintMassesAndSprings()
 void Step()
 {
 	//std::cout << "Frame: " << frame << std::endl;
+	//std::cout << "compute bounds." << std::endl;
+	cubes.computeBounds(masses);
+	cubes.collideCubes(dt, masses);
+	/*
+	// print bounds
+	for (size_t i = 0; i < cubes.size(); ++i) {
+		SigAsiaDemo::Cube *cube = cubes.getCube(i);
+		if (cube) {
+			std::cout << "Cube " << i << ":" << std::endl;
+			std::cout << "[" << cube->_min_x << ", " \
+			<< cube->_max_x << "]" << std::endl;
+			std::cout << "[" << cube->_min_y << ", " \
+			<< cube->_max_y << "]" << std::endl;
+			std::cout << "[" << cube->_min_z << ", " \
+			<< cube->_max_z << "]" << std::endl;
+		}
+	}
+	*/
+
 	//std::cout << "upload masses." << std::endl;
 	masses.upload();
 	//std::cout << "upload springs." << std::endl;
@@ -196,6 +215,7 @@ void Step()
 
 	//std::cout << "update." << std::endl;
 	masses.update(dt, ground_collision);
+	masses.endFrame();
 
 	//PrintMassesAndSprings();
 
@@ -367,6 +387,7 @@ int main(int argc, char **argv)
 	std::cout << "Fill masses." << std::endl;
 
 	springs.setConstants(10000.0, 1000.0);
+	cubes.setConstants(10000.0, 1000.0);
 
 	/*
 	// TODO: replace by creators
@@ -428,6 +449,42 @@ int main(int argc, char **argv)
 		));
 	cubes.push(SigAsiaDemo::Cube(
 		40.0, 80.0, 0.0,	// position
+		10, 10, 10,			// size
+		1.0,				// spacing
+		4.0,				// mass
+		1.0					// radius
+		));
+
+	cubes.push(SigAsiaDemo::Cube(
+		-40.0, 40.0, 0.0,	// position
+		10, 10, 10,			// size
+		1.0,				// spacing
+		4.0,				// mass
+		1.0					// radius
+		));
+	cubes.push(SigAsiaDemo::Cube(
+		-20.0, 50.0, 0.0,	// position
+		10, 10, 10,			// size
+		1.0,				// spacing
+		4.0,				// mass
+		1.0					// radius
+		));
+	cubes.push(SigAsiaDemo::Cube(
+		0.0, 60.0, 0.0,	// position
+		10, 10, 10,		// size
+		1.0,			// spacing
+		4.0,			// mass
+		1.0				// radius
+		));
+	cubes.push(SigAsiaDemo::Cube(
+		20.0, 70.0, 0.0,	// position
+		10, 10, 10,			// size
+		1.0,				// spacing
+		4.0,				// mass
+		1.0					// radius
+		));
+	cubes.push(SigAsiaDemo::Cube(
+		40.0, 100.0, 0.0,	// position
 		10, 10, 10,			// size
 		1.0,				// spacing
 		4.0,				// mass

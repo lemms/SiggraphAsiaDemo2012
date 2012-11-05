@@ -11,6 +11,7 @@ Laurence Emms
 #include <vector>
 #include <fstream>
 #include <iterator>
+#include <cfloat>
 
 #include <GL/glew.h>
 #include <cuda.h>
@@ -47,7 +48,13 @@ SigAsiaDemo::Cube::Cube(
 		_half_z(static_cast<int>(size_z/2)),
 		_spacing(spacing),
 		_mass(mass),
-		_radius(radius)
+		_radius(radius),
+		_min_x(0.0),
+		_min_y(0.0),
+		_min_z(0.0),
+		_max_x(0.0),
+		_max_y(0.0),
+		_max_z(0.0)
 {}
 
 SigAsiaDemo::Cube::~Cube()
@@ -62,7 +69,14 @@ void SigAsiaDemo::Cube::create(
 
 	int side = _half_x*2+1;
 	int plane = side*side;
-	//int cube = plane*side;
+
+	// compute min/max
+	_min_x = static_cast<float>(-_half_x)*_spacing + _x - _radius;
+	_min_y = static_cast<float>(-_half_y)*_spacing + _y - _radius;
+	_min_z = static_cast<float>(-_half_z)*_spacing + _z - _radius;
+	_max_x = static_cast<float>(_half_x)*_spacing + _x + _radius;
+	_max_y = static_cast<float>(_half_y)*_spacing + _y + _radius;
+	_max_z = static_cast<float>(_half_z)*_spacing + _z + _radius;
 
 	// add points
 	for (int i = -_half_x; i <= _half_x; ++i) {
@@ -338,9 +352,21 @@ void SigAsiaDemo::Cube::create(
 }
 
 SigAsiaDemo::CubeList::CubeList(
+	float ks,
+	float kd,
 	unsigned int threads) :
+		_ks(ks),
+		_kd(kd),
 		_threads(threads)
 {}
+
+void SigAsiaDemo::CubeList::setConstants(
+	float ks,
+	float kd)
+{
+	_ks = ks;
+	_kd = kd;
+}
 
 void SigAsiaDemo::CubeList::push(
 	Cube cube)
@@ -368,7 +394,226 @@ void SigAsiaDemo::CubeList::create(
 	}
 }
 
-void SigAsiaDemo::CubeList::computeBounds()
+SigAsiaDemo::Cube *SigAsiaDemo::CubeList::getCube(
+	size_t index)
 {
-	// TODO
+	if (index < _cubes.size()) {
+		return &_cubes[index];
+	}
+	return NULL;
+}
+
+void SigAsiaDemo::CubeList::computeBounds(
+	MassList &masses)
+{
+	// TODO: convert this to use parallel prefix min/max?
+	masses.download();
+
+	for (std::vector<Cube>::iterator cube = _cubes.begin();
+		cube != _cubes.end(); cube++) {
+		float min_x = FLT_MAX;
+		float min_y = FLT_MAX;
+		float min_z = FLT_MAX;
+		float max_x = -FLT_MAX;
+		float max_y = -FLT_MAX;
+		float max_z = -FLT_MAX;
+		for (unsigned int i = cube->_start; i < cube->_end; i++) {
+			Mass *mass = masses.getMass(i);
+			if (mass->_x - mass->_radius < min_x)
+				min_x = mass->_x - mass->_radius;
+			if (mass->_y - mass->_radius < min_y)
+				min_y = mass->_y - mass->_radius;
+			if (mass->_z - mass->_radius < min_z)
+				min_z = mass->_z - mass->_radius;
+
+			if (mass->_x + mass->_radius > max_x)
+				max_x = mass->_x + mass->_radius;
+			if (mass->_y + mass->_radius > max_y)
+				max_y = mass->_y + mass->_radius;
+			if (mass->_z + mass->_radius > max_z)
+				max_z = mass->_z + mass->_radius;
+		}
+
+		cube->_min_x = min_x;
+		cube->_min_y = min_y;
+		cube->_min_z = min_z;
+
+		cube->_max_x = max_x;
+		cube->_max_y = max_y;
+		cube->_max_z = max_z;
+
+		/*
+		std::cout << "Start: " << cube->_start << std::endl;
+		std::cout << "End: " << cube->_end << std::endl;
+		std::cout << "[" << cube->_min_x << ", " \
+		<< cube->_max_x << "]" << std::endl;
+		std::cout << "[" << cube->_min_y << ", " \
+		<< cube->_max_y << "]" << std::endl;
+		std::cout << "[" << cube->_min_z << ", " \
+		<< cube->_max_z << "]" << std::endl;
+		*/
+	}
+}
+
+__global__ void deviceCollideCubes(
+	float dt,
+	float ks,
+	float kd,
+	unsigned int masses_count,
+	unsigned int collider_start,
+	unsigned int collidee_start,
+	unsigned int collidee_end,
+	unsigned int masses_size,
+	SigAsiaDemo::Mass *masses)
+{
+	// compute collision forces
+	// as temporary springs
+	// O(N^2) comparison on the GPU
+
+	int tid = threadIdx.x + blockIdx.x * blockDim.x;
+	if (tid < masses_count) {
+		for (unsigned int i = collidee_start; i < collidee_end; i++) {
+			float l0 = masses[collider_start+tid]._radius + masses[i]._radius;
+			
+			// d contains the vector from mass 0 to mass 1
+			float dx = masses[i]._x - masses[collider_start+tid]._x;
+			float dy = masses[i]._y - masses[collider_start+tid]._y;
+			float dz = masses[i]._z - masses[collider_start+tid]._z;
+
+			// compute length of d
+			float ld = sqrt(dx*dx + dy*dy + dz*dz);
+
+			if (ld < l0) {
+				// velocity delta
+				float dvx =
+					masses[i]._vx - masses[collider_start+tid]._vx;
+				float dvy =
+					masses[i]._vy - masses[collider_start+tid]._vy;
+				float dvz =
+					masses[i]._vz - masses[collider_start+tid]._vz;
+
+				float rcp_ld = 1.0f;
+				if (ld != 0.0f) {
+					rcp_ld = 1.0f / ld;
+				}
+
+				// compute unit d
+				float udx = dx * rcp_ld;
+				float udy = dy * rcp_ld;
+				float udz = dz * rcp_ld;
+
+				// project velocity delta onto unit d
+				float dot_dv_v =
+					dvx * udx +
+					dvy * udy +
+					dvz * udz;
+				// compute impulse for mass 1
+				float impulse = (
+					-ks * (ld / l0 - 1.0f)
+					-kd * dot_dv_v) * dt;
+				float i_x = impulse * udx;
+				float i_y = impulse * udy;
+				float i_z = impulse * udz;
+
+				// compute impulse for mass 0
+				masses[collider_start+tid]._vx += -i_x;
+				masses[collider_start+tid]._vy += -i_y;
+				masses[collider_start+tid]._vz += -i_z;
+				masses[collider_start+tid]._tvx += -i_x;
+				masses[collider_start+tid]._tvy += -i_y;
+				masses[collider_start+tid]._tvz += -i_z;
+			}
+		}
+	}
+}
+
+void SigAsiaDemo::CubeList::collideCubes(
+	float dt,
+	MassList &masses)
+{
+	// get overlapping pairs of cubes
+	for (unsigned int i = 0; i < _cubes.size(); ++i) {
+		for (unsigned int j = i+1; j < _cubes.size(); ++j) {
+			if (
+				_cubes[i]._min_x > _cubes[j]._max_x ||
+				_cubes[j]._min_x > _cubes[i]._max_x ||
+				_cubes[i]._min_y > _cubes[j]._max_y ||
+				_cubes[j]._min_y > _cubes[i]._max_y ||
+				_cubes[i]._min_z > _cubes[j]._max_z ||
+				_cubes[j]._min_z > _cubes[i]._max_z) {
+				// no overlap
+
+				/*
+				std::cout << "Cube " << i << " does not overlap " \
+				<< j << std::endl;
+				std::cout << "Cube " << i << ":" << std::endl;
+				std::cout << "[" << _cubes[i]._min_x << ", " \
+				<< _cubes[i]._max_x << "]" << std::endl;
+				std::cout << "[" << _cubes[i]._min_y << ", " \
+				<< _cubes[i]._max_y << "]" << std::endl;
+				std::cout << "[" << _cubes[i]._min_z << ", " \
+				<< _cubes[i]._max_z << "]" << std::endl;
+				std::cout << "Cube " << j << ":" << std::endl;
+				std::cout << "[" << _cubes[j]._min_x << ", " \
+				<< _cubes[j]._max_x << "]" << std::endl;
+				std::cout << "[" << _cubes[j]._min_y << ", " \
+				<< _cubes[j]._max_y << "]" << std::endl;
+				std::cout << "[" << _cubes[j]._min_z << ", " \
+				<< _cubes[j]._max_z << "]" << std::endl;
+				*/
+			} else {
+				// overlap
+
+				/*
+				std::cout << "Cube " << i << " overlaps " << j << std::endl;
+				std::cout << "Cube " << i << ":" << std::endl;
+				std::cout << "[" << _cubes[i]._min_x << ", " \
+				<< _cubes[i]._max_x << "]" << std::endl;
+				std::cout << "[" << _cubes[i]._min_y << ", " \
+				<< _cubes[i]._max_y << "]" << std::endl;
+				std::cout << "[" << _cubes[i]._min_z << ", " \
+				<< _cubes[i]._max_z << "]" << std::endl;
+				std::cout << "Cube " << j << ":" << std::endl;
+				std::cout << "[" << _cubes[j]._min_x << ", " \
+				<< _cubes[j]._max_x << "]" << std::endl;
+				std::cout << "[" << _cubes[j]._min_y << ", " \
+				<< _cubes[j]._max_y << "]" << std::endl;
+				std::cout << "[" << _cubes[j]._min_z << ", " \
+				<< _cubes[j]._max_z << "]" << std::endl;
+				*/
+
+				unsigned int masses_count = _cubes[i]._end - _cubes[i]._start;
+
+				deviceCollideCubes
+					<<<(masses_count+_threads-1)/_threads, _threads>>>(
+						dt,
+						_ks,
+						_kd,
+						masses_count,
+						_cubes[i]._start,
+						_cubes[j]._start,
+						_cubes[j]._end,
+						masses.size(),
+						masses.getDeviceMasses());
+				cudaThreadSynchronize();
+
+				masses_count = _cubes[j]._end - _cubes[j]._start;
+
+				deviceCollideCubes
+					<<<(masses_count+_threads-1)/_threads, _threads>>>(
+						dt,
+						_ks,
+						_kd,
+						masses_count,
+						_cubes[j]._start,
+						_cubes[i]._start,
+						_cubes[i]._end,
+						masses.size(),
+						masses.getDeviceMasses());
+
+				cudaThreadSynchronize();
+
+			}
+		}
+	}
 }

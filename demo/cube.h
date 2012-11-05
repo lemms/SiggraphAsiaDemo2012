@@ -27,11 +27,13 @@ namespace SigAsiaDemo {
 			virtual void create(
 				MassList &masses,
 				SpringList &springs);
-		private:
+
+		public:
 			// indices
 			unsigned int _start;
 			unsigned int _end;
 
+		private:
 			// position
 			float _x;
 			float _y;
@@ -47,21 +49,42 @@ namespace SigAsiaDemo {
 			// properties
 			float _mass;
 			float _radius;
+
+		public:
+			// bounds
+			float _min_x;
+			float _min_y;
+			float _min_z;
+			float _max_x;
+			float _max_y;
+			float _max_z;
 	};
 
 	class CubeList {
 		public:
 			CubeList(
+				float ks = 10000.0,
+				float kd = 1000.0,
 				unsigned int threads = 128);
+			void setConstants(float ks, float kd);
 			void push(Cube cube);
 			bool empty() const;
 			size_t size() const;
 			void create(
 				MassList &masses,
 				SpringList &springs);
-			void computeBounds();
+			Cube *getCube(size_t index);
+			void computeBounds(
+				MassList &masses);
+			void collideCubes(
+				float dt,
+				MassList &masses);
 		private:
 			std::vector<Cube> _cubes;
+
+			// collisions
+			float _ks;
+			float _kd;
 
 			// CUDA
 			unsigned int _threads;

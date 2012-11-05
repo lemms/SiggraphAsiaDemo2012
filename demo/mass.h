@@ -56,13 +56,14 @@ namespace SigAsiaDemo {
 			bool push(Mass mass);
 			bool empty() const;
 			size_t size() const;
-			void upload();
+			void upload(bool force_copy = false);
 			void download();
 			Mass *getMass(size_t index);
 			// returns 0 if Mass is uploaded to the GPU
 			Mass *getDeviceMasses();
 			bool getChanged() const;
 			void startFrame();
+			void endFrame();
 			void clearForces(
 				float fx = 0.0, float fy = 0.0, float fz = 0.0,
 				float gravity = -9.8);

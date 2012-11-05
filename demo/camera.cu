@@ -28,7 +28,7 @@ SigAsiaDemo::Camera::Camera(
 		_far(far)
 {
 	_l.x = 0.0; _l.y = 0.0; _l.z = 0.0;
-	_p.x = 0.0; _p.y = 0.0; _p.z = 30.0;
+	_p.x = 10.0; _p.y = 20.0; _p.z = 50.0;
 	_u.x = 0.0; _u.y = 1.0; _u.z = 0.0;
 }
 

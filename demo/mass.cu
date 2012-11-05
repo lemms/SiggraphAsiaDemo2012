@@ -102,36 +102,15 @@ size_t SigAsiaDemo::MassList::size() const
 	return _masses.size();
 }
 
-void SigAsiaDemo::MassList::upload()
+void SigAsiaDemo::MassList::upload(bool force_copy)
 {
 	if (_computing) {
 		// do nothing if computing
+		std::cout << "Can not upload, computing." << std::endl;
 		return;
 	}
 
-	if (_changed) {
-		//std::cout << "Upload masses." << std::endl;
-		_changed = false;
-		if (_device_masses) {
-			cudaThreadSynchronize();
-			//std::cout << "Free masses." << std::endl;
-			cudaFree(_device_masses);
-			_device_masses = 0;
-		}
-
-		// allocate GPU buffer
-		//std::cout << std::fixed << std::setprecision(8) \
-		<< "Allocate GPU buffer of size " << \
-		_masses.size()*sizeof(Mass)/1073741824.0 \
-		<< " GB." << std::endl;
-		cudaError_t result = cudaMalloc(
-			(void**)&_device_masses,
-			_masses.size()*sizeof(Mass));
-		if (result != cudaSuccess) {
-			std::cerr << "Error: CUDA failed to malloc memory." << std::endl;
-			std::terminate();
-		}
-
+	if (force_copy) {
 		// copy into GPU buffer
 		//std::cout << "Copy masses into GPU buffer." << std::endl;
 		cudaMemcpy(
@@ -139,14 +118,44 @@ void SigAsiaDemo::MassList::upload()
 			&_masses[0],
 			_masses.size()*sizeof(Mass),
 			cudaMemcpyHostToDevice);
-	}
+	} else {
+		if (_changed) {
+			//std::cout << "Upload masses." << std::endl;
+			_changed = false;
+			if (_device_masses) {
+				cudaThreadSynchronize();
+				//std::cout << "Free masses." << std::endl;
+				cudaFree(_device_masses);
+				_device_masses = 0;
+			}
 
-	_computing = true;
+			// allocate GPU buffer
+			//std::cout << std::fixed << std::setprecision(8) \
+			<< "Allocate GPU buffer of size " << \
+			_masses.size()*sizeof(Mass)/1073741824.0 \
+			<< " GB." << std::endl;
+			cudaError_t result = cudaMalloc(
+				(void**)&_device_masses,
+				_masses.size()*sizeof(Mass));
+			if (result != cudaSuccess) {
+				std::cerr << "Error: CUDA failed to malloc memory." << std::endl;
+				std::terminate();
+			}
+
+			// copy into GPU buffer
+			//std::cout << "Copy masses into GPU buffer." << std::endl;
+			cudaMemcpy(
+				_device_masses,
+				&_masses[0],
+				_masses.size()*sizeof(Mass),
+				cudaMemcpyHostToDevice);
+		}
+	}
 }
 
 void SigAsiaDemo::MassList::download()
 {
-	if (_changed) {
+	if (_computing && _changed) {
 		std::cerr << "Error: Mass list changed while \
 data was being used in GPU computations." << std::endl;
 		std::terminate();
@@ -160,7 +169,6 @@ data was being used in GPU computations." << std::endl;
 			_masses.size()*sizeof(Mass),
 			cudaMemcpyDeviceToHost);
 	}
-	_computing = false;
 }
 
 SigAsiaDemo::Mass *SigAsiaDemo::MassList::getMass(size_t index)
@@ -200,7 +208,8 @@ __global__ void deviceStartFrame(unsigned int N, SigAsiaDemo::Mass *masses)
 
 void SigAsiaDemo::MassList::startFrame()
 {
-	if (_computing && !_masses.empty()) {
+	_computing = true;
+	if (!_masses.empty()) {
 		//std::cout << "Start frame (" \
 		<< _masses.size() << ")." << std::endl;
 		deviceStartFrame<<<(_masses.size()+_threads-1)/_threads, _threads>>>(
@@ -208,6 +217,11 @@ void SigAsiaDemo::MassList::startFrame()
 			_device_masses);
 		cudaThreadSynchronize();
 	}
+}
+
+void SigAsiaDemo::MassList::endFrame()
+{
+	_computing = false;
 }
 
 __global__ void deviceClearForces(
