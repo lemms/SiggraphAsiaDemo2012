@@ -40,6 +40,6 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/massGS.glsl
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/massFS.glsl
 	${CMAKE_CURRENT_BINARY_DIR}/massFS.glsl COPYONLY)
 
-cuda_add_executable(SiggraphAsiaDemo main.cu viewport.cu mass.cu spring.cu device.cu camera.cu)
+cuda_add_executable(SiggraphAsiaDemo main.cu viewport.cu mass.cu spring.cu device.cu camera.cu cube.cu)
 target_link_libraries (SiggraphAsiaDemo ${LIBS})
 

@@ -32,6 +32,8 @@ using namespace std;
 #include "mass.h"
 #include "spring.h"
 #include "camera.h"
+#include "creator.h"
+#include "cube.h"
 
 // globals
 SigAsiaDemo::Viewport viewport;
@@ -340,15 +342,18 @@ int main(int argc, char **argv)
 
 	// initialize OpenGL
 	std::cout << "Initialize OpenGL." << std::endl;
+	glEnable(GL_DEPTH_TEST);
 	glClearColor(0.0, 0.0, 0.0, 0.0);
 
 	// resize viewport
 	std::cout << "Resize viewport." << std::endl;
 	glViewport(0, 0, viewport.GetWidth(), viewport.GetHeight());
 
-	// TODO: replace by creators
 	// fill masses
 	std::cout << "Fill masses." << std::endl;
+
+	/*
+	// TODO: replace by creators
 	float offset = 20.0f;
 	unsigned int m = 20;
 	for (unsigned int i = 0; i < m; i++) {
@@ -373,6 +378,11 @@ int main(int argc, char **argv)
 	for (unsigned int i = 0; i < m-1; i++) {
 		springs.push(SigAsiaDemo::Spring(masses, i, i+1, 10000.0, 1000.0));
 	}
+	*/
+
+	SigAsiaDemo::Cube cube(10, 10, 10, 1.0, 1.0, 1.0);
+
+	cube.create(0.0, 30.0, 0.0, masses, springs);
 
 	/*
 	masses.push(
