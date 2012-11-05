@@ -14,15 +14,11 @@ namespace SigAsiaDemo {
 			Spring(
 				MassList &masses,
 				unsigned int mass0,
-				unsigned int mass1,
-				float ks = 0.2,
-				float kd = 0.2);
+				unsigned int mass1);
 
 			// data
 			unsigned int _mass0; // mass 0 index
 			unsigned int _mass1; // mass 1 index
-			float _ks; // spring constant
-			float _kd; // linear damping
 			float _l0; // resting length
 			// force applied to mass 0
 			float _fx0; float _fy0; float _fz0;
@@ -32,8 +28,12 @@ namespace SigAsiaDemo {
 
 	class SpringList {
 		public:
-			SpringList();
+			SpringList(
+				float ks = 10000.0,
+				float kd = 1000.0,
+				unsigned int threads = 128);
 			~SpringList();
+			void setConstants(float ks, float kd);
 			bool push(Spring spring);
 			bool empty() const;
 			size_t size() const;
@@ -45,6 +45,8 @@ namespace SigAsiaDemo {
 			bool getChanged() const;
 			void applySpringForces(MassList &masses);
 		private:
+			float _ks;
+			float _kd;
 			std::vector<Spring> _springs;
 			std::vector<unsigned int> _mass_spring_counts;
 			std::vector<unsigned int> _mass_spring_indices;
@@ -57,5 +59,8 @@ namespace SigAsiaDemo {
 			Spring *_device_springs;
 			unsigned int *_device_mass_spring_counts;
 			unsigned int *_device_mass_spring_indices;
+
+			// CUDA
+			unsigned int _threads;
 	};
 }

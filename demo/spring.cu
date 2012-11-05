@@ -23,13 +23,9 @@ Laurence Emms
 SigAsiaDemo::Spring::Spring(
 	MassList &masses,
 	unsigned int mass0,
-	unsigned int mass1,
-	float ks,
-	float kd) :
+	unsigned int mass1) :
 		_mass0(mass0),
 		_mass1(mass1),
-		_ks(ks),
-		_kd(kd),
 		_l0(0.0),
 		_fx0(0.0),
 		_fy0(0.0),
@@ -55,14 +51,19 @@ SigAsiaDemo::Spring::Spring(
 	_l0 = sqrt(dx*dx + dy*dy + dz*dz);
 }
 
-SigAsiaDemo::SpringList::SpringList() :
+SigAsiaDemo::SpringList::SpringList(
+	float ks,
+	float kd,
+	unsigned int threads) :
+	_ks(ks),
+	_kd(kd),
 	_computing(false),
 	_changed(false),
 	_device_springs(0),
 	_device_mass_spring_counts(0),
-	_device_mass_spring_indices(0)
-{
-}
+	_device_mass_spring_indices(0),
+	_threads(threads)
+{}
 
 SigAsiaDemo::SpringList::~SpringList()
 {
@@ -86,6 +87,14 @@ SigAsiaDemo::SpringList::~SpringList()
 		cudaFree(_device_mass_spring_indices);
 		_device_mass_spring_indices = 0;
 	}
+}
+
+void SigAsiaDemo::SpringList::setConstants(
+	float ks,
+	float kd)
+{
+	_ks = ks;
+	_kd = kd;
 }
 
 bool SigAsiaDemo::SpringList::push(Spring spring)
@@ -326,12 +335,14 @@ bool SigAsiaDemo::SpringList::getChanged() const
 }
 
 __global__ void deviceComputeSpringForces(
+	float ks,
+	float kd,
 	unsigned int springs_size,
 	SigAsiaDemo::Spring *springs,
 	unsigned int masses_size,
 	SigAsiaDemo::Mass *masses)
 {
-	int tid = blockIdx.x;
+	int tid = threadIdx.x + blockIdx.x * blockDim.x;
 	if (tid < springs_size) {
 		// d is the vector from mass 0 to mass 1
 		// we're operating on the temporary position
@@ -373,8 +384,8 @@ __global__ void deviceComputeSpringForces(
 			dvz * udz;
 		// compute force for mass 1
 		float force =
-			-springs[tid]._ks * (lv / springs[tid]._l0 - 1.0f)
-			-springs[tid]._kd * dot_dv_v;
+			-ks * (lv / springs[tid]._l0 - 1.0f)
+			-kd * dot_dv_v;
 		springs[tid]._fx1 = force * udx;
 		springs[tid]._fy1 = force * udy;
 		springs[tid]._fz1 = force * udz;
@@ -394,7 +405,7 @@ __global__ void deviceApplySpringForces(
 	unsigned int *mass_spring_counts,
 	unsigned int *mass_spring_indices)
 {
-	int tid = blockIdx.x;
+	int tid = threadIdx.x + blockIdx.x * blockDim.x;
 	if (tid < masses_size) {
 		for (unsigned int i = mass_spring_counts[tid];
 			i < mass_spring_counts[tid+1];
@@ -418,22 +429,26 @@ void SigAsiaDemo::SpringList::applySpringForces(MassList &masses)
 	if (_computing && !_springs.empty() && !masses.empty()) {
 		//std::cout << "Compute spring forces (" << _springs.size() << ")." \
 		<< std::endl;
-		deviceComputeSpringForces<<<_springs.size(), 1>>>(
-			_springs.size(),
-			_device_springs,
-			masses.size(),
-			masses.getDeviceMasses());
+		deviceComputeSpringForces
+			<<<(_springs.size()+_threads-1)/_threads, _threads>>>(
+				_ks,
+				_kd,
+				_springs.size(),
+				_device_springs,
+				masses.size(),
+				masses.getDeviceMasses());
 		cudaThreadSynchronize();
 
 		//std::cout << "Accumulate mass forces (" << masses.size() << ")." \
 		<< std::endl;
-		deviceApplySpringForces<<<masses.size(), 1>>>(
-			_springs.size(),
-			_device_springs,
-			masses.size(),
-			masses.getDeviceMasses(),
-			_device_mass_spring_counts,
-			_device_mass_spring_indices);
+		deviceApplySpringForces
+			<<<(masses.size()+_threads-1)/_threads, _threads>>>(
+				_springs.size(),
+				_device_springs,
+				masses.size(),
+				masses.getDeviceMasses(),
+				_device_mass_spring_counts,
+				_device_mass_spring_indices);
 		cudaThreadSynchronize();
 	}
 }

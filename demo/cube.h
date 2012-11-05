@@ -30,7 +30,7 @@ namespace SigAsiaDemo {
 		private:
 			// indices
 			unsigned int _start;
-			unsigned int _size;
+			unsigned int _end;
 
 			// sizes
 			int _half_x;

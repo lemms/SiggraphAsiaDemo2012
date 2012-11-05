@@ -42,7 +42,7 @@ SigAsiaDemo::MassList masses;
 SigAsiaDemo::SpringList springs;
 
 size_t frame = 0;
-float dt = 1e-4;
+float dt = 1e-5;
 bool play = false;
 bool ground_collision = true;
 
@@ -135,8 +135,6 @@ void PrintMassesAndSprings()
 			std::cout << "Spring " << i << std::endl;
 			std::cout << "mass 0: " << spring->_mass0 << std::endl;
 			std::cout << "mass 1: " << spring->_mass1 << std::endl;
-			std::cout << "ks: " << spring->_ks << std::endl;
-			std::cout << "kd: " << spring->_kd << std::endl;
 			std::cout << "l0: " << spring->_l0 << std::endl;
 			std::cout << "f0: (";
 			std::cout << spring->_fx0 << ", ";
@@ -162,26 +160,39 @@ void Step()
 	//std::cout << "start frame." << std::endl;
 	masses.startFrame();
 
-	masses.clearForces();
-	springs.applySpringForces(masses);
 	//std::cout << "evaluate k1." << std::endl;
+	//std::cout << "clear forces." << std::endl;
+	masses.clearForces();
+	//std::cout << "apply spring forces." << std::endl;
+	springs.applySpringForces(masses);
+	//std::cout << "evaluate." << std::endl;
 	masses.evaluateK1(dt, ground_collision);
 
-	masses.clearForces();
-	springs.applySpringForces(masses);
 	//std::cout << "evaluate k2." << std::endl;
+	//std::cout << "clear forces." << std::endl;
+	masses.clearForces();
+	//std::cout << "apply spring forces." << std::endl;
+	springs.applySpringForces(masses);
+	//std::cout << "evaluate." << std::endl;
 	masses.evaluateK2(dt, ground_collision);
 
-	masses.clearForces();
-	springs.applySpringForces(masses);
 	//std::cout << "evaluate k3." << std::endl;
+	//std::cout << "clear forces." << std::endl;
+	masses.clearForces();
+	//std::cout << "apply spring forces." << std::endl;
+	springs.applySpringForces(masses);
+	//std::cout << "evaluate." << std::endl;
 	masses.evaluateK3(dt, ground_collision);
 
-	masses.clearForces();
-	springs.applySpringForces(masses);
 	//std::cout << "evaluate k4." << std::endl;
+	//std::cout << "clear forces." << std::endl;
+	masses.clearForces();
+	//std::cout << "apply spring forces." << std::endl;
+	springs.applySpringForces(masses);
+	//std::cout << "evaluate." << std::endl;
 	masses.evaluateK4(dt, ground_collision);
 
+	//std::cout << "update." << std::endl;
 	masses.update(dt, ground_collision);
 
 	//PrintMassesAndSprings();
@@ -193,9 +204,9 @@ void Idle()
 {
 	if (play) {
 		Step();
-		std::cout << "Stepping, frame: " << frame << std::endl;
+		//std::cout << "Stepping, frame: " << frame << std::endl;
 		// TODO: come up with a better metric
-		if (frame % 100 == 0)
+		if (frame % 10 == 0)
 			glutPostRedisplay();
 	}
 
@@ -250,7 +261,7 @@ void Keys(unsigned char key, int x, int y)
 	if (key == 'e') pz = 10.0;
 	if (key == 'd') pz = -10.0;
 	if (px != 0.0 || py != 0.0 || pz != 0.0) {
-		std::cout << "Move camera: " << px << ", " << py << ", " << pz \
+		//std::cout << "Move camera: " << px << ", " << py << ", " << pz \
 		<< std::endl;
 		glutPostRedisplay();
 	}
@@ -268,7 +279,7 @@ void Keys(unsigned char key, int x, int y)
 	}
 
 	if (key == 27) {
-		PrintMassesAndSprings();
+		//PrintMassesAndSprings();
 
 		exit(0);
 	}
@@ -352,6 +363,8 @@ int main(int argc, char **argv)
 	// fill masses
 	std::cout << "Fill masses." << std::endl;
 
+	springs.setConstants(10000.0, 10000.0);
+
 	/*
 	// TODO: replace by creators
 	float offset = 20.0f;
@@ -380,9 +393,30 @@ int main(int argc, char **argv)
 	}
 	*/
 
-	SigAsiaDemo::Cube cube(10, 10, 10, 1.0, 1.0, 1.0);
+	std::cout << "Setup cube." << std::endl;
+	SigAsiaDemo::Cube cube(
+		10, 10, 10,		// size
+		1.0,			// spacing
+		10.0,			// mass
+		1.0				// radius
+		);
 
-	cube.create(0.0, 30.0, 0.0, masses, springs);
+	std::cout << "Create cube." << std::endl;
+	cube.create(
+		-40.0, 30.0, 0.0,	// position
+		masses, springs);
+	cube.create(
+		-20.0, 30.0, 0.0,	// position
+		masses, springs);
+	cube.create(
+		0.0, 30.0, 0.0,	// position
+		masses, springs);
+	cube.create(
+		20.0, 30.0, 0.0,	// position
+		masses, springs);
+	cube.create(
+		40.0, 30.0, 0.0,	// position
+		masses, springs);
 
 	/*
 	masses.push(
@@ -403,14 +437,18 @@ int main(int argc, char **argv)
 	springs.push(
 		SigAsiaDemo::Spring(
 			masses,
-			0, 1,
-			69.0, 0.2)); // ks, kd
+			0, 1)); // ks, kd
 	SigAsiaDemo::Spring *spring0 = springs.getSpring(0);
 	spring0->_l0 = 2.0f;
 	*/
 
+	std::cout << "Added " << masses.size() << " masses." << std::endl;
+	std::cout << "Added " << springs.size() << " springs." << std::endl;
+	std::cout << "Creation complete." << std::endl;
+
 	std::cout << "Initialize masses." << std::endl;
 	Step();
+	std::cout << "Initialization complete." << std::endl;
 
 	// register callbacks
 	std::cout << "Register callbacks." << std::endl;

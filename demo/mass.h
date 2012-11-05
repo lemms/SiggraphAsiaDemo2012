@@ -48,7 +48,9 @@ namespace SigAsiaDemo {
 
 	class MassList {
 		public:
-			MassList(float coeff_restitution = 0.2);
+			MassList(
+				float coeff_restitution = 0.2,
+				unsigned int threads = 128);
 			~MassList();
 			bool push(Mass mass);
 			bool empty() const;
@@ -105,5 +107,8 @@ namespace SigAsiaDemo {
 			int _program;
 			int _ModelViewLocation;
 			int _ProjectionLocation;
+
+			// CUDA
+			unsigned int _threads;
 	};
 }

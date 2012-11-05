@@ -49,7 +49,8 @@ SigAsiaDemo::Mass::Mass(
 {}
 
 SigAsiaDemo::MassList::MassList(
-	float coeff_restitution) :
+	float coeff_restitution,
+	unsigned int threads) :
 	_masses_array(0),
 	_masses_buffer(0),
 	_computing(false),
@@ -63,7 +64,8 @@ SigAsiaDemo::MassList::MassList(
 	_fragment_shader(0),
 	_program(0),
 	_ModelViewLocation(0),
-	_ProjectionLocation(0)
+	_ProjectionLocation(0),
+	_threads(threads)
 {}
 
 SigAsiaDemo::MassList::~MassList()
@@ -187,7 +189,7 @@ bool SigAsiaDemo::MassList::getChanged() const
 
 __global__ void deviceStartFrame(unsigned int N, SigAsiaDemo::Mass *masses)
 {
-	int tid = blockIdx.x;
+	int tid = threadIdx.x + blockIdx.x * blockDim.x;
 	if (tid < N) {
 		if (masses[tid]._state == 1)
 			return;
@@ -199,7 +201,7 @@ void SigAsiaDemo::MassList::startFrame()
 	if (_computing && !_masses.empty()) {
 		//std::cout << "Start frame (" \
 		<< _masses.size() << ")." << std::endl;
-		deviceStartFrame<<<_masses.size(), 1>>>(
+		deviceStartFrame<<<(_masses.size()+_threads-1)/_threads, _threads>>>(
 			_masses.size(),
 			_device_masses);
 		cudaThreadSynchronize();
@@ -214,7 +216,7 @@ __global__ void deviceClearForces(
 	float gravity,
 	SigAsiaDemo::Mass *masses)
 {
-	int tid = blockIdx.x;
+	int tid = threadIdx.x + blockIdx.x * blockDim.x;
 	if (tid < N) {
 		if (masses[tid]._state == 1)
 			return;
@@ -233,7 +235,7 @@ void SigAsiaDemo::MassList::clearForces(
 	if (_computing && !_masses.empty()) {
 		//std::cout << "Clear forces and add gravity (" \
 		<< _masses.size() << ")." << std::endl;
-		deviceClearForces<<<_masses.size(), 1>>>(
+		deviceClearForces<<<(_masses.size()+_threads-1)/_threads, _threads>>>(
 			_masses.size(),
 			fx, fy, fz,
 			gravity,
@@ -248,7 +250,7 @@ __global__ void deviceEvaluateK1(
 	unsigned int N, SigAsiaDemo::Mass *masses,
 	bool ground_collision = true)
 {
-	int tid = blockIdx.x;
+	int tid = threadIdx.x + blockIdx.x * blockDim.x;
 	if (tid < N) {
 		if (masses[tid]._state == 1)
 			return;
@@ -285,7 +287,7 @@ void SigAsiaDemo::MassList::evaluateK1(
 {
 	if (_computing && !_masses.empty()) {
 		//std::cout << "Evaluate K1 (" << _masses.size() << ")." << std::endl;
-		deviceEvaluateK1<<<_masses.size(), 1>>>(
+		deviceEvaluateK1<<<(_masses.size()+_threads-1)/_threads, _threads>>>(
 			dt,
 			_coeff_restitution,
 			_masses.size(),
@@ -301,7 +303,7 @@ __global__ void deviceEvaluateK2(
 	unsigned int N, SigAsiaDemo::Mass *masses,
 	bool ground_collision = true)
 {
-	int tid = blockIdx.x;
+	int tid = threadIdx.x + blockIdx.x * blockDim.x;
 	if (tid < N) {
 		if (masses[tid]._state == 1)
 			return;
@@ -339,7 +341,7 @@ void SigAsiaDemo::MassList::evaluateK2(
 {
 	if (_computing && !_masses.empty()) {
 		//std::cout << "Evaluate K2 (" << _masses.size() << ")." << std::endl;
-		deviceEvaluateK2<<<_masses.size(), 1>>>(
+		deviceEvaluateK2<<<(_masses.size()+_threads-1)/_threads, _threads>>>(
 			dt,
 			_coeff_restitution,
 			_masses.size(),
@@ -355,7 +357,7 @@ __global__ void deviceEvaluateK3(
 	unsigned int N, SigAsiaDemo::Mass *masses,
 	bool ground_collision = true)
 {
-	int tid = blockIdx.x;
+	int tid = threadIdx.x + blockIdx.x * blockDim.x;
 	if (tid < N) {
 		if (masses[tid]._state == 1)
 			return;
@@ -393,7 +395,7 @@ void SigAsiaDemo::MassList::evaluateK3(
 {
 	if (_computing && !_masses.empty()) {
 		//std::cout << "Evaluate K3 (" << _masses.size() << ")." << std::endl;
-		deviceEvaluateK3<<<_masses.size(), 1>>>(
+		deviceEvaluateK3<<<(_masses.size()+_threads-1)/_threads, _threads>>>(
 			dt,
 			_coeff_restitution,
 			_masses.size(),
@@ -408,7 +410,7 @@ __global__ void deviceEvaluateK4(
 	unsigned int N, SigAsiaDemo::Mass *masses,
 	bool ground_collision = true)
 {
-	int tid = blockIdx.x;
+	int tid = threadIdx.x + blockIdx.x * blockDim.x;
 	if (tid < N) {
 		if (masses[tid]._state == 1)
 			return;
@@ -432,7 +434,7 @@ void SigAsiaDemo::MassList::evaluateK4(
 {
 	if (_computing && !_masses.empty()) {
 		//std::cout << "Evaluate K4 (" << _masses.size() << ")." << std::endl;
-		deviceEvaluateK4<<<_masses.size(), 1>>>(
+		deviceEvaluateK4<<<(_masses.size()+_threads-1)/_threads, _threads>>>(
 			dt,
 			_coeff_restitution,
 			_masses.size(),
@@ -450,7 +452,7 @@ __global__ void deviceUpdate(
 	float *masses_buffer,
 	bool ground_collision = true)
 {
-	int tid = blockIdx.x;
+	int tid = threadIdx.x + blockIdx.x * blockDim.x;
 	if (tid < N) {
 		if (masses[tid]._state == 0) {
 			// update position
@@ -594,7 +596,7 @@ void SigAsiaDemo::MassList::update(
 	// update positions and upload to GL
 	if (_computing && !_masses.empty()) {
 		//std::cout << "Update masses (" << _masses.size() << ")." << std::endl;
-		deviceUpdate<<<_masses.size(), 1>>>(
+		deviceUpdate<<<(_masses.size()+_threads-1)/_threads, _threads>>>(
 			dt,
 			_coeff_restitution,
 			_masses.size(),
