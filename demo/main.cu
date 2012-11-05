@@ -43,7 +43,7 @@ SigAsiaDemo::SpringList springs;
 SigAsiaDemo::CubeList cubes;
 
 size_t frame = 0;
-float dt = 1e-4;
+float dt = 1e-5;
 bool play = false;
 bool ground_collision = true;
 
@@ -448,7 +448,7 @@ int main(int argc, char **argv)
 		1.0					// radius
 		));
 	cubes.push(SigAsiaDemo::Cube(
-		40.0, 80.0, 0.0,	// position
+		40.0, 60.0, 0.0,	// position
 		10, 10, 10,			// size
 		1.0,				// spacing
 		4.0,				// mass
@@ -484,7 +484,7 @@ int main(int argc, char **argv)
 		1.0					// radius
 		));
 	cubes.push(SigAsiaDemo::Cube(
-		40.0, 100.0, 0.0,	// position
+		40.0, 80.0, 0.0,	// position
 		10, 10, 10,			// size
 		1.0,				// spacing
 		4.0,				// mass
@@ -493,30 +493,6 @@ int main(int argc, char **argv)
 
 	std::cout << "Create cubes." << std::endl;
 	cubes.create(masses, springs);
-
-	/*
-	masses.push(
-		SigAsiaDemo::Mass(
-			10.0,
-			0.0, 10.0, 0.0,
-			0.0, 0.0, 0.0,
-			1,
-			0.1));
-	masses.push(
-		SigAsiaDemo::Mass(
-			10.0,
-			5.0, 10.0, 0.0,
-			0.0, 0.0, 0.0,
-			0,
-			0.1));
-
-	springs.push(
-		SigAsiaDemo::Spring(
-			masses,
-			0, 1)); // ks, kd
-	SigAsiaDemo::Spring *spring0 = springs.getSpring(0);
-	spring0->_l0 = 2.0f;
-	*/
 
 	std::cout << "Added " << masses.size() << " masses." << std::endl;
 	std::cout << "Added " << springs.size() << " springs." << std::endl;
