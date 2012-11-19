@@ -51,6 +51,7 @@ namespace SigAsiaDemo {
 			MassList(
 				float coeff_friction = 0.2,
 				float coeff_restitution = 0.2,
+				float plane_size = 512.0,
 				unsigned int threads = 128);
 			~MassList();
 			bool push(Mass mass);
@@ -83,12 +84,24 @@ namespace SigAsiaDemo {
 				float dt,
 				bool ground_collision = true);
 			bool loadShaders();
+			void clearBuffers();
+			bool loadBuffers();
 			void render(glm::mat4 ModelView, glm::mat4 Projection) const;
+			void resizeWindow(
+				float near,
+				float far,
+				float fov,
+				float view_dist,
+				float spring_length,
+				unsigned int width,
+				unsigned int height);
 		private:
+			GLuint _screen_width;
+			GLuint _screen_height;
 			// vertex buffer object with (position, radius)
 			std::vector<Mass> _masses;
-			unsigned int _masses_array;
-			unsigned int _masses_buffer;
+			GLuint _masses_array;
+			GLuint _masses_buffer;
 			cudaGraphicsResource *_cuda_masses_resource;
 			// indicates that the GPU is currently
 			// computing updates for the masses
@@ -100,16 +113,42 @@ namespace SigAsiaDemo {
 			float _coeff_restitution;
 			Mass *_device_masses;
 
-			unsigned int _axes_array;
-			unsigned int _axes_buffer;
+			// ground plane
+			float _plane_size;
+			GLuint _plane_array;
+			GLuint _plane_buffer;
+
+			// screen_quad
+			GLuint _screen_array;
+			GLuint _screen_pos_buffer;
+			GLuint _screen_tex_buffer;
 
 			// shaders
-			int _vertex_shader;
-			int _geometry_shader;
-			int _fragment_shader;
-			int _program;
-			int _ModelViewLocation;
-			int _ProjectionLocation;
+			int _layer_0_ModelViewLocation;
+			int _layer_0_ProjectionLocation;
+			GLuint _layer_0_vertex_shader;
+			GLuint _layer_0_geometry_shader;
+			GLuint _layer_0_fragment_shader;
+			GLuint _layer_0_program;
+
+			int _plane_ModelViewLocation;
+			int _plane_ProjectionLocation;
+			GLuint _plane_vertex_shader;
+			GLuint _plane_fragment_shader;
+			GLuint _plane_program;
+
+			int _screen_ColorTexLocation;
+			GLuint _screen_vertex_shader;
+			GLuint _screen_fragment_shader;
+			GLuint _screen_program;
+
+			// buffers
+			float _inv_rho;
+			GLuint _image_width;
+			GLuint _image_height;
+			GLuint _image_buffer;
+			GLuint _image_color;
+			GLuint _image_depth;
 
 			// CUDA
 			unsigned int _threads;

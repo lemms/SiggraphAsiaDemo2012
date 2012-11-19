@@ -47,6 +47,8 @@ float dt = 1e-5;
 bool play = false;
 bool ground_collision = true;
 
+float cube_spacing = 1.0;
+
 void ParseArgs(int argc, char **argv)
 {
 	for (int i = 1; i < argc; ++i) {
@@ -74,6 +76,13 @@ void ParseArgs(int argc, char **argv)
 		}
 		viewport.ResizeWindow(width, height);
 		camera.ResizeWindow(width, height);
+		masses.resizeWindow(
+			viewport.GetNear(),
+			viewport.GetFar(),
+			viewport.GetFieldOfView(),
+			glm::length(camera.GetLook()-camera.GetPosition()),
+			cube_spacing,
+			width, height);
 		glViewport(0, 0, viewport.GetWidth(), viewport.GetHeight());
 	}
 }
@@ -246,6 +255,13 @@ void Reshape(int width, int height)
 {
 	viewport.ResizeWindow(width, height);
 	camera.ResizeWindow(width, height);
+	masses.resizeWindow(
+		viewport.GetNear(),
+		viewport.GetFar(),
+		viewport.GetFieldOfView(),
+		glm::length(camera.GetLook()-camera.GetPosition()),
+		cube_spacing,
+		width, height);
 	glViewport(0, 0, viewport.GetWidth(), viewport.GetHeight());
 }
 
@@ -286,6 +302,15 @@ void Keys(unsigned char key, int x, int y)
 	if (px != 0.0 || py != 0.0 || pz != 0.0) {
 		//std::cout << "Move camera: " << px << ", " << py << ", " << pz \
 		<< std::endl;
+		unsigned int width = viewport.GetWidth();
+		unsigned int height = viewport.GetHeight();
+		masses.resizeWindow(
+			viewport.GetNear(),
+			viewport.GetFar(),
+			viewport.GetFieldOfView(),
+			glm::length(camera.GetLook()-camera.GetPosition()),
+			cube_spacing,
+			width, height);
 		glutPostRedisplay();
 	}
 	camera.MovePosition(px, py, pz);
@@ -374,6 +399,10 @@ int main(int argc, char **argv)
 	std::cout << "Load shaders." << std::endl;
 	masses.loadShaders();
 
+	// load buffers
+	std::cout << "Load buffers." << std::endl;
+	masses.loadBuffers();
+
 	// initialize OpenGL
 	std::cout << "Initialize OpenGL." << std::endl;
 	glEnable(GL_DEPTH_TEST);
@@ -422,73 +451,81 @@ int main(int argc, char **argv)
 	cubes.push(SigAsiaDemo::Cube(
 		-40.0, 20.0, 0.0,	// position
 		10, 10, 10,			// size
-		1.0,				// spacing
+		cube_spacing,		// spacing
 		4.0,				// mass
-		1.0					// radius
+		cube_spacing		// radius
 		));
+	/*
 	cubes.push(SigAsiaDemo::Cube(
 		-20.0, 30.0, 0.0,	// position
 		10, 10, 10,			// size
-		1.0,				// spacing
+		cube_spacing,		// spacing
 		4.0,				// mass
-		1.0					// radius
+		cube_spacing		// radius
 		));
+	*/
 	cubes.push(SigAsiaDemo::Cube(
-		0.0, 40.0, 0.0,	// position
-		10, 10, 10,		// size
-		1.0,			// spacing
-		4.0,			// mass
-		1.0				// radius
+		0.0, 40.0, 0.0,		// position
+		10, 10, 10,			// size
+		cube_spacing*0.5,	// spacing
+		4.0,				// mass
+		cube_spacing*0.5	// radius
 		));
+	/*
 	cubes.push(SigAsiaDemo::Cube(
 		20.0, 50.0, 0.0,	// position
 		10, 10, 10,			// size
-		1.0,				// spacing
+		cube_spacing,		// spacing
 		4.0,				// mass
-		1.0					// radius
+		cube_spacing		// radius
 		));
+	*/
 	cubes.push(SigAsiaDemo::Cube(
 		40.0, 60.0, 0.0,	// position
 		10, 10, 10,			// size
-		1.0,				// spacing
+		cube_spacing,		// spacing
 		4.0,				// mass
-		1.0					// radius
+		cube_spacing		// radius
 		));
 
 	cubes.push(SigAsiaDemo::Cube(
 		-40.0, 40.0, 0.0,	// position
 		10, 10, 10,			// size
-		1.0,				// spacing
+		cube_spacing,		// spacing
 		4.0,				// mass
-		1.0					// radius
+		cube_spacing		// radius
 		));
+	/*
 	cubes.push(SigAsiaDemo::Cube(
 		-20.0, 50.0, 0.0,	// position
 		10, 10, 10,			// size
-		1.0,				// spacing
+		cube_spacing,		// spacing
 		4.0,				// mass
-		1.0					// radius
+		cube_spacing		// radius
 		));
+	*/
 	cubes.push(SigAsiaDemo::Cube(
 		0.0, 60.0, 0.0,	// position
 		10, 10, 10,		// size
-		1.0,			// spacing
+		cube_spacing,	// spacing
 		4.0,			// mass
-		1.0				// radius
+		cube_spacing	// radius
 		));
+	/*
 	cubes.push(SigAsiaDemo::Cube(
 		20.0, 70.0, 0.0,	// position
 		10, 10, 10,			// size
-		1.0,				// spacing
+		cube_spacing,		// spacing
 		4.0,				// mass
-		1.0					// radius
+		cube_spacing		// radius
 		));
+	*/
 	cubes.push(SigAsiaDemo::Cube(
 		40.0, 80.0, 0.0,	// position
 		10, 10, 10,			// size
-		1.0,				// spacing
+		cube_spacing,		// spacing
 		4.0,				// mass
-		1.0					// radius
+		cube_spacing		// radius
 		));
 
 	std::cout << "Create cubes." << std::endl;

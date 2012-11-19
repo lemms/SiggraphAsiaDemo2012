@@ -14,7 +14,7 @@ namespace SigAsiaDemo {
 				float height = 768.0,
 				float fovy = 90.0,
 				float near = 0.1,
-				float far = 10000.0);
+				float far = 1000.0);
 			void SetLook(
 				float x, float y, float z);
 			void MoveLook(
@@ -27,6 +27,10 @@ namespace SigAsiaDemo {
 				float x, float y, float z);
 			void ResizeWindow(
 				float width, float height);
+
+			glm::vec3 GetLook() const;
+			glm::vec3 GetPosition() const;
+			glm::vec3 GetUp() const;
 
 			glm::mat4 GetProjection();
 			glm::mat4 GetModelView();

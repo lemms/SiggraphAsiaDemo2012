@@ -39,6 +39,14 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/massGS.glsl
 	${CMAKE_CURRENT_BINARY_DIR}/massGS.glsl COPYONLY)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/massFS.glsl
 	${CMAKE_CURRENT_BINARY_DIR}/massFS.glsl COPYONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/planeVS.glsl
+	${CMAKE_CURRENT_BINARY_DIR}/planeVS.glsl COPYONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/planeFS.glsl
+	${CMAKE_CURRENT_BINARY_DIR}/planeFS.glsl COPYONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/screenVS.glsl
+	${CMAKE_CURRENT_BINARY_DIR}/screenVS.glsl COPYONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/screenFS.glsl
+	${CMAKE_CURRENT_BINARY_DIR}/screenFS.glsl COPYONLY)
 
 cuda_add_executable(SiggraphAsiaDemo main.cu viewport.cu mass.cu spring.cu device.cu camera.cu cube.cu)
 target_link_libraries (SiggraphAsiaDemo ${LIBS})

@@ -11,6 +11,7 @@ Laurence Emms
 #include <vector>
 #include <fstream>
 #include <iterator>
+#include <cmath>
 
 #include <GL/glew.h>
 #include <cuda.h>
@@ -51,7 +52,10 @@ SigAsiaDemo::Mass::Mass(
 SigAsiaDemo::MassList::MassList(
 	float coeff_friction,
 	float coeff_restitution,
+	float plane_size,
 	unsigned int threads) :
+	_screen_width(1024),
+	_screen_height(768),
 	_masses_array(0),
 	_masses_buffer(0),
 	_computing(false),
@@ -59,16 +63,36 @@ SigAsiaDemo::MassList::MassList(
 	_coeff_friction(coeff_friction),
 	_coeff_restitution(coeff_restitution),
 	_device_masses(0),
-	_axes_array(0),
-	_axes_buffer(0),
-	_vertex_shader(0),
-	_geometry_shader(0),
-	_fragment_shader(0),
-	_program(0),
-	_ModelViewLocation(0),
-	_ProjectionLocation(0),
+	_plane_size(plane_size),
+	_plane_array(0),
+	_plane_buffer(0),
+	_screen_array(0),
+	_screen_pos_buffer(0),
+	_screen_tex_buffer(0),
+	_layer_0_ModelViewLocation(0),
+	_layer_0_ProjectionLocation(0),
+	_layer_0_vertex_shader(0),
+	_layer_0_geometry_shader(0),
+	_layer_0_fragment_shader(0),
+	_layer_0_program(0),
+	_plane_ModelViewLocation(0),
+	_plane_ProjectionLocation(0),
+	_plane_vertex_shader(0),
+	_plane_fragment_shader(0),
+	_plane_program(0),
+	_screen_ColorTexLocation(0),
+	_screen_vertex_shader(0),
+	_screen_fragment_shader(0),
+	_screen_program(0),
+	_inv_rho(1.0),
+	_image_width(1024),
+	_image_height(768),
+	_image_buffer(0),
+	_image_color(0),
+	_image_depth(0),
 	_threads(threads)
-{}
+{
+}
 
 SigAsiaDemo::MassList::~MassList()
 {
@@ -570,23 +594,62 @@ void SigAsiaDemo::MassList::update(
 			return;
 		}
 	}
-	if (_axes_buffer == 0) {
-		std::cout << "Generate axes_buffer." << std::endl;
-		glGenBuffers(1, &_axes_buffer);
-		glBindBuffer(GL_ARRAY_BUFFER, _axes_buffer);
-		// allocate space for (position, radius);
-		float _axes_data[] = 
+	if (_plane_buffer == 0) {
+		std::cout << "Generate ground plane buffer." << std::endl;
+		glGenBuffers(1, &_plane_buffer);
+		glBindBuffer(GL_ARRAY_BUFFER, _plane_buffer);
+		// allocate space for position
+		float _plane_data[] = 
 			{
-				0.0, 0.0, 0.0, 0.1,
-				1.0, 0.0, 0.0, 0.1,
-				0.0, 1.0, 0.0, 0.1,
-				0.0, 0.0, 1.0, 0.1
+				_plane_size, 0.0, _plane_size, 1.0,
+				-_plane_size, 0.0, _plane_size, 1.0,
+				-_plane_size, 0.0, -_plane_size, 1.0,
+				_plane_size, 0.0, -_plane_size, 1.0
 			};
 		glBufferData(
 			GL_ARRAY_BUFFER,
 			16*sizeof(float),
-			_axes_data,
+			_plane_data,
 			GL_DYNAMIC_DRAW);
+	}
+	if (_screen_pos_buffer == 0) {
+		std::cout << "Generate screen quad position buffer." << std::endl;
+		glGenBuffers(1, &_screen_pos_buffer);
+		glBindBuffer(GL_ARRAY_BUFFER, _screen_pos_buffer);
+		// allocate space for position
+		float _screen_data[] = 
+			{
+				1.0, 1.0, 0.0, 1.0,
+				-1.0, 1.0, 0.0, 1.0,
+				-1.0, -1.0, 0.0, 1.0,
+				1.0, -1.0, 0.0, 1.0
+			};
+		glBufferData(
+			GL_ARRAY_BUFFER,
+			16*sizeof(float),
+			_screen_data,
+			GL_DYNAMIC_DRAW);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+	}
+	if (_screen_tex_buffer == 0) {
+		std::cout << "Generate screen texture coordinates buffer." << std::endl;
+		glGenBuffers(1, &_screen_tex_buffer);
+		glBindBuffer(GL_ARRAY_BUFFER, _screen_tex_buffer);
+		// allocate space for uvs
+		float _screen_data[] = 
+			{
+				1.0, 1.0,
+				0.0, 1.0,
+				0.0, 0.0,
+				1.0, 0.0
+			};
+		glBufferData(
+			GL_ARRAY_BUFFER,
+			8*sizeof(float),
+			_screen_data,
+			GL_DYNAMIC_DRAW);
+
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
 
 	// generate arrays
@@ -602,19 +665,37 @@ void SigAsiaDemo::MassList::update(
 		glBindVertexArray(0);
 	}
 
-	if (_axes_buffer != 0) {
-		//std::cout << "Bind axes array." << std::endl;
-		if (_axes_array == 0) {
+	if (_plane_buffer != 0) {
+		//std::cout << "Bind plane array." << std::endl;
+		if (_plane_array == 0) {
 			std::cout << "Generate vertex arrays." << std::endl;
-			glGenVertexArrays(1, &_axes_array);
+			glGenVertexArrays(1, &_plane_array);
 		}
-		glBindVertexArray(_axes_array);
+		glBindVertexArray(_plane_array);
 
 		glEnableVertexAttribArray(0);
 
-		glBindBuffer(GL_ARRAY_BUFFER, _axes_buffer);
+		glBindBuffer(GL_ARRAY_BUFFER, _plane_buffer);
 		glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, NULL);
-		//glBindVertexArray(0);
+		glBindVertexArray(0);
+	}
+
+	if (_screen_pos_buffer != 0 && _screen_tex_buffer != 0) {
+		//std::cout << "Bind screen array." << std::endl;
+		if (_screen_array == 0) {
+			std::cout << "Generate vertex arrays." << std::endl;
+			glGenVertexArrays(1, &_screen_array);
+		}
+		glBindVertexArray(_screen_array);
+
+		glEnableVertexAttribArray(0);
+		glEnableVertexAttribArray(1);
+
+		glBindBuffer(GL_ARRAY_BUFFER, _screen_pos_buffer);
+		glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, NULL);
+		glBindBuffer(GL_ARRAY_BUFFER, _screen_tex_buffer);
+		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, NULL);
+		glBindVertexArray(0);
 	}
 
 	// map CUDA resource
@@ -629,7 +710,8 @@ void SigAsiaDemo::MassList::update(
 
 	// update positions and upload to GL
 	if (_computing && !_masses.empty()) {
-		//std::cout << "Update masses (" << _masses.size() << ")." << std::endl;
+		//std::cout << "Update masses (" << _masses.size() << ")." \
+		<< std::endl;
 		deviceUpdate<<<(_masses.size()+_threads-1)/_threads, _threads>>>(
 			dt,
 			_coeff_friction,
@@ -714,107 +796,250 @@ bool verifyLinking(unsigned int program)
 	return true;
 }
 
-bool SigAsiaDemo::MassList::loadShaders()
+bool loadShader(
+	const char *vs_file_name,
+	const char *gs_file_name,
+	const char *fs_file_name,
+	GLuint *program,
+	GLuint *vertex_shader,
+	GLuint *geometry_shader,
+	GLuint *fragment_shader)
 {
+	if (!program || !vertex_shader || !fragment_shader || 
+		!vs_file_name || !fs_file_name)
+		return false;
+
 	// load shaders
-	if (_program == 0) {
+	if (*program == 0) {
 		// read and compile shaders
-		_vertex_shader = glCreateShader(GL_VERTEX_SHADER);
-		if (_vertex_shader == 0) {
-			std::cerr << "Error: Failed to create vertex shader." \
+		*vertex_shader = glCreateShader(GL_VERTEX_SHADER);
+		if (*vertex_shader == 0) {
+			std::cerr << "Warning: Failed to create vertex shader." \
 			<< std::endl;
 			return false;
 		}
-		std::ifstream vs_file("massVS.glsl");
+		std::ifstream vs_file(vs_file_name);
 		std::string vs_string(
 			(std::istreambuf_iterator<char>(vs_file)),
 			std::istreambuf_iterator<char>());
 		const char *vs_char = vs_string.c_str();
-		glShaderSource(_vertex_shader, 1, &vs_char, NULL);
-		glCompileShader(_vertex_shader);
+		glShaderSource(*vertex_shader, 1, &vs_char, NULL);
+		glCompileShader(*vertex_shader);
 		if (verifyCompilation(
-				_vertex_shader,
+				*vertex_shader,
 				vs_string.c_str(),
 				"vertex") == false)
 			return false;
 
-		_geometry_shader = glCreateShader(GL_GEOMETRY_SHADER);
-		if (_geometry_shader == 0) {
-			std::cerr << "Error: Failed to create geometry shader." \
-			<< std::endl;
-			return false;
+		if (geometry_shader && gs_file_name) {
+			*geometry_shader = glCreateShader(GL_GEOMETRY_SHADER);
+			if (*geometry_shader == 0) {
+				std::cerr << "Warning: Failed to create geometry shader." \
+				<< std::endl;
+			}
+			std::ifstream gs_file(gs_file_name);
+			std::string gs_string(
+				(std::istreambuf_iterator<char>(gs_file)),
+				std::istreambuf_iterator<char>());
+			const char *gs_char = gs_string.c_str();
+			glShaderSource(*geometry_shader, 1, &gs_char, NULL);
+			glCompileShader(*geometry_shader);
+			if (verifyCompilation(
+					*geometry_shader,
+					gs_string.c_str(),
+					"geometry") == false)
+				return false;
 		}
-		std::ifstream gs_file("massGS.glsl");
-		std::string gs_string(
-			(std::istreambuf_iterator<char>(gs_file)),
-			std::istreambuf_iterator<char>());
-		const char *gs_char = gs_string.c_str();
-		glShaderSource(_geometry_shader, 1, &gs_char, NULL);
-		glCompileShader(_geometry_shader);
-		if (verifyCompilation(
-				_geometry_shader,
-				gs_string.c_str(),
-				"geometry") == false)
-			return false;
 
-		_fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
-		if (_fragment_shader == 0) {
+		*fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
+		if (*fragment_shader == 0) {
 			std::cerr << "Error: Failed to create fragment shader." \
 			<< std::endl;
 			return false;
 		}
-		std::ifstream fs_file("massFS.glsl");
+		std::ifstream fs_file(fs_file_name);
 		std::string fs_string(
 			(std::istreambuf_iterator<char>(fs_file)),
 			std::istreambuf_iterator<char>());
 		const char *fs_char = fs_string.c_str();
-		glShaderSource(_fragment_shader, 1, &fs_char, NULL);
-		glCompileShader(_fragment_shader);
+		glShaderSource(*fragment_shader, 1, &fs_char, NULL);
+		glCompileShader(*fragment_shader);
 		if (verifyCompilation(
-				_fragment_shader,
+				*fragment_shader,
 				fs_string.c_str(),
 				"fragment") == false)
 			return false;
 
 		// create program
-		_program = glCreateProgram();
-		if (_program == 0) {
+		*program = glCreateProgram();
+		if (*program == 0) {
 			std::cerr << "Error: Failed to create shader program." \
 			<< std::endl;
 			return false;
 		}
 
 		// attach shaders
-		glAttachShader(_program, _vertex_shader);
-		glAttachShader(_program, _geometry_shader);
-		glAttachShader(_program, _fragment_shader);
+		glAttachShader(*program, *vertex_shader);
+		if (geometry_shader && *geometry_shader)
+			glAttachShader(*program, *geometry_shader);
+		glAttachShader(*program, *fragment_shader);
 
 		// bind attributes
-		glBindAttribLocation(_program, 0, "position");
+		//glBindAttribLocation(*program, 0, "position");
+		//glBindAttribLocation(*program, 1, "uv");
 
 		// link program
-		glLinkProgram(_program);
-		if (verifyLinking(_program) == false)
+		glLinkProgram(*program);
+		if (verifyLinking(*program) == false)
 			return false;
 
-		glUseProgram(_program);
-		// get uniforms
-		_ModelViewLocation = glGetUniformLocation(_program, "ModelView");
-		if (_ModelViewLocation == -1) {
-			std::cerr << "Error: Failed to get ModelView location." \
-			<< std::endl;
-			return false;
-		}
-
-		_ProjectionLocation = glGetUniformLocation(_program, "Projection");
-		if (_ProjectionLocation == -1) {
-			std::cerr << "Error: Failed to get Projection location." \
-			<< std::endl;
-			return false;
-		}
 		glUseProgram(0);
 	}
+	return true;
+}
 
+bool SigAsiaDemo::MassList::loadShaders()
+{
+	std::cout << "Load mass shader" << std::endl;
+	bool success = false;
+	success = loadShader(
+		"massVS.glsl",
+		"massGS.glsl",
+		"massFS.glsl",
+		&_layer_0_program,
+		&_layer_0_vertex_shader,
+		&_layer_0_geometry_shader,
+		&_layer_0_fragment_shader);
+	if (!success)
+		return false;
+
+	glUseProgram(_layer_0_program);
+
+	// get uniforms
+	_layer_0_ModelViewLocation = glGetUniformLocation(
+		_layer_0_program, "ModelView");
+	if (_layer_0_ModelViewLocation == -1) {
+		std::cerr << "Error: Failed to get ModelView location." \
+			<< std::endl;
+		return false;
+	}
+
+	_layer_0_ProjectionLocation = glGetUniformLocation(
+		_layer_0_program, "Projection");
+	if (_layer_0_ProjectionLocation == -1) {
+		std::cerr << "Error: Failed to get Projection location." \
+			<< std::endl;
+		return false;
+	}
+
+	std::cout << "Load plane shader" << std::endl;
+	success = loadShader(
+		"planeVS.glsl",
+		"",
+		"planeFS.glsl",
+		&_plane_program,
+		&_plane_vertex_shader,
+		0,
+		&_plane_fragment_shader);
+	if (!success)
+		return false;
+
+	glUseProgram(_plane_program);
+
+	// get uniforms
+	_plane_ModelViewLocation = glGetUniformLocation(
+		_plane_program, "ModelView");
+	if (_plane_ModelViewLocation == -1) {
+		std::cerr << "Error: Failed to get ModelView location." \
+			<< std::endl;
+		return false;
+	}
+
+	_plane_ProjectionLocation = glGetUniformLocation(
+		_plane_program, "Projection");
+	if (_plane_ProjectionLocation == -1) {
+		std::cerr << "Error: Failed to get Projection location." \
+			<< std::endl;
+		return false;
+	}
+
+	std::cout << "Load screen shader" << std::endl;
+	success = loadShader(
+		"screenVS.glsl",
+		"",
+		"screenFS.glsl",
+		&_screen_program,
+		&_screen_vertex_shader,
+		0,
+		&_screen_fragment_shader);
+	if (!success)
+		return false;
+
+	glUseProgram(_screen_program);
+
+	// get uniforms
+	_screen_ColorTexLocation = glGetUniformLocation(
+		_screen_program, "color_tex");
+	if (_screen_ColorTexLocation == -1) {
+		std::cerr << "Error: Failed to get Color Tex location." \
+			<< std::endl;
+		return false;
+	}
+
+	glUseProgram(0);
+
+	std::cout << "Finished loading shaders" << std::endl;
+
+	return true;
+}
+
+void SigAsiaDemo::MassList::clearBuffers()
+{
+	if (_image_color != 0) {
+		glDeleteTextures(1, &_image_color);
+		_image_color = 0;
+	}
+	if (_image_depth != 0) {
+		glDeleteRenderbuffers(1, &_image_depth);
+		_image_depth = 0;
+	}
+	if (_image_buffer != 0) {
+		glDeleteFramebuffers(1, &_image_buffer);
+		_image_buffer = 0;
+	}
+}
+
+bool SigAsiaDemo::MassList::loadBuffers()
+{
+	if (_image_buffer == 0) {
+		// generate offscreen rendering buffer
+		glGenFramebuffers(1, &_image_buffer);
+		glBindFramebuffer(GL_FRAMEBUFFER, _image_buffer);
+
+		glGenTextures(1, &_image_color);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, _image_color);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, _image_width, _image_height, 0,
+			GL_RGBA, GL_FLOAT, NULL);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+			GL_TEXTURE_2D, _image_color, 0);
+
+		glGenRenderbuffers(1, &_image_depth);
+		glBindRenderbuffer(GL_RENDERBUFFER, _image_depth);
+		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT,
+			_image_width, _image_height);
+		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+			GL_RENDERBUFFER, _image_depth);
+		
+		GLenum targets[] = {GL_COLOR_ATTACHMENT0};
+		glDrawBuffers(1, targets);
+
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	}
 	return true;
 }
 
@@ -822,13 +1047,43 @@ void SigAsiaDemo::MassList::render(
 	glm::mat4 ModelView,
 	glm::mat4 Projection) const
 {
-	if (_ModelViewLocation == -1) {
-		std::cerr << "Warning: _ModelViewLocation not set." \
+	if (_layer_0_program == 0) {
+		std::cerr << "Warning: _layer_0_program not set." \
 		<< std::endl;
 		return;
 	}
-	if (_ProjectionLocation == -1) {
-		std::cerr << "Warning: _ProjectionLocation not set." \
+	if (_plane_program == 0) {
+		std::cerr << "Warning: _plane_program not set." \
+		<< std::endl;
+		return;
+	}
+	if (_screen_program == 0) {
+		std::cerr << "Warning: _screen_program not set." \
+		<< std::endl;
+		return;
+	}
+	if (_layer_0_ModelViewLocation == -1) {
+		std::cerr << "Warning: _layer_0_ModelViewLocation not set." \
+		<< std::endl;
+		return;
+	}
+	if (_layer_0_ProjectionLocation == -1) {
+		std::cerr << "Warning: _layer_0_ProjectionLocation not set." \
+		<< std::endl;
+		return;
+	}
+	if (_plane_ModelViewLocation == -1) {
+		std::cerr << "Warning: _plane_ModelViewLocation not set." \
+		<< std::endl;
+		return;
+	}
+	if (_plane_ProjectionLocation == -1) {
+		std::cerr << "Warning: _plane_ProjectionLocation not set." \
+		<< std::endl;
+		return;
+	}
+	if (_screen_ColorTexLocation == -1) {
+		std::cerr << "Warning: _screen_ColorTexLocation not set." \
 		<< std::endl;
 		return;
 	}
@@ -837,22 +1092,41 @@ void SigAsiaDemo::MassList::render(
 		<< std::endl;
 		return;
 	}
-	if (_axes_array == 0) {
-		std::cerr << "Warning: _axes_array not set." \
+	if (_plane_array == 0) {
+		std::cerr << "Warning: _plane_array not set." \
+		<< std::endl;
+		return;
+	}
+	if (_screen_array == 0) {
+		std::cerr << "Warning: _screen_array not set." \
+		<< std::endl;
+		return;
+	}
+	if (_image_color == 0) {
+		std::cerr << "Warning: _image_color not set." \
 		<< std::endl;
 		return;
 	}
 
-	// bind shader
-	glUseProgram(_program);
+	// first rendering pass, draw into image buffer
+
+	// bind frame buffer
+	glViewport(0, 0, _image_width, _image_height);
+	glBindFramebuffer(GL_FRAMEBUFFER, _image_buffer);
+
+	// clear frame buffer
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	// bind layer 0 shader
+	glUseProgram(_layer_0_program);
 
 	// setup uniforms
 	glUniformMatrix4fv(
-		_ModelViewLocation,
+		_layer_0_ModelViewLocation,
 		1, GL_FALSE,
 		glm::value_ptr(ModelView));
 	glUniformMatrix4fv(
-		_ProjectionLocation,
+		_layer_0_ProjectionLocation,
 		1, GL_FALSE,
 		glm::value_ptr(Projection));
 
@@ -860,10 +1134,75 @@ void SigAsiaDemo::MassList::render(
 	glDrawArrays(GL_POINTS, 0, _masses.size());
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-	glBindVertexArray(_axes_array);
-	glDrawArrays(GL_POINTS, 0, 4);
+	glUseProgram(_plane_program);
+
+	glUniformMatrix4fv(
+		_plane_ModelViewLocation,
+		1, GL_FALSE,
+		glm::value_ptr(ModelView));
+	glUniformMatrix4fv(
+		_plane_ProjectionLocation,
+		1, GL_FALSE,
+		glm::value_ptr(Projection));
+
+	glBindVertexArray(_plane_array);
+	glDrawArrays(GL_QUADS, 0, 4);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	// unbind frame buffer
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glViewport(0, 0, _screen_width, _screen_height);
+
+	// render a screen space quad with the image
+
+	// bind quad shader
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, _image_color);
+
+	glUseProgram(_screen_program);
+
+	glUniform1i(_screen_ColorTexLocation, 0);
+
+	glBindVertexArray(_screen_array);
+	glDrawArrays(GL_QUADS, 0, 4);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	// unbind shader
 	glUseProgram(0);
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void SigAsiaDemo::MassList::resizeWindow(
+	float near,
+	float far,
+	float fov,
+	float view_dist,
+	float spring_length,
+	unsigned int width,
+	unsigned int height)
+{
+	_screen_width = width;
+	_screen_height = height;
+	// we assume that |v-p| ~= view_dist
+	float lambda = (far*near)*view_dist/(far - near) + 1.0;
+	_inv_rho = (tan(fov*0.5)*lambda)/(spring_length*static_cast<float>(width));
+	std::cout << "rho: " << 1.0f / _inv_rho << std::endl;
+	std::cout << "lambda: " << lambda << std::endl;
+	GLuint image_width =
+		static_cast<GLuint>(static_cast<float>(width) * _inv_rho);
+	GLuint image_height =
+		static_cast<GLuint>(static_cast<float>(height) * _inv_rho);
+	// TODO: fix
+	image_width = width/4;
+	image_height = height/4;
+	if (image_width != _image_width || image_height != _image_height) {
+		_image_width = image_width;
+		_image_height = image_height;
+		std::cout << "New image dimensions: [" << _image_width << ", " \
+			<< _image_height << "]" << std::endl;
+		clearBuffers();
+		loadBuffers();
+	}
 }

@@ -12,6 +12,7 @@ layout(triangle_strip, max_vertices = 4) out;
 
 in float radius_v[];
 
+out vec4 wpos_g;
 out vec2 texcoord_g;
 
 uniform mat4 Projection;
@@ -25,21 +26,25 @@ void main()
 
 	gl_Position =
 		Projection*(gl_in[0].gl_Position + bottom_left);
+	wpos_g = gl_in[0].gl_Position;
 	texcoord_g = vec2(0.0, 0.0);
 	EmitVertex();
 
 	gl_Position =
 		Projection*(gl_in[0].gl_Position + top_left);
+	wpos_g = gl_in[0].gl_Position;
 	texcoord_g = vec2(0.0, 1.0);
 	EmitVertex();
 
 	gl_Position =
 		Projection*(gl_in[0].gl_Position + bottom_right);
+	wpos_g = gl_in[0].gl_Position;
 	texcoord_g = vec2(1.0, 0.0);
 	EmitVertex();
 
 	gl_Position =
 		Projection*(gl_in[0].gl_Position + top_right);
+	wpos_g = gl_in[0].gl_Position;
 	texcoord_g = vec2(1.0, 1.0);
 	EmitVertex();
 }

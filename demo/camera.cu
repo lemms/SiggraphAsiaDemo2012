@@ -80,6 +80,21 @@ void SigAsiaDemo::Camera::ResizeWindow(
 	_aspect = width/height;
 }
 
+glm::vec3 SigAsiaDemo::Camera::GetLook() const
+{
+	return _l;
+}
+
+glm::vec3 SigAsiaDemo::Camera::GetPosition() const
+{
+	return _p;
+}
+
+glm::vec3 SigAsiaDemo::Camera::GetUp() const
+{
+	return _u;
+}
+
 glm::mat4 SigAsiaDemo::Camera::GetProjection()
 {
 	return glm::perspective(

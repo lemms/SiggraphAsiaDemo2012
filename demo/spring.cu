@@ -11,6 +11,8 @@ Laurence Emms
 #include <vector>
 #include <cmath>
 
+#include <GL/glew.h>
+
 // GLM
 #define GLM_FORCE_CUDA
 #include <glm/glm.hpp>
