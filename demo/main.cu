@@ -47,6 +47,7 @@ float dt = 1e-5;
 bool play = false;
 bool ground_collision = true;
 
+float resolution_multiplier = 0.02;
 float cube_spacing = 1.0;
 
 void ParseArgs(int argc, char **argv)
@@ -81,7 +82,7 @@ void ParseArgs(int argc, char **argv)
 			viewport.GetFar(),
 			viewport.GetFieldOfView(),
 			glm::length(camera.GetLook()-camera.GetPosition()),
-			cube_spacing,
+			cube_spacing*resolution_multiplier,
 			width, height);
 		glViewport(0, 0, viewport.GetWidth(), viewport.GetHeight());
 	}
@@ -260,7 +261,7 @@ void Reshape(int width, int height)
 		viewport.GetFar(),
 		viewport.GetFieldOfView(),
 		glm::length(camera.GetLook()-camera.GetPosition()),
-		cube_spacing,
+		cube_spacing*resolution_multiplier,
 		width, height);
 	glViewport(0, 0, viewport.GetWidth(), viewport.GetHeight());
 }
@@ -309,7 +310,7 @@ void Keys(unsigned char key, int x, int y)
 			viewport.GetFar(),
 			viewport.GetFieldOfView(),
 			glm::length(camera.GetLook()-camera.GetPosition()),
-			cube_spacing,
+			cube_spacing*resolution_multiplier,
 			width, height);
 		glutPostRedisplay();
 	}
@@ -505,11 +506,11 @@ int main(int argc, char **argv)
 		));
 	*/
 	cubes.push(SigAsiaDemo::Cube(
-		0.0, 60.0, 0.0,	// position
-		10, 10, 10,		// size
-		cube_spacing,	// spacing
-		4.0,			// mass
-		cube_spacing	// radius
+		0.0, 60.0, 0.0,		// position
+		10, 10, 10,			// size
+		cube_spacing,		// spacing
+		4.0,				// mass
+		cube_spacing		// radius
 		));
 	/*
 	cubes.push(SigAsiaDemo::Cube(

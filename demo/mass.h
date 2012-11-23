@@ -131,6 +131,14 @@ namespace SigAsiaDemo {
 			GLuint _layer_0_fragment_shader;
 			GLuint _layer_0_program;
 
+			int _layer_1_ModelViewLocation;
+			int _layer_1_ProjectionLocation;
+			int _layer_1_ColorTexLocation;
+			GLuint _layer_1_vertex_shader;
+			GLuint _layer_1_geometry_shader;
+			GLuint _layer_1_fragment_shader;
+			GLuint _layer_1_program;
+
 			int _plane_ModelViewLocation;
 			int _plane_ProjectionLocation;
 			GLuint _plane_vertex_shader;
@@ -146,9 +154,14 @@ namespace SigAsiaDemo {
 			float _inv_rho;
 			GLuint _image_width;
 			GLuint _image_height;
+			// first pass
 			GLuint _image_buffer;
 			GLuint _image_color;
 			GLuint _image_depth;
+			// second pass
+			GLuint _image2_buffer;
+			GLuint _image2_color;
+			GLuint _image2_depth;
 
 			// CUDA
 			unsigned int _threads;

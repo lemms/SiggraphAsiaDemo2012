@@ -75,6 +75,13 @@ SigAsiaDemo::MassList::MassList(
 	_layer_0_geometry_shader(0),
 	_layer_0_fragment_shader(0),
 	_layer_0_program(0),
+	_layer_1_ModelViewLocation(0),
+	_layer_1_ProjectionLocation(0),
+	_layer_1_ColorTexLocation(0),
+	_layer_1_vertex_shader(0),
+	_layer_1_geometry_shader(0),
+	_layer_1_fragment_shader(0),
+	_layer_1_program(0),
 	_plane_ModelViewLocation(0),
 	_plane_ProjectionLocation(0),
 	_plane_vertex_shader(0),
@@ -90,6 +97,9 @@ SigAsiaDemo::MassList::MassList(
 	_image_buffer(0),
 	_image_color(0),
 	_image_depth(0),
+	_image2_buffer(0),
+	_image2_color(0),
+	_image2_depth(0),
 	_threads(threads)
 {
 }
@@ -900,7 +910,7 @@ bool loadShader(
 
 bool SigAsiaDemo::MassList::loadShaders()
 {
-	std::cout << "Load mass shader" << std::endl;
+	std::cout << "Load layer 0 shader" << std::endl;
 	bool success = false;
 	success = loadShader(
 		"massVS.glsl",
@@ -928,6 +938,45 @@ bool SigAsiaDemo::MassList::loadShaders()
 		_layer_0_program, "Projection");
 	if (_layer_0_ProjectionLocation == -1) {
 		std::cerr << "Error: Failed to get Projection location." \
+			<< std::endl;
+		return false;
+	}
+
+	std::cout << "Load layer 1 shader" << std::endl;
+	success = loadShader(
+		"massVS.glsl",
+		"massGS.glsl",
+		"mass2FS.glsl",
+		&_layer_1_program,
+		&_layer_1_vertex_shader,
+		&_layer_1_geometry_shader,
+		&_layer_1_fragment_shader);
+	if (!success)
+		return false;
+
+	glUseProgram(_layer_1_program);
+
+	// get uniforms
+	_layer_1_ModelViewLocation = glGetUniformLocation(
+		_layer_1_program, "ModelView");
+	if (_layer_1_ModelViewLocation == -1) {
+		std::cerr << "Error: Failed to get ModelView location." \
+			<< std::endl;
+		return false;
+	}
+
+	_layer_1_ProjectionLocation = glGetUniformLocation(
+		_layer_1_program, "Projection");
+	if (_layer_1_ProjectionLocation == -1) {
+		std::cerr << "Error: Failed to get Projection location." \
+			<< std::endl;
+		return false;
+	}
+
+	_layer_1_ColorTexLocation = glGetUniformLocation(
+		_layer_1_program, "color_tex");
+	if (_layer_1_ColorTexLocation == -1) {
+		std::cerr << "Error: Failed to get Color Tex location." \
 			<< std::endl;
 		return false;
 	}
@@ -1007,10 +1056,26 @@ void SigAsiaDemo::MassList::clearBuffers()
 		glDeleteFramebuffers(1, &_image_buffer);
 		_image_buffer = 0;
 	}
+
+	if (_image2_color != 0) {
+		glDeleteTextures(1, &_image2_color);
+		_image2_color = 0;
+	}
+	if (_image2_depth != 0) {
+		glDeleteRenderbuffers(1, &_image2_depth);
+		_image2_depth = 0;
+	}
+	if (_image2_buffer != 0) {
+		glDeleteFramebuffers(1, &_image2_buffer);
+		_image2_buffer = 0;
+	}
 }
 
 bool SigAsiaDemo::MassList::loadBuffers()
 {
+	if (!GLEW_ARB_texture_float) {
+		std::cout << "Warning: No floating point texture support." << std::endl;
+	}
 	if (_image_buffer == 0) {
 		// generate offscreen rendering buffer
 		glGenFramebuffers(1, &_image_buffer);
@@ -1019,10 +1084,12 @@ bool SigAsiaDemo::MassList::loadBuffers()
 		glGenTextures(1, &_image_color);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, _image_color);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, _image_width, _image_height, 0,
-			GL_RGBA, GL_FLOAT, NULL);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, _image_width, _image_height,
+			0, GL_RGBA, GL_FLOAT, NULL);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+			GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
+			GL_LINEAR);
 
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
 			GL_TEXTURE_2D, _image_color, 0);
@@ -1038,8 +1105,39 @@ bool SigAsiaDemo::MassList::loadBuffers()
 		glDrawBuffers(1, targets);
 
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
 	}
+
+	if (_image2_buffer == 0) {
+		// generate offscreen rendering buffer
+		glGenFramebuffers(1, &_image2_buffer);
+		glBindFramebuffer(GL_FRAMEBUFFER, _image2_buffer);
+
+		glGenTextures(1, &_image2_color);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, _image2_color);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, _image_width, _image_height,
+			0, GL_RGBA, GL_FLOAT, NULL);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+			GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
+			GL_LINEAR);
+
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+			GL_TEXTURE_2D, _image2_color, 0);
+
+		glGenRenderbuffers(1, &_image2_depth);
+		glBindRenderbuffer(GL_RENDERBUFFER, _image2_depth);
+		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT,
+			_image_width, _image_height);
+		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+			GL_RENDERBUFFER, _image2_depth);
+		
+		GLenum targets[] = {GL_COLOR_ATTACHMENT0};
+		glDrawBuffers(1, targets);
+
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	}
+
 	return true;
 }
 
@@ -1049,6 +1147,11 @@ void SigAsiaDemo::MassList::render(
 {
 	if (_layer_0_program == 0) {
 		std::cerr << "Warning: _layer_0_program not set." \
+		<< std::endl;
+		return;
+	}
+	if (_layer_1_program == 0) {
+		std::cerr << "Warning: _layer_1_program not set." \
 		<< std::endl;
 		return;
 	}
@@ -1069,6 +1172,21 @@ void SigAsiaDemo::MassList::render(
 	}
 	if (_layer_0_ProjectionLocation == -1) {
 		std::cerr << "Warning: _layer_0_ProjectionLocation not set." \
+		<< std::endl;
+		return;
+	}
+	if (_layer_1_ModelViewLocation == -1) {
+		std::cerr << "Warning: _layer_1_ModelViewLocation not set." \
+		<< std::endl;
+		return;
+	}
+	if (_layer_1_ProjectionLocation == -1) {
+		std::cerr << "Warning: _layer_1_ProjectionLocation not set." \
+		<< std::endl;
+		return;
+	}
+	if (_layer_1_ColorTexLocation == -1) {
+		std::cerr << "Warning: _layer_1_ColorTexLocation not set." \
 		<< std::endl;
 		return;
 	}
@@ -1107,11 +1225,23 @@ void SigAsiaDemo::MassList::render(
 		<< std::endl;
 		return;
 	}
+	if (_image2_color == 0) {
+		std::cerr << "Warning: _image2_color not set." \
+		<< std::endl;
+		return;
+	}
 
+	//==============================
+	// set viewport for image passes
+	//==============================
+
+	glViewport(0, 0, _image_width, _image_height);
+
+	//=============================================
 	// first rendering pass, draw into image buffer
+	//=============================================
 
 	// bind frame buffer
-	glViewport(0, 0, _image_width, _image_height);
 	glBindFramebuffer(GL_FRAMEBUFFER, _image_buffer);
 
 	// clear frame buffer
@@ -1151,13 +1281,91 @@ void SigAsiaDemo::MassList::render(
 
 	// unbind frame buffer
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	
+	//===============================================
+	// second rendering pass, draw into image2 buffer
+	//===============================================
+
+	// TODO: remove
 	glViewport(0, 0, _screen_width, _screen_height);
 
-	// render a screen space quad with the image
+	// set depth function
 
-	// bind quad shader
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, _image_color);
+
+	/*
+	// bind frame buffer
+	glBindFramebuffer(GL_FRAMEBUFFER, _image2_buffer);
+
+	// clear frame buffer
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	*/
+
+	// bind layer 1 shader
+	glUseProgram(_layer_1_program);
+
+	// setup uniforms
+	glUniform1i(_layer_1_ColorTexLocation, 0);
+	glUniformMatrix4fv(
+		_layer_1_ModelViewLocation,
+		1, GL_FALSE,
+		glm::value_ptr(ModelView));
+	glUniformMatrix4fv(
+		_layer_1_ProjectionLocation,
+		1, GL_FALSE,
+		glm::value_ptr(Projection));
+
+	glBindVertexArray(_masses_array);
+	glDrawArrays(GL_POINTS, 0, _masses.size());
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	glDepthFunc(GL_GREATER);
+
+	glBindVertexArray(_masses_array);
+	glDrawArrays(GL_POINTS, 0, _masses.size());
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	// reset depth function
+	glDepthFunc(GL_LESS);
+
+	glUseProgram(_plane_program);
+
+	glUniformMatrix4fv(
+		_plane_ModelViewLocation,
+		1, GL_FALSE,
+		glm::value_ptr(ModelView));
+	glUniformMatrix4fv(
+		_plane_ProjectionLocation,
+		1, GL_FALSE,
+		glm::value_ptr(Projection));
+
+	glBindVertexArray(_plane_array);
+	glDrawArrays(GL_QUADS, 0, 4);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	// unbind frame buffer
+	/*
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, 0);
+	*/
+
+	//===============================
+	// set viewport for screen passes
+	//===============================
+
+	glViewport(0, 0, _screen_width, _screen_height);
+
+	//==========================================
+	// render a screen space quad with the image
+	//==========================================
+
+	// bind quad shader
+	/*
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, _image2_color);
 
 	glUseProgram(_screen_program);
 
@@ -1166,6 +1374,7 @@ void SigAsiaDemo::MassList::render(
 	glBindVertexArray(_screen_array);
 	glDrawArrays(GL_QUADS, 0, 4);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	*/
 
 	// unbind shader
 	glUseProgram(0);
@@ -1186,17 +1395,18 @@ void SigAsiaDemo::MassList::resizeWindow(
 	_screen_width = width;
 	_screen_height = height;
 	// we assume that |v-p| ~= view_dist
-	float lambda = (far*near)*view_dist/(far - near) + 1.0;
+	float lambda = (far*near * view_dist)/(far - near) + 1.0;
 	_inv_rho = (tan(fov*0.5)*lambda)/(spring_length*static_cast<float>(width));
 	std::cout << "rho: " << 1.0f / _inv_rho << std::endl;
+	std::cout << "inv rho: " << _inv_rho << std::endl;
 	std::cout << "lambda: " << lambda << std::endl;
 	GLuint image_width =
 		static_cast<GLuint>(static_cast<float>(width) * _inv_rho);
 	GLuint image_height =
 		static_cast<GLuint>(static_cast<float>(height) * _inv_rho);
-	// TODO: fix
-	image_width = width/4;
-	image_height = height/4;
+	// TODO: remove
+	image_width = width;
+	image_height = height;
 	if (image_width != _image_width || image_height != _image_height) {
 		_image_width = image_width;
 		_image_height = image_height;

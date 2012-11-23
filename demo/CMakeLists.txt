@@ -39,6 +39,10 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/massGS.glsl
 	${CMAKE_CURRENT_BINARY_DIR}/massGS.glsl COPYONLY)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/massFS.glsl
 	${CMAKE_CURRENT_BINARY_DIR}/massFS.glsl COPYONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/mass2GS.glsl
+	${CMAKE_CURRENT_BINARY_DIR}/mass2GS.glsl COPYONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/mass2FS.glsl
+	${CMAKE_CURRENT_BINARY_DIR}/mass2FS.glsl COPYONLY)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/planeVS.glsl
 	${CMAKE_CURRENT_BINARY_DIR}/planeVS.glsl COPYONLY)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/planeFS.glsl

@@ -17,7 +17,6 @@ uniform mat4 ModelView;
 void main()
 {
 	// pass through data
-	// TODO
 	radius_v = position.w;
 
 	// vertex position

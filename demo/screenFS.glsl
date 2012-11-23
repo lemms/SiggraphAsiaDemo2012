@@ -7,9 +7,9 @@ Laurence Emms
 
 #version 400
 
-in vec2 uv_v;
-
 uniform sampler2D color_tex;
+
+in vec2 uv_v;
 
 layout(location = 0) out vec4 color_f;
 
