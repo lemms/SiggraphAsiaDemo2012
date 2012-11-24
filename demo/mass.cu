@@ -15,6 +15,7 @@ Laurence Emms
 
 #ifdef WIN32
 #include <windows.h>
+#define GLEW_STATIC
 #endif
 #include <GL/glew.h>
 #include <cuda.h>
@@ -1627,7 +1628,7 @@ void SigAsiaDemo::MassList::resizeWindow(
 	_screen_width = width;
 	_screen_height = height;
 	// we assume that |v-p| ~= view_dist
-	float lambda = (far*near * view_dist)/(far - near) + 1.0;
+	float lambda = 1.0; //(far*near * view_dist)/(far - near) + 1.0;
 	_inv_rho = (tan(fov*0.5)*lambda)/(spring_length*static_cast<float>(width));
 	std::cout << "rho: " << 1.0f / _inv_rho << std::endl;
 	std::cout << "inv rho: " << _inv_rho << std::endl;

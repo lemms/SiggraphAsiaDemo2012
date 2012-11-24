@@ -12,6 +12,9 @@ using namespace std;
 // OpenGL
 #ifdef WIN32
 #include <windows.h>
+#define GLEW_STATIC
+#pragma (lib, "freeglut_static.lib")
+#define GLUT_DISABLE_ATEXIT_HACK
 #endif
 #include <GL/glew.h>
 #ifdef __APPLE__

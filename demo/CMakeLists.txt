@@ -19,10 +19,12 @@ if (GLEW_FOUND)
 	set(DIRS ${DIRS} ${GLEW_INCLUDE_DIRS})
 	set(LIBS ${LIBS} ${GLEW_LIBRARIES})
 	message(STATUS " GLEW_INCLUDE_DIR:  ${GLEW_INCLUDE_DIRS}")
-	message(STATUS " GLEW_LIBRARIES:  ${GLEW_LIBRARIES}")
+	message(STATUS " GLEW_LIBRARIES:  ${GLEW_LIBRARIES}")	
+	ADD_DEFINITIONS(-DBUILD_VTI -DGLEW_STATIC)
 endif (GLEW_FOUND)
 
 # add GLUT support
+ADD_DEFINITIONS(-DBUILD_VTI -DFREEGLUT_STATIC)
 find_package (GLUT)
 if (GLUT_FOUND)
 	set(DIRS ${DIRS} ${GLUT_INCLUDE_DIRS})
@@ -54,6 +56,6 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/screenVS.glsl
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/screenFS.glsl
 	${CMAKE_CURRENT_BINARY_DIR}/screenFS.glsl COPYONLY)
 
-cuda_add_executable(SiggraphAsiaDemo main.cu viewport.cu mass.cu spring.cu device.cu camera.cu cube.cu)
+cuda_add_executable(SiggraphAsiaDemo main.cu viewport.cu mass.cu spring.cu device.cu camera.cu cube.cu glew.c)
 target_link_libraries (SiggraphAsiaDemo ${LIBS})
 

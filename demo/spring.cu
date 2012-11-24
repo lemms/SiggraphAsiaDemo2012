@@ -13,6 +13,7 @@ Laurence Emms
 
 #ifdef WIN32
 #include <windows.h>
+#define GLEW_STATIC
 #endif
 #include <GL/glew.h>
 

@@ -8,6 +8,12 @@ Laurence Emms
 
 #include <iostream>
 
+#ifdef WIN32
+#include <windows.h>
+#define GLEW_STATIC
+#endif
+#include <GL/glew.h>
+
 // CUDA
 #include <cuda.h>
 #include <cuda_gl_interop.h>
