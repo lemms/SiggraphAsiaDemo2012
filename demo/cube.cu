@@ -13,6 +13,9 @@ Laurence Emms
 #include <iterator>
 #include <cfloat>
 
+#ifdef WIN32
+#include <windows.h>
+#endif
 #include <GL/glew.h>
 #include <cuda.h>
 #include <cuda_gl_interop.h>

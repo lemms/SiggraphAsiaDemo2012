@@ -10,6 +10,9 @@ Laurence Emms
 using namespace std;
 
 // OpenGL
+#ifdef WIN32
+#include <windows.h>
+#endif
 #include <GL/glew.h>
 #ifdef __APPLE__
 #include <GLUT/glut.h>
