@@ -36,7 +36,9 @@ void main()
 		discard;
 	}
 
+	float g = 0.199471 * exp(-0.5*(l_r*l_r*4.0))*10.0;
+
 	//color_f = vec4(dist, dist, dist, 1.0);
-	color_f = vec4(l_r, l_r, l_r, 1.0);
-	//color_f = vec4(wpos_g.xyz, 1.0);
+	//color_f = vec4(l_r, l_r, l_r, 1.0);
+	color_f = vec4(wpos_g.xy, wpos_g.z + (1.0-g), 1.0);
 }

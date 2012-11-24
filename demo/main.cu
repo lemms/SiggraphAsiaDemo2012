@@ -49,6 +49,7 @@ bool ground_collision = true;
 
 float resolution_multiplier = 0.02;
 float cube_spacing = 1.0;
+float cube_radius = 1.0;
 
 void ParseArgs(int argc, char **argv)
 {
@@ -454,7 +455,7 @@ int main(int argc, char **argv)
 		10, 10, 10,			// size
 		cube_spacing,		// spacing
 		4.0,				// mass
-		cube_spacing		// radius
+		cube_radius		// radius
 		));
 	/*
 	cubes.push(SigAsiaDemo::Cube(
@@ -462,7 +463,7 @@ int main(int argc, char **argv)
 		10, 10, 10,			// size
 		cube_spacing,		// spacing
 		4.0,				// mass
-		cube_spacing		// radius
+		cube_radius		// radius
 		));
 	*/
 	cubes.push(SigAsiaDemo::Cube(
@@ -470,7 +471,7 @@ int main(int argc, char **argv)
 		10, 10, 10,			// size
 		cube_spacing*0.5,	// spacing
 		4.0,				// mass
-		cube_spacing*0.5	// radius
+		cube_radius*0.5	// radius
 		));
 	/*
 	cubes.push(SigAsiaDemo::Cube(
@@ -478,7 +479,7 @@ int main(int argc, char **argv)
 		10, 10, 10,			// size
 		cube_spacing,		// spacing
 		4.0,				// mass
-		cube_spacing		// radius
+		cube_radius		// radius
 		));
 	*/
 	cubes.push(SigAsiaDemo::Cube(
@@ -486,7 +487,7 @@ int main(int argc, char **argv)
 		10, 10, 10,			// size
 		cube_spacing,		// spacing
 		4.0,				// mass
-		cube_spacing		// radius
+		cube_radius		// radius
 		));
 
 	cubes.push(SigAsiaDemo::Cube(
@@ -494,7 +495,7 @@ int main(int argc, char **argv)
 		10, 10, 10,			// size
 		cube_spacing,		// spacing
 		4.0,				// mass
-		cube_spacing		// radius
+		cube_radius		// radius
 		));
 	/*
 	cubes.push(SigAsiaDemo::Cube(
@@ -502,7 +503,7 @@ int main(int argc, char **argv)
 		10, 10, 10,			// size
 		cube_spacing,		// spacing
 		4.0,				// mass
-		cube_spacing		// radius
+		cube_radius		// radius
 		));
 	*/
 	cubes.push(SigAsiaDemo::Cube(
@@ -510,7 +511,7 @@ int main(int argc, char **argv)
 		10, 10, 10,			// size
 		cube_spacing,		// spacing
 		4.0,				// mass
-		cube_spacing		// radius
+		cube_radius		// radius
 		));
 	/*
 	cubes.push(SigAsiaDemo::Cube(
@@ -518,7 +519,7 @@ int main(int argc, char **argv)
 		10, 10, 10,			// size
 		cube_spacing,		// spacing
 		4.0,				// mass
-		cube_spacing		// radius
+		cube_radius		// radius
 		));
 	*/
 	cubes.push(SigAsiaDemo::Cube(
@@ -526,7 +527,7 @@ int main(int argc, char **argv)
 		10, 10, 10,			// size
 		cube_spacing,		// spacing
 		4.0,				// mass
-		cube_spacing		// radius
+		cube_radius		// radius
 		));
 
 	std::cout << "Create cubes." << std::endl;

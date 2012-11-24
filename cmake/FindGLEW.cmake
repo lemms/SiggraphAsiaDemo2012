@@ -1,53 +1,63 @@
-# The MIT License (MIT)
-# 
-# Copyright (c) 2007 NVIDIA
-# 
-# Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-# 
-# The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-# 
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# Copyright (c) 1998, Regents of the University of California
+# All rights reserved.
 
-# - Try to find GLEW
+# Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+
+# Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+# Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+# Neither the name of the University of California, Berkeley nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+#
+# Try to find GLEW library and include path.
 # Once done this will define
-#  GLEW_FOUND - System has GLEW
-#  GLEW_INCLUDE_DIRS - The GLEW include directories
-#  GLEW_LIBRARIES - The libraries needed to use GLEW
-#  GLEW_DEFINITIONS - Compiler switches required for using GLEW
+#
+# GLEW_FOUND
+# GLEW_INCLUDE_PATH
+# GLEW_LIBRARY
+#
+IF (WIN32)
+FIND_PATH( GLEW_INCLUDE_PATH GL/glew.h
+${GLEW_ROOT_DIR}/include
+DOC "The directory where GL/glew.h resides")
+if (CMAKE_SIZEOF_VOID_P EQUAL 8)
+set(GLEWNAMES glew GLEW glew64 glew64s)
+else ()
+set(GLEWNAMES glew GLEW glew32 glew32s)
+endif (CMAKE_SIZEOF_VOID_P EQUAL 8)
 
-find_package(PkgConfig)
-pkg_check_modules(PC_GLEW QUIET glew)
-set(GLEW_DEFINITIONS ${PC_GLEW_CFLAGS_OTHER})
+FIND_LIBRARY( GLEW_LIBRARY
+NAMES ${GLEWNAMES}
+PATHS
+${GLEW_ROOT_DIR}/bin
+${GLEW_ROOT_DIR}/lib
+DOC "The GLEW library")
+ELSE (WIN32)
+FIND_PATH( GLEW_INCLUDE_PATH GL/glew.h
+/usr/include
+/usr/local/include
+/sw/include
+/opt/local/include
+${GLEW_ROOT_DIR}/include
+DOC "The directory where GL/glew.h resides")
+FIND_LIBRARY( GLEW_LIBRARY
+NAMES GLEW libGLEW
+PATHS
+/usr/lib64
+/usr/lib
+/usr/local/lib64
+/usr/local/lib
+/sw/lib
+/opt/local/lib
+${GLEW_ROOT_DIR}/lib
+DOC "The GLEW library")
+ENDIF (WIN32)
 
-find_path(GLEW_INCLUDE_DIR GL/glew.h
-		/usr/include
-		/usr/local/include
-		/sw/include
-		/opt/local/include
-		HINTS ${PC_GLEW_INCLUDEDIR} ${PC_GLEW_INCLUDE_DIRS}
-		PATH_SUFFIXES glew)
+IF (GLEW_INCLUDE_PATH AND GLEW_LIBRARY)
+SET( FOUND_GLEW 1)
+ELSE (GLEW_INCLUDE_PATH AND GLEW_LIBRARY)
+SET( FOUND_GLEW 0)
+ENDIF (GLEW_INCLUDE_PATH AND GLEW_LIBRARY)
 
-find_library(GLEW_LIBRARY 
-		NAMES glew GLEW libglew glew32 libglew32 glew32s
-		PATHS
-		/usr/lib64
-		/usr/lib
-		/usr/local/lib64
-		/usr/local/lib
-		/usr/bin
-		/usr/local/bin
-		/sw/lib
-		/opt/local/lib
-		HINTS ${PC_GLEW_LIBDIR} ${PC_GLEW_LIBRARY_DIRS})
-
-set(GLEW_LIBRARIES ${GLEW_LIBRARY})
-set(GLEW_INCLUDE_DIRS ${GLEW_INCLUDE_DIR})
-
-include(FindPackageHandleStandardArgs)
-# handle the QUIETLY and REQUIRED arguments and set GLEW_FOUND to TRUE
-# if all listed variables are TRUE
-find_package_handle_standard_args(GLEW  DEFAULT_MSG
-                                  GLEW_LIBRARY GLEW_INCLUDE_DIR)
-
-mark_as_advanced(GLEW_INCLUDE_DIR GLEW_LIBRARY)
-
+MARK_AS_ADVANCED( FOUND_GLEW )

@@ -124,6 +124,8 @@ namespace SigAsiaDemo {
 			GLuint _screen_tex_buffer;
 
 			// shaders
+
+			// layer 0 shader
 			int _layer_0_ModelViewLocation;
 			int _layer_0_ProjectionLocation;
 			GLuint _layer_0_vertex_shader;
@@ -131,6 +133,7 @@ namespace SigAsiaDemo {
 			GLuint _layer_0_fragment_shader;
 			GLuint _layer_0_program;
 
+			// layer 1 shader
 			int _layer_1_ModelViewLocation;
 			int _layer_1_ProjectionLocation;
 			int _layer_1_ColorTexLocation;
@@ -139,13 +142,25 @@ namespace SigAsiaDemo {
 			GLuint _layer_1_fragment_shader;
 			GLuint _layer_1_program;
 
+			// averaging shader
+			int _avg_ColorTexLocation;
+			int _avg_Color2TexLocation;
+			int _avg_WidthLocation;
+			int _avg_HeightLocation;
+			GLuint _avg_vertex_shader;
+			GLuint _avg_fragment_shader;
+			GLuint _avg_program;
+
 			int _plane_ModelViewLocation;
 			int _plane_ProjectionLocation;
 			GLuint _plane_vertex_shader;
 			GLuint _plane_fragment_shader;
 			GLuint _plane_program;
 
-			int _screen_ColorTexLocation;
+			int _screen_PositionTexLocation;
+			int _screen_NormalTexLocation;
+			int _screen_WidthLocation;
+			int _screen_HeightLocation;
 			GLuint _screen_vertex_shader;
 			GLuint _screen_fragment_shader;
 			GLuint _screen_program;
@@ -162,6 +177,10 @@ namespace SigAsiaDemo {
 			GLuint _image2_buffer;
 			GLuint _image2_color;
 			GLuint _image2_depth;
+			// third pass
+			GLuint _image3_buffer;
+			GLuint _image3_color;
+			GLuint _image3_depth;
 
 			// CUDA
 			unsigned int _threads;

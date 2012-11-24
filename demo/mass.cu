@@ -82,12 +82,22 @@ SigAsiaDemo::MassList::MassList(
 	_layer_1_geometry_shader(0),
 	_layer_1_fragment_shader(0),
 	_layer_1_program(0),
+	_avg_ColorTexLocation(0),
+	_avg_Color2TexLocation(0),
+	_avg_WidthLocation(0),
+	_avg_HeightLocation(0),
+	_avg_vertex_shader(0),
+	_avg_fragment_shader(0),
+	_avg_program(0),
 	_plane_ModelViewLocation(0),
 	_plane_ProjectionLocation(0),
 	_plane_vertex_shader(0),
 	_plane_fragment_shader(0),
 	_plane_program(0),
-	_screen_ColorTexLocation(0),
+	_screen_PositionTexLocation(0),
+	_screen_NormalTexLocation(0),
+	_screen_WidthLocation(0),
+	_screen_HeightLocation(0),
 	_screen_vertex_shader(0),
 	_screen_fragment_shader(0),
 	_screen_program(0),
@@ -100,6 +110,9 @@ SigAsiaDemo::MassList::MassList(
 	_image2_buffer(0),
 	_image2_color(0),
 	_image2_depth(0),
+	_image3_buffer(0),
+	_image3_color(0),
+	_image3_depth(0),
 	_threads(threads)
 {
 }
@@ -981,6 +994,53 @@ bool SigAsiaDemo::MassList::loadShaders()
 		return false;
 	}
 
+	std::cout << "Load averaging shader" << std::endl;
+	success = loadShader(
+		"avgVS.glsl",
+		"",
+		"avgFS.glsl",
+		&_avg_program,
+		&_avg_vertex_shader,
+		0,
+		&_avg_fragment_shader);
+	if (!success)
+		return false;
+
+	glUseProgram(_avg_program);
+
+	// get uniforms
+	_avg_ColorTexLocation = glGetUniformLocation(
+		_avg_program, "color_tex");
+	if (_avg_ColorTexLocation == -1) {
+		std::cerr << "Error: Failed to get Color Tex location." \
+			<< std::endl;
+		return false;
+	}
+
+	_avg_Color2TexLocation = glGetUniformLocation(
+		_avg_program, "color2_tex");
+	if (_avg_Color2TexLocation == -1) {
+		std::cerr << "Error: Failed to get Color Tex 2 location." \
+			<< std::endl;
+		return false;
+	}
+
+	_avg_WidthLocation = glGetUniformLocation(
+		_avg_program, "inv_image_width");
+	if (_avg_WidthLocation == -1) {
+		std::cerr << "Error: Failed to get Width location." \
+			<< std::endl;
+		return false;
+	}
+
+	_avg_HeightLocation = glGetUniformLocation(
+		_avg_program, "inv_image_height");
+	if (_avg_HeightLocation == -1) {
+		std::cerr << "Error: Failed to get Height location." \
+			<< std::endl;
+		return false;
+	}
+
 	std::cout << "Load plane shader" << std::endl;
 	success = loadShader(
 		"planeVS.glsl",
@@ -1027,10 +1087,34 @@ bool SigAsiaDemo::MassList::loadShaders()
 	glUseProgram(_screen_program);
 
 	// get uniforms
-	_screen_ColorTexLocation = glGetUniformLocation(
-		_screen_program, "color_tex");
-	if (_screen_ColorTexLocation == -1) {
-		std::cerr << "Error: Failed to get Color Tex location." \
+	_screen_PositionTexLocation = glGetUniformLocation(
+		_screen_program, "position_tex");
+	if (_screen_PositionTexLocation == -1) {
+		std::cerr << "Error: Failed to get Position Tex location." \
+			<< std::endl;
+		return false;
+	}
+
+	_screen_NormalTexLocation = glGetUniformLocation(
+		_screen_program, "normal_tex");
+	if (_screen_NormalTexLocation == -1) {
+		std::cerr << "Error: Failed to get Normal Tex location." \
+			<< std::endl;
+		return false;
+	}
+
+	_screen_WidthLocation = glGetUniformLocation(
+		_screen_program, "inv_image_width");
+	if (_screen_WidthLocation == -1) {
+		std::cerr << "Error: Failed to get Width location." \
+			<< std::endl;
+		return false;
+	}
+
+	_screen_HeightLocation = glGetUniformLocation(
+		_screen_program, "inv_image_height");
+	if (_screen_HeightLocation == -1) {
+		std::cerr << "Error: Failed to get Height location." \
 			<< std::endl;
 		return false;
 	}
@@ -1069,6 +1153,19 @@ void SigAsiaDemo::MassList::clearBuffers()
 		glDeleteFramebuffers(1, &_image2_buffer);
 		_image2_buffer = 0;
 	}
+
+	if (_image3_color != 0) {
+		glDeleteTextures(1, &_image3_color);
+		_image3_color = 0;
+	}
+	if (_image3_depth != 0) {
+		glDeleteRenderbuffers(1, &_image3_depth);
+		_image3_depth = 0;
+	}
+	if (_image3_buffer != 0) {
+		glDeleteFramebuffers(1, &_image3_buffer);
+		_image3_buffer = 0;
+	}
 }
 
 bool SigAsiaDemo::MassList::loadBuffers()
@@ -1090,6 +1187,8 @@ bool SigAsiaDemo::MassList::loadBuffers()
 			GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
 			GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
 
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
 			GL_TEXTURE_2D, _image_color, 0);
@@ -1121,6 +1220,8 @@ bool SigAsiaDemo::MassList::loadBuffers()
 			GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
 			GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
 
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
 			GL_TEXTURE_2D, _image2_color, 0);
@@ -1131,6 +1232,39 @@ bool SigAsiaDemo::MassList::loadBuffers()
 			_image_width, _image_height);
 		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
 			GL_RENDERBUFFER, _image2_depth);
+		
+		GLenum targets[] = {GL_COLOR_ATTACHMENT0};
+		glDrawBuffers(1, targets);
+
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	}
+
+	if (_image3_buffer == 0) {
+		// generate offscreen rendering buffer
+		glGenFramebuffers(1, &_image3_buffer);
+		glBindFramebuffer(GL_FRAMEBUFFER, _image3_buffer);
+
+		glGenTextures(1, &_image3_color);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, _image3_color);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, _image_width, _image_height,
+			0, GL_RGBA, GL_FLOAT, NULL);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+			GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
+			GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+			GL_TEXTURE_2D, _image3_color, 0);
+
+		glGenRenderbuffers(1, &_image3_depth);
+		glBindRenderbuffer(GL_RENDERBUFFER, _image3_depth);
+		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT,
+			_image_width, _image_height);
+		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+			GL_RENDERBUFFER, _image3_depth);
 		
 		GLenum targets[] = {GL_COLOR_ATTACHMENT0};
 		glDrawBuffers(1, targets);
@@ -1152,6 +1286,11 @@ void SigAsiaDemo::MassList::render(
 	}
 	if (_layer_1_program == 0) {
 		std::cerr << "Warning: _layer_1_program not set." \
+		<< std::endl;
+		return;
+	}
+	if (_avg_program == 0) {
+		std::cerr << "Warning: _avg_program not set." \
 		<< std::endl;
 		return;
 	}
@@ -1190,6 +1329,26 @@ void SigAsiaDemo::MassList::render(
 		<< std::endl;
 		return;
 	}
+	if (_avg_ColorTexLocation == -1) {
+		std::cerr << "Warning: _avg_ColorTexLocation not set." \
+		<< std::endl;
+		return;
+	}
+	if (_avg_Color2TexLocation == -1) {
+		std::cerr << "Warning: _avg_Color2TexLocation not set." \
+		<< std::endl;
+		return;
+	}
+	if (_avg_WidthLocation == -1) {
+		std::cerr << "Warning: _avg_WidthLocation not set." \
+		<< std::endl;
+		return;
+	}
+	if (_avg_HeightLocation == -1) {
+		std::cerr << "Warning: _avg_HeightLocation not set." \
+		<< std::endl;
+		return;
+	}
 	if (_plane_ModelViewLocation == -1) {
 		std::cerr << "Warning: _plane_ModelViewLocation not set." \
 		<< std::endl;
@@ -1200,8 +1359,21 @@ void SigAsiaDemo::MassList::render(
 		<< std::endl;
 		return;
 	}
-	if (_screen_ColorTexLocation == -1) {
-		std::cerr << "Warning: _screen_ColorTexLocation not set." \
+	if (_screen_PositionTexLocation == -1) {
+		std::cerr << "Warning: _screen_PositionTexLocation not set." \
+		<< std::endl;
+	}
+	if (_screen_NormalTexLocation == -1) {
+		std::cerr << "Warning: _screen_NormalTexLocation not set." \
+		<< std::endl;
+	}
+	if (_screen_WidthLocation == -1) {
+		std::cerr << "Warning: _screen_WidthLocation not set." \
+		<< std::endl;
+		return;
+	}
+	if (_screen_HeightLocation == -1) {
+		std::cerr << "Warning: _screen_HeightLocation not set." \
 		<< std::endl;
 		return;
 	}
@@ -1227,6 +1399,26 @@ void SigAsiaDemo::MassList::render(
 	}
 	if (_image2_color == 0) {
 		std::cerr << "Warning: _image2_color not set." \
+		<< std::endl;
+		return;
+	}
+	if (_image3_color == 0) {
+		std::cerr << "Warning: _image3_color not set." \
+		<< std::endl;
+		return;
+	}
+	if (_image_buffer == 0) {
+		std::cerr << "Warning: _image_buffer not set." \
+		<< std::endl;
+		return;
+	}
+	if (_image2_color == 0) {
+		std::cerr << "Warning: _image2_buffer not set." \
+		<< std::endl;
+		return;
+	}
+	if (_image3_color == 0) {
+		std::cerr << "Warning: _image3_color not set." \
 		<< std::endl;
 		return;
 	}
@@ -1286,21 +1478,16 @@ void SigAsiaDemo::MassList::render(
 	// second rendering pass, draw into image2 buffer
 	//===============================================
 
-	// TODO: remove
-	glViewport(0, 0, _screen_width, _screen_height);
-
 	// set depth function
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, _image_color);
 
-	/*
 	// bind frame buffer
 	glBindFramebuffer(GL_FRAMEBUFFER, _image2_buffer);
 
 	// clear frame buffer
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	*/
 
 	// bind layer 1 shader
 	glUseProgram(_layer_1_program);
@@ -1345,12 +1532,47 @@ void SigAsiaDemo::MassList::render(
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	// unbind frame buffer
-	/*
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, 0);
-	*/
+
+	//===============================================
+	// third rendering pass, draw into image3 buffer
+	//===============================================
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, _image_color);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, _image2_color);
+
+	// bind frame buffer
+	glBindFramebuffer(GL_FRAMEBUFFER, _image3_buffer);
+
+	// clear frame buffer
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	glUseProgram(_avg_program);
+
+	float inv_width = 1.0 / static_cast<float>(_image_width);
+	float inv_height = 1.0 / static_cast<float>(_image_height);
+
+	glUniform1i(_avg_ColorTexLocation, 0);
+	glUniform1i(_avg_Color2TexLocation, 1);
+	glUniform1f(_avg_WidthLocation, inv_width);
+	glUniform1f(_avg_HeightLocation, inv_height);
+
+	glBindVertexArray(_screen_array);
+	glDrawArrays(GL_QUADS, 0, 4);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	// unbind frame buffer
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, 0);
 
 	//===============================
 	// set viewport for screen passes
@@ -1363,22 +1585,29 @@ void SigAsiaDemo::MassList::render(
 	//==========================================
 
 	// bind quad shader
-	/*
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, _image2_color);
+	glBindTexture(GL_TEXTURE_2D, _image_color);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, _image3_color);
 
 	glUseProgram(_screen_program);
 
-	glUniform1i(_screen_ColorTexLocation, 0);
+	if (_screen_PositionTexLocation != -1)
+		glUniform1i(_screen_PositionTexLocation, 0);
+	if (_screen_NormalTexLocation != -1)
+		glUniform1i(_screen_NormalTexLocation, 1);
+	glUniform1f(_screen_WidthLocation, inv_width);
+	glUniform1f(_screen_HeightLocation, inv_height);
 
 	glBindVertexArray(_screen_array);
 	glDrawArrays(GL_QUADS, 0, 4);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	*/
 
 	// unbind shader
 	glUseProgram(0);
 
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, 0);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
