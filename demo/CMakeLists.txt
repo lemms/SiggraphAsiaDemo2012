@@ -35,18 +35,28 @@ endif (GLUT_FOUND)
 
 include_directories(${DIRS})
 
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/massVS.glsl
-	${CMAKE_CURRENT_BINARY_DIR}/massVS.glsl COPYONLY)
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/massGS.glsl
-	${CMAKE_CURRENT_BINARY_DIR}/massGS.glsl COPYONLY)
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/massFS.glsl
-	${CMAKE_CURRENT_BINARY_DIR}/massFS.glsl COPYONLY)
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/mass2FS.glsl
-	${CMAKE_CURRENT_BINARY_DIR}/mass2FS.glsl COPYONLY)
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/avgVS.glsl
-	${CMAKE_CURRENT_BINARY_DIR}/avgVS.glsl COPYONLY)
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/avgFS.glsl
-	${CMAKE_CURRENT_BINARY_DIR}/avgFS.glsl COPYONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/depthVS.glsl
+	${CMAKE_CURRENT_BINARY_DIR}/depthVS.glsl COPYONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/depthGS.glsl
+	${CMAKE_CURRENT_BINARY_DIR}/depthGS.glsl COPYONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/depthFS.glsl
+	${CMAKE_CURRENT_BINARY_DIR}/depthFS.glsl COPYONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/overlapVS.glsl
+	${CMAKE_CURRENT_BINARY_DIR}/overlapVS.glsl COPYONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/overlapGS.glsl
+	${CMAKE_CURRENT_BINARY_DIR}/overlapGS.glsl COPYONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/overlapFS.glsl
+	${CMAKE_CURRENT_BINARY_DIR}/overlapFS.glsl COPYONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/weightVS.glsl
+	${CMAKE_CURRENT_BINARY_DIR}/weightVS.glsl COPYONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/weightGS.glsl
+	${CMAKE_CURRENT_BINARY_DIR}/weightGS.glsl COPYONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/weightFS.glsl
+	${CMAKE_CURRENT_BINARY_DIR}/weightFS.glsl COPYONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/outlineVS.glsl
+	${CMAKE_CURRENT_BINARY_DIR}/outlineVS.glsl COPYONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/outlineFS.glsl
+	${CMAKE_CURRENT_BINARY_DIR}/outlineFS.glsl COPYONLY)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/planeVS.glsl
 	${CMAKE_CURRENT_BINARY_DIR}/planeVS.glsl COPYONLY)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/planeFS.glsl

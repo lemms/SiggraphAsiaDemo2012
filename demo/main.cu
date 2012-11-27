@@ -456,6 +456,7 @@ int main(int argc, char **argv)
 
 	std::cout << "Setup cube." << std::endl;
 
+	/*
 	cubes.push(SigAsiaDemo::Cube(
 		-40.0, 20.0, 0.0,	// position
 		10, 10, 10,			// size
@@ -463,6 +464,7 @@ int main(int argc, char **argv)
 		4.0,				// mass
 		cube_radius		// radius
 		));
+	*/
 	/*
 	cubes.push(SigAsiaDemo::Cube(
 		-20.0, 30.0, 0.0,	// position
@@ -488,6 +490,7 @@ int main(int argc, char **argv)
 		cube_radius		// radius
 		));
 	*/
+	/*
 	cubes.push(SigAsiaDemo::Cube(
 		40.0, 60.0, 0.0,	// position
 		10, 10, 10,			// size
@@ -495,7 +498,9 @@ int main(int argc, char **argv)
 		4.0,				// mass
 		cube_radius		// radius
 		));
+	*/
 
+	/*
 	cubes.push(SigAsiaDemo::Cube(
 		-40.0, 40.0, 0.0,	// position
 		10, 10, 10,			// size
@@ -503,6 +508,7 @@ int main(int argc, char **argv)
 		4.0,				// mass
 		cube_radius		// radius
 		));
+	*/
 	/*
 	cubes.push(SigAsiaDemo::Cube(
 		-20.0, 50.0, 0.0,	// position
@@ -528,6 +534,7 @@ int main(int argc, char **argv)
 		cube_radius		// radius
 		));
 	*/
+	/*
 	cubes.push(SigAsiaDemo::Cube(
 		40.0, 80.0, 0.0,	// position
 		10, 10, 10,			// size
@@ -535,6 +542,7 @@ int main(int argc, char **argv)
 		4.0,				// mass
 		cube_radius		// radius
 		));
+	*/
 
 	std::cout << "Create cubes." << std::endl;
 	cubes.create(masses, springs);

@@ -14,6 +14,7 @@ uniform mat4 ModelView;
 uniform mat4 Projection;
 
 out vec4 wpos_v;
+out vec4 ppos_v;
 
 void main()
 {
@@ -21,6 +22,7 @@ void main()
 	wpos_v = ModelView*vec4(position.xyz, 1.0);
 
 	// vertex position
-	gl_Position = Projection*wpos_v;
+	ppos_v = Projection*wpos_v;
+	gl_Position = ppos_v;
 }
 

@@ -125,31 +125,40 @@ namespace SigAsiaDemo {
 
 			// shaders
 
-			// layer 0 shader
-			int _layer_0_ModelViewLocation;
-			int _layer_0_ProjectionLocation;
-			GLuint _layer_0_vertex_shader;
-			GLuint _layer_0_geometry_shader;
-			GLuint _layer_0_fragment_shader;
-			GLuint _layer_0_program;
+			// depth shader
+			int _depth_ModelViewLocation;
+			int _depth_ProjectionLocation;
+			GLuint _depth_vertex_shader;
+			GLuint _depth_geometry_shader;
+			GLuint _depth_fragment_shader;
+			GLuint _depth_program;
 
-			// layer 1 shader
-			int _layer_1_ModelViewLocation;
-			int _layer_1_ProjectionLocation;
-			int _layer_1_ColorTexLocation;
-			GLuint _layer_1_vertex_shader;
-			GLuint _layer_1_geometry_shader;
-			GLuint _layer_1_fragment_shader;
-			GLuint _layer_1_program;
+			// overlap shader
+			int _overlap_ModelViewLocation;
+			int _overlap_ProjectionLocation;
+			int _overlap_DepthTexLocation;
+			GLuint _overlap_vertex_shader;
+			GLuint _overlap_geometry_shader;
+			GLuint _overlap_fragment_shader;
+			GLuint _overlap_program;
 
-			// averaging shader
-			int _avg_ColorTexLocation;
-			int _avg_Color2TexLocation;
-			int _avg_WidthLocation;
-			int _avg_HeightLocation;
-			GLuint _avg_vertex_shader;
-			GLuint _avg_fragment_shader;
-			GLuint _avg_program;
+			// weight shader
+			int _weight_ModelViewLocation;
+			int _weight_ProjectionLocation;
+			int _weight_DepthTexLocation;
+			int _weight_OverlapTexLocation;
+			GLuint _weight_vertex_shader;
+			GLuint _weight_geometry_shader;
+			GLuint _weight_fragment_shader;
+			GLuint _weight_program;
+
+			// outline shader
+			int _outline_DepthTexLocation;
+			int _outline_WeightTexLocation;
+			GLuint _outline_vertex_shader;
+			GLuint _outline_geometry_shader;
+			GLuint _outline_fragment_shader;
+			GLuint _outline_program;
 
 			int _plane_ModelViewLocation;
 			int _plane_ProjectionLocation;
@@ -169,18 +178,24 @@ namespace SigAsiaDemo {
 			float _inv_rho;
 			GLuint _image_width;
 			GLuint _image_height;
-			// first pass
-			GLuint _image_buffer;
-			GLuint _image_color;
-			GLuint _image_depth;
-			// second pass
-			GLuint _image2_buffer;
-			GLuint _image2_color;
-			GLuint _image2_depth;
-			// third pass
-			GLuint _image3_buffer;
-			GLuint _image3_color;
-			GLuint _image3_depth;
+
+			// depth pass
+			GLuint _depth_buffer;
+			GLuint _depth_color;
+			GLuint _depth_depth;
+			// overlap pass
+			GLuint _overlap_buffer;
+			GLuint _overlap_color;
+			GLuint _overlap_depth;
+			// weight pass
+			GLuint _weight_buffer;
+			GLuint _weight_color;
+			GLuint _weight_depth;
+
+			// outline pass
+			GLuint _outline_buffer;
+			GLuint _outline_color;
+			GLuint _outline_depth;
 
 			// CUDA
 			unsigned int _threads;

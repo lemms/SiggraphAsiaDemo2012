@@ -1,5 +1,5 @@
 /*
-massVS.glsl
+weightVS.glsl
 Simple pass-through shader for point masses.
 
 Laurence Emms

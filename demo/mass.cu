@@ -73,26 +73,33 @@ SigAsiaDemo::MassList::MassList(
 	_screen_array(0),
 	_screen_pos_buffer(0),
 	_screen_tex_buffer(0),
-	_layer_0_ModelViewLocation(0),
-	_layer_0_ProjectionLocation(0),
-	_layer_0_vertex_shader(0),
-	_layer_0_geometry_shader(0),
-	_layer_0_fragment_shader(0),
-	_layer_0_program(0),
-	_layer_1_ModelViewLocation(0),
-	_layer_1_ProjectionLocation(0),
-	_layer_1_ColorTexLocation(0),
-	_layer_1_vertex_shader(0),
-	_layer_1_geometry_shader(0),
-	_layer_1_fragment_shader(0),
-	_layer_1_program(0),
-	_avg_ColorTexLocation(0),
-	_avg_Color2TexLocation(0),
-	_avg_WidthLocation(0),
-	_avg_HeightLocation(0),
-	_avg_vertex_shader(0),
-	_avg_fragment_shader(0),
-	_avg_program(0),
+	_depth_ModelViewLocation(0),
+	_depth_ProjectionLocation(0),
+	_depth_vertex_shader(0),
+	_depth_geometry_shader(0),
+	_depth_fragment_shader(0),
+	_depth_program(0),
+	_overlap_ModelViewLocation(0),
+	_overlap_ProjectionLocation(0),
+	_overlap_DepthTexLocation(0),
+	_overlap_vertex_shader(0),
+	_overlap_geometry_shader(0),
+	_overlap_fragment_shader(0),
+	_overlap_program(0),
+	_weight_ModelViewLocation(0),
+	_weight_ProjectionLocation(0),
+	_weight_DepthTexLocation(0),
+	_weight_OverlapTexLocation(0),
+	_weight_vertex_shader(0),
+	_weight_geometry_shader(0),
+	_weight_fragment_shader(0),
+	_weight_program(0),
+	_outline_DepthTexLocation(0),
+	_outline_WeightTexLocation(0),
+	_outline_vertex_shader(0),
+	_outline_geometry_shader(0),
+	_outline_fragment_shader(0),
+	_outline_program(0),
 	_plane_ModelViewLocation(0),
 	_plane_ProjectionLocation(0),
 	_plane_vertex_shader(0),
@@ -108,15 +115,18 @@ SigAsiaDemo::MassList::MassList(
 	_inv_rho(1.0),
 	_image_width(1024),
 	_image_height(768),
-	_image_buffer(0),
-	_image_color(0),
-	_image_depth(0),
-	_image2_buffer(0),
-	_image2_color(0),
-	_image2_depth(0),
-	_image3_buffer(0),
-	_image3_color(0),
-	_image3_depth(0),
+	_depth_buffer(0),
+	_depth_color(0),
+	_depth_depth(0),
+	_overlap_buffer(0),
+	_overlap_color(0),
+	_overlap_depth(0),
+	_weight_buffer(0),
+	_weight_color(0),
+	_weight_depth(0),
+	_outline_buffer(0),
+	_outline_color(0),
+	_outline_depth(0),
 	_threads(threads)
 {
 }
@@ -927,122 +937,150 @@ bool loadShader(
 
 bool SigAsiaDemo::MassList::loadShaders()
 {
-	std::cout << "Load layer 0 shader" << std::endl;
+
+	std::cout << "Load depth shader" << std::endl;
 	bool success = false;
 	success = loadShader(
-		"massVS.glsl",
-		"massGS.glsl",
-		"massFS.glsl",
-		&_layer_0_program,
-		&_layer_0_vertex_shader,
-		&_layer_0_geometry_shader,
-		&_layer_0_fragment_shader);
+		"depthVS.glsl",
+		"depthGS.glsl",
+		"depthFS.glsl",
+		&_depth_program,
+		&_depth_vertex_shader,
+		&_depth_geometry_shader,
+		&_depth_fragment_shader);
 	if (!success)
 		return false;
 
-	glUseProgram(_layer_0_program);
+	glUseProgram(_depth_program);
 
 	// get uniforms
-	_layer_0_ModelViewLocation = glGetUniformLocation(
-		_layer_0_program, "ModelView");
-	if (_layer_0_ModelViewLocation == -1) {
+	_depth_ModelViewLocation = glGetUniformLocation(
+		_depth_program, "ModelView");
+	if (_depth_ModelViewLocation == -1) {
 		std::cerr << "Error: Failed to get ModelView location." \
 			<< std::endl;
 		return false;
 	}
 
-	_layer_0_ProjectionLocation = glGetUniformLocation(
-		_layer_0_program, "Projection");
-	if (_layer_0_ProjectionLocation == -1) {
+	_depth_ProjectionLocation = glGetUniformLocation(
+		_depth_program, "Projection");
+	if (_depth_ProjectionLocation == -1) {
 		std::cerr << "Error: Failed to get Projection location." \
 			<< std::endl;
 		return false;
 	}
 
-	std::cout << "Load layer 1 shader" << std::endl;
+	std::cout << "Load overlap shader" << std::endl;
+	success = false;
 	success = loadShader(
-		"massVS.glsl",
-		"massGS.glsl",
-		"mass2FS.glsl",
-		&_layer_1_program,
-		&_layer_1_vertex_shader,
-		&_layer_1_geometry_shader,
-		&_layer_1_fragment_shader);
+		"overlapVS.glsl",
+		"overlapGS.glsl",
+		"overlapFS.glsl",
+		&_overlap_program,
+		&_overlap_vertex_shader,
+		&_overlap_geometry_shader,
+		&_overlap_fragment_shader);
 	if (!success)
 		return false;
 
-	glUseProgram(_layer_1_program);
+	glUseProgram(_overlap_program);
 
 	// get uniforms
-	_layer_1_ModelViewLocation = glGetUniformLocation(
-		_layer_1_program, "ModelView");
-	if (_layer_1_ModelViewLocation == -1) {
+	_overlap_ModelViewLocation = glGetUniformLocation(
+		_overlap_program, "ModelView");
+	if (_overlap_ModelViewLocation == -1) {
 		std::cerr << "Error: Failed to get ModelView location." \
 			<< std::endl;
 		return false;
 	}
 
-	_layer_1_ProjectionLocation = glGetUniformLocation(
-		_layer_1_program, "Projection");
-	if (_layer_1_ProjectionLocation == -1) {
+	_overlap_ProjectionLocation = glGetUniformLocation(
+		_overlap_program, "Projection");
+	if (_overlap_ProjectionLocation == -1) {
 		std::cerr << "Error: Failed to get Projection location." \
 			<< std::endl;
 		return false;
 	}
 
-	_layer_1_ColorTexLocation = glGetUniformLocation(
-		_layer_1_program, "color_tex");
-	if (_layer_1_ColorTexLocation == -1) {
-		std::cerr << "Error: Failed to get Color Tex location." \
+	_overlap_DepthTexLocation = glGetUniformLocation(
+			_overlap_program, "depth_tex");
+	if (_overlap_DepthTexLocation == -1) {
+		std::cerr << "Error: Failed to get Depth Tex location." \
+			<< std::endl;
+	}
+
+	std::cout << "Load weight shader" << std::endl;
+	success = loadShader(
+		"weightVS.glsl",
+		"weightGS.glsl",
+		"weightFS.glsl",
+		&_weight_program,
+		&_weight_vertex_shader,
+		&_weight_geometry_shader,
+		&_weight_fragment_shader);
+	if (!success)
+		return false;
+
+	glUseProgram(_weight_program);
+
+	// get uniforms
+	_weight_ModelViewLocation = glGetUniformLocation(
+			_weight_program, "ModelView");
+	if (_weight_ModelViewLocation == -1) {
+		std::cerr << "Error: Failed to get ModelView location." \
 			<< std::endl;
 		return false;
 	}
 
-	std::cout << "Load averaging shader" << std::endl;
+	_weight_ProjectionLocation = glGetUniformLocation(
+			_weight_program, "Projection");
+	if (_weight_ProjectionLocation == -1) {
+		std::cerr << "Error: Failed to get Projection location." \
+			<< std::endl;
+		return false;
+	}
+
+	_weight_DepthTexLocation = glGetUniformLocation(
+			_weight_program, "depth_tex");
+	if (_weight_DepthTexLocation == -1) {
+		std::cerr << "Error: Failed to get Depth Tex location." \
+			<< std::endl;
+	}
+
+	_weight_OverlapTexLocation = glGetUniformLocation(
+			_weight_program, "overlap_tex");
+	if (_weight_OverlapTexLocation == -1) {
+		std::cerr << "Error: Failed to get Overlap Tex location." \
+			<< std::endl;
+	}
+
+	std::cout << "Load outline shader" << std::endl;
 	success = loadShader(
-		"avgVS.glsl",
+		"outlineVS.glsl",
 		"",
-		"avgFS.glsl",
-		&_avg_program,
-		&_avg_vertex_shader,
+		"outlineFS.glsl",
+		&_outline_program,
+		&_outline_vertex_shader,
 		0,
-		&_avg_fragment_shader);
+		&_outline_fragment_shader);
 	if (!success)
 		return false;
 
-	glUseProgram(_avg_program);
+	glUseProgram(_outline_program);
 
 	// get uniforms
-	_avg_ColorTexLocation = glGetUniformLocation(
-		_avg_program, "color_tex");
-	if (_avg_ColorTexLocation == -1) {
-		std::cerr << "Error: Failed to get Color Tex location." \
+	_outline_DepthTexLocation = glGetUniformLocation(
+			_outline_program, "depth_tex");
+	if (_outline_DepthTexLocation == -1) {
+		std::cerr << "Error: Failed to get Depth Tex location." \
 			<< std::endl;
-		return false;
 	}
 
-	_avg_Color2TexLocation = glGetUniformLocation(
-		_avg_program, "color2_tex");
-	if (_avg_Color2TexLocation == -1) {
-		std::cerr << "Error: Failed to get Color Tex 2 location." \
+	_outline_WeightTexLocation = glGetUniformLocation(
+			_outline_program, "weight_tex");
+	if (_outline_WeightTexLocation == -1) {
+		std::cerr << "Error: Failed to get Weight Tex location." \
 			<< std::endl;
-		return false;
-	}
-
-	_avg_WidthLocation = glGetUniformLocation(
-		_avg_program, "inv_image_width");
-	if (_avg_WidthLocation == -1) {
-		std::cerr << "Error: Failed to get Width location." \
-			<< std::endl;
-		return false;
-	}
-
-	_avg_HeightLocation = glGetUniformLocation(
-		_avg_program, "inv_image_height");
-	if (_avg_HeightLocation == -1) {
-		std::cerr << "Error: Failed to get Height location." \
-			<< std::endl;
-		return false;
 	}
 
 	std::cout << "Load plane shader" << std::endl;
@@ -1096,7 +1134,6 @@ bool SigAsiaDemo::MassList::loadShaders()
 	if (_screen_PositionTexLocation == -1) {
 		std::cerr << "Error: Failed to get Position Tex location." \
 			<< std::endl;
-		return false;
 	}
 
 	_screen_NormalTexLocation = glGetUniformLocation(
@@ -1104,7 +1141,6 @@ bool SigAsiaDemo::MassList::loadShaders()
 	if (_screen_NormalTexLocation == -1) {
 		std::cerr << "Error: Failed to get Normal Tex location." \
 			<< std::endl;
-		return false;
 	}
 
 	_screen_WidthLocation = glGetUniformLocation(
@@ -1132,43 +1168,56 @@ bool SigAsiaDemo::MassList::loadShaders()
 
 void SigAsiaDemo::MassList::clearBuffers()
 {
-	if (_image_color != 0) {
-		glDeleteTextures(1, &_image_color);
-		_image_color = 0;
+	if (_depth_color != 0) {
+		glDeleteTextures(1, &_depth_color);
+		_depth_color = 0;
 	}
-	if (_image_depth != 0) {
-		glDeleteRenderbuffers(1, &_image_depth);
-		_image_depth = 0;
+	if (_depth_depth != 0) {
+		glDeleteRenderbuffers(1, &_depth_depth);
+		_depth_depth = 0;
 	}
-	if (_image_buffer != 0) {
-		glDeleteFramebuffers(1, &_image_buffer);
-		_image_buffer = 0;
-	}
-
-	if (_image2_color != 0) {
-		glDeleteTextures(1, &_image2_color);
-		_image2_color = 0;
-	}
-	if (_image2_depth != 0) {
-		glDeleteRenderbuffers(1, &_image2_depth);
-		_image2_depth = 0;
-	}
-	if (_image2_buffer != 0) {
-		glDeleteFramebuffers(1, &_image2_buffer);
-		_image2_buffer = 0;
+	if (_depth_buffer != 0) {
+		glDeleteFramebuffers(1, &_depth_buffer);
+		_depth_buffer = 0;
 	}
 
-	if (_image3_color != 0) {
-		glDeleteTextures(1, &_image3_color);
-		_image3_color = 0;
+	if (_overlap_color != 0) {
+		glDeleteTextures(1, &_overlap_color);
+		_overlap_color = 0;
 	}
-	if (_image3_depth != 0) {
-		glDeleteRenderbuffers(1, &_image3_depth);
-		_image3_depth = 0;
+	if (_overlap_depth != 0) {
+		glDeleteRenderbuffers(1, &_overlap_depth);
+		_overlap_depth = 0;
 	}
-	if (_image3_buffer != 0) {
-		glDeleteFramebuffers(1, &_image3_buffer);
-		_image3_buffer = 0;
+	if (_overlap_buffer != 0) {
+		glDeleteFramebuffers(1, &_overlap_buffer);
+		_overlap_buffer = 0;
+	}
+
+	if (_weight_color != 0) {
+		glDeleteTextures(1, &_weight_color);
+		_weight_color = 0;
+	}
+	if (_weight_depth != 0) {
+		glDeleteRenderbuffers(1, &_weight_depth);
+		_weight_depth = 0;
+	}
+	if (_weight_buffer != 0) {
+		glDeleteFramebuffers(1, &_weight_buffer);
+		_weight_buffer = 0;
+	}
+
+	if (_outline_color != 0) {
+		glDeleteTextures(1, &_outline_color);
+		_outline_color = 0;
+	}
+	if (_outline_depth != 0) {
+		glDeleteRenderbuffers(1, &_outline_depth);
+		_outline_depth = 0;
+	}
+	if (_outline_buffer != 0) {
+		glDeleteFramebuffers(1, &_outline_buffer);
+		_outline_buffer = 0;
 	}
 }
 
@@ -1177,14 +1226,15 @@ bool SigAsiaDemo::MassList::loadBuffers()
 	if (!GLEW_ARB_texture_float) {
 		std::cout << "Warning: No floating point texture support." << std::endl;
 	}
-	if (_image_buffer == 0) {
-		// generate offscreen rendering buffer
-		glGenFramebuffers(1, &_image_buffer);
-		glBindFramebuffer(GL_FRAMEBUFFER, _image_buffer);
 
-		glGenTextures(1, &_image_color);
+	if (_depth_buffer == 0) {
+		// generate offscreen rendering buffer
+		glGenFramebuffers(1, &_depth_buffer);
+		glBindFramebuffer(GL_FRAMEBUFFER, _depth_buffer);
+
+		glGenTextures(1, &_depth_color);
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, _image_color);
+		glBindTexture(GL_TEXTURE_2D, _depth_color);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, _image_width, _image_height,
 			0, GL_RGBA, GL_FLOAT, NULL);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
@@ -1195,14 +1245,14 @@ bool SigAsiaDemo::MassList::loadBuffers()
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
 
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-			GL_TEXTURE_2D, _image_color, 0);
+			GL_TEXTURE_2D, _depth_color, 0);
 
-		glGenRenderbuffers(1, &_image_depth);
-		glBindRenderbuffer(GL_RENDERBUFFER, _image_depth);
+		glGenRenderbuffers(1, &_depth_depth);
+		glBindRenderbuffer(GL_RENDERBUFFER, _depth_depth);
 		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT,
 			_image_width, _image_height);
 		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
-			GL_RENDERBUFFER, _image_depth);
+			GL_RENDERBUFFER, _depth_depth);
 		
 		GLenum targets[] = {GL_COLOR_ATTACHMENT0};
 		glDrawBuffers(1, targets);
@@ -1210,14 +1260,14 @@ bool SigAsiaDemo::MassList::loadBuffers()
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 
-	if (_image2_buffer == 0) {
+	if (_overlap_buffer == 0) {
 		// generate offscreen rendering buffer
-		glGenFramebuffers(1, &_image2_buffer);
-		glBindFramebuffer(GL_FRAMEBUFFER, _image2_buffer);
+		glGenFramebuffers(1, &_overlap_buffer);
+		glBindFramebuffer(GL_FRAMEBUFFER, _overlap_buffer);
 
-		glGenTextures(1, &_image2_color);
+		glGenTextures(1, &_overlap_color);
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, _image2_color);
+		glBindTexture(GL_TEXTURE_2D, _overlap_color);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, _image_width, _image_height,
 			0, GL_RGBA, GL_FLOAT, NULL);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
@@ -1228,14 +1278,14 @@ bool SigAsiaDemo::MassList::loadBuffers()
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
 
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-			GL_TEXTURE_2D, _image2_color, 0);
+			GL_TEXTURE_2D, _overlap_color, 0);
 
-		glGenRenderbuffers(1, &_image2_depth);
-		glBindRenderbuffer(GL_RENDERBUFFER, _image2_depth);
+		glGenRenderbuffers(1, &_overlap_depth);
+		glBindRenderbuffer(GL_RENDERBUFFER, _overlap_depth);
 		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT,
 			_image_width, _image_height);
 		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
-			GL_RENDERBUFFER, _image2_depth);
+			GL_RENDERBUFFER, _overlap_depth);
 		
 		GLenum targets[] = {GL_COLOR_ATTACHMENT0};
 		glDrawBuffers(1, targets);
@@ -1243,14 +1293,14 @@ bool SigAsiaDemo::MassList::loadBuffers()
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 
-	if (_image3_buffer == 0) {
+	if (_weight_buffer == 0) {
 		// generate offscreen rendering buffer
-		glGenFramebuffers(1, &_image3_buffer);
-		glBindFramebuffer(GL_FRAMEBUFFER, _image3_buffer);
+		glGenFramebuffers(1, &_weight_buffer);
+		glBindFramebuffer(GL_FRAMEBUFFER, _weight_buffer);
 
-		glGenTextures(1, &_image3_color);
+		glGenTextures(1, &_weight_color);
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, _image3_color);
+		glBindTexture(GL_TEXTURE_2D, _weight_color);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, _image_width, _image_height,
 			0, GL_RGBA, GL_FLOAT, NULL);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
@@ -1261,14 +1311,47 @@ bool SigAsiaDemo::MassList::loadBuffers()
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
 
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-			GL_TEXTURE_2D, _image3_color, 0);
+			GL_TEXTURE_2D, _weight_color, 0);
 
-		glGenRenderbuffers(1, &_image3_depth);
-		glBindRenderbuffer(GL_RENDERBUFFER, _image3_depth);
+		glGenRenderbuffers(1, &_weight_depth);
+		glBindRenderbuffer(GL_RENDERBUFFER, _weight_depth);
 		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT,
 			_image_width, _image_height);
 		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
-			GL_RENDERBUFFER, _image3_depth);
+			GL_RENDERBUFFER, _weight_depth);
+		
+		GLenum targets[] = {GL_COLOR_ATTACHMENT0};
+		glDrawBuffers(1, targets);
+
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	}
+
+	if (_outline_buffer == 0) {
+		// generate offscreen rendering buffer
+		glGenFramebuffers(1, &_outline_buffer);
+		glBindFramebuffer(GL_FRAMEBUFFER, _outline_buffer);
+
+		glGenTextures(1, &_outline_color);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, _outline_color);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, _image_width, _image_height,
+			0, GL_RGBA, GL_FLOAT, NULL);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+			GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
+			GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+			GL_TEXTURE_2D, _outline_color, 0);
+
+		glGenRenderbuffers(1, &_outline_depth);
+		glBindRenderbuffer(GL_RENDERBUFFER, _outline_depth);
+		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT,
+			_image_width, _image_height);
+		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+			GL_RENDERBUFFER, _outline_depth);
 		
 		GLenum targets[] = {GL_COLOR_ATTACHMENT0};
 		glDrawBuffers(1, targets);
@@ -1283,18 +1366,23 @@ void SigAsiaDemo::MassList::render(
 	glm::mat4 ModelView,
 	glm::mat4 Projection) const
 {
-	if (_layer_0_program == 0) {
-		std::cerr << "Warning: _layer_0_program not set." \
+	if (_depth_program == 0) {
+		std::cerr << "Warning: _depth_program not set." \
 		<< std::endl;
 		return;
 	}
-	if (_layer_1_program == 0) {
-		std::cerr << "Warning: _layer_1_program not set." \
+	if (_overlap_program == 0) {
+		std::cerr << "Warning: _overlap_program not set." \
 		<< std::endl;
 		return;
 	}
-	if (_avg_program == 0) {
-		std::cerr << "Warning: _avg_program not set." \
+	if (_weight_program == 0) {
+		std::cerr << "Warning: _weight_program not set." \
+		<< std::endl;
+		return;
+	}
+	if (_outline_program == 0) {
+		std::cerr << "Warning: _outline_program not set." \
 		<< std::endl;
 		return;
 	}
@@ -1308,50 +1396,56 @@ void SigAsiaDemo::MassList::render(
 		<< std::endl;
 		return;
 	}
-	if (_layer_0_ModelViewLocation == -1) {
-		std::cerr << "Warning: _layer_0_ModelViewLocation not set." \
+
+	if (_depth_ModelViewLocation == -1) {
+		std::cerr << "Warning: _depth_ModelViewLocation not set." \
 		<< std::endl;
 		return;
 	}
-	if (_layer_0_ProjectionLocation == -1) {
-		std::cerr << "Warning: _layer_0_ProjectionLocation not set." \
+	if (_depth_ProjectionLocation == -1) {
+		std::cerr << "Warning: _depth_ProjectionLocation not set." \
 		<< std::endl;
 		return;
 	}
-	if (_layer_1_ModelViewLocation == -1) {
-		std::cerr << "Warning: _layer_1_ModelViewLocation not set." \
+	if (_overlap_ModelViewLocation == -1) {
+		std::cerr << "Warning: _overlap_ModelViewLocation not set." \
 		<< std::endl;
 		return;
 	}
-	if (_layer_1_ProjectionLocation == -1) {
-		std::cerr << "Warning: _layer_1_ProjectionLocation not set." \
+	if (_overlap_ProjectionLocation == -1) {
+		std::cerr << "Warning: _overlap_ProjectionLocation not set." \
 		<< std::endl;
 		return;
 	}
-	if (_layer_1_ColorTexLocation == -1) {
-		std::cerr << "Warning: _layer_1_ColorTexLocation not set." \
+	if (_overlap_DepthTexLocation == -1) {
+		std::cerr << "Warning: _overlap_DepthTexLocation not set." \
+		<< std::endl;
+	}
+	if (_weight_ModelViewLocation == -1) {
+		std::cerr << "Warning: _weight_ModelViewLocation not set." \
 		<< std::endl;
 		return;
 	}
-	if (_avg_ColorTexLocation == -1) {
-		std::cerr << "Warning: _avg_ColorTexLocation not set." \
+	if (_weight_ProjectionLocation == -1) {
+		std::cerr << "Warning: _weight_ProjectionLocation not set." \
 		<< std::endl;
 		return;
 	}
-	if (_avg_Color2TexLocation == -1) {
-		std::cerr << "Warning: _avg_Color2TexLocation not set." \
+	if (_weight_DepthTexLocation == -1) {
+		std::cerr << "Warning: _weight_DepthTexLocation not set." \
 		<< std::endl;
-		return;
 	}
-	if (_avg_WidthLocation == -1) {
-		std::cerr << "Warning: _avg_WidthLocation not set." \
+	if (_weight_OverlapTexLocation == -1) {
+		std::cerr << "Warning: _weight_OverlapTexLocation not set." \
 		<< std::endl;
-		return;
 	}
-	if (_avg_HeightLocation == -1) {
-		std::cerr << "Warning: _avg_HeightLocation not set." \
+	if (_outline_DepthTexLocation == -1) {
+		std::cerr << "Warning: _outline_DepthTexLocation not set." \
 		<< std::endl;
-		return;
+	}
+	if (_outline_WeightTexLocation == -1) {
+		std::cerr << "Warning: _outline_WeightTexLocation not set." \
+		<< std::endl;
 	}
 	if (_plane_ModelViewLocation == -1) {
 		std::cerr << "Warning: _plane_ModelViewLocation not set." \
@@ -1396,63 +1490,72 @@ void SigAsiaDemo::MassList::render(
 		<< std::endl;
 		return;
 	}
-	if (_image_color == 0) {
-		std::cerr << "Warning: _image_color not set." \
+
+	if (_depth_color == 0) {
+		std::cerr << "Warning: _depth_color not set." \
 		<< std::endl;
 		return;
 	}
-	if (_image2_color == 0) {
-		std::cerr << "Warning: _image2_color not set." \
+	if (_overlap_color == 0) {
+		std::cerr << "Warning: _overlap_color not set." \
 		<< std::endl;
 		return;
 	}
-	if (_image3_color == 0) {
-		std::cerr << "Warning: _image3_color not set." \
+	if (_weight_color == 0) {
+		std::cerr << "Warning: _weight_color not set." \
 		<< std::endl;
 		return;
 	}
-	if (_image_buffer == 0) {
-		std::cerr << "Warning: _image_buffer not set." \
-		<< std::endl;
-		return;
-	}
-	if (_image2_color == 0) {
-		std::cerr << "Warning: _image2_buffer not set." \
-		<< std::endl;
-		return;
-	}
-	if (_image3_color == 0) {
-		std::cerr << "Warning: _image3_color not set." \
+	if (_outline_color == 0) {
+		std::cerr << "Warning: _outline_color not set." \
 		<< std::endl;
 		return;
 	}
 
-	//==============================
-	// set viewport for image passes
-	//==============================
+	if (_depth_buffer == 0) {
+		std::cerr << "Warning: _depth_color not set." \
+		<< std::endl;
+		return;
+	}
+	if (_overlap_buffer == 0) {
+		std::cerr << "Warning: _overlap_buffer not set." \
+		<< std::endl;
+		return;
+	}
+	if (_weight_buffer == 0) {
+		std::cerr << "Warning: _weight_buffer not set." \
+		<< std::endl;
+		return;
+	}
+	if (_outline_buffer == 0) {
+		std::cerr << "Warning: _outline_buffer not set." \
+		<< std::endl;
+		return;
+	}
 
-	glViewport(0, 0, _image_width, _image_height);
+	float inv_width = 1.0 / static_cast<float>(_image_width);
+	float inv_height = 1.0 / static_cast<float>(_image_height);
 
 	//=============================================
-	// first rendering pass, draw into image buffer
+	// depth rendering pass, draw into depth buffer
 	//=============================================
 
 	// bind frame buffer
-	glBindFramebuffer(GL_FRAMEBUFFER, _image_buffer);
+	glBindFramebuffer(GL_FRAMEBUFFER, _depth_buffer);
 
 	// clear frame buffer
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	// bind layer 0 shader
-	glUseProgram(_layer_0_program);
+	// bind depth shader
+	glUseProgram(_depth_program);
 
 	// setup uniforms
 	glUniformMatrix4fv(
-		_layer_0_ModelViewLocation,
+		_depth_ModelViewLocation,
 		1, GL_FALSE,
 		glm::value_ptr(ModelView));
 	glUniformMatrix4fv(
-		_layer_0_ProjectionLocation,
+		_depth_ProjectionLocation,
 		1, GL_FALSE,
 		glm::value_ptr(Projection));
 
@@ -1477,33 +1580,37 @@ void SigAsiaDemo::MassList::render(
 
 	// unbind frame buffer
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	
-	//===============================================
-	// second rendering pass, draw into image2 buffer
-	//===============================================
 
-	// set depth function
+	//=============================================
+	// overlap rendering pass, draw into overlap buffer
+	//=============================================
 
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, _image_color);
+	glBindTexture(GL_TEXTURE_2D, _depth_color);
 
 	// bind frame buffer
-	glBindFramebuffer(GL_FRAMEBUFFER, _image2_buffer);
+	glBindFramebuffer(GL_FRAMEBUFFER, _overlap_buffer);
 
 	// clear frame buffer
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	// bind layer 1 shader
-	glUseProgram(_layer_1_program);
+	// setup blending
+	glDisable(GL_DEPTH_TEST);
+	glBlendFunc(GL_ONE, GL_ONE);
+	glEnable(GL_BLEND);
+
+	// bind overlap shader
+	glUseProgram(_overlap_program);
 
 	// setup uniforms
-	glUniform1i(_layer_1_ColorTexLocation, 0);
+	if (_overlap_DepthTexLocation != -1)
+		glUniform1i(_overlap_DepthTexLocation, 0);
 	glUniformMatrix4fv(
-		_layer_1_ModelViewLocation,
+		_overlap_ModelViewLocation,
 		1, GL_FALSE,
 		glm::value_ptr(ModelView));
 	glUniformMatrix4fv(
-		_layer_1_ProjectionLocation,
+		_overlap_ProjectionLocation,
 		1, GL_FALSE,
 		glm::value_ptr(Projection));
 
@@ -1511,88 +1618,128 @@ void SigAsiaDemo::MassList::render(
 	glDrawArrays(GL_POINTS, 0, _masses.size());
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-	glDepthFunc(GL_GREATER);
-
-	glBindVertexArray(_masses_array);
-	glDrawArrays(GL_POINTS, 0, _masses.size());
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-	// reset depth function
-	glDepthFunc(GL_LESS);
-
-	glUseProgram(_plane_program);
-
-	glUniformMatrix4fv(
-		_plane_ModelViewLocation,
-		1, GL_FALSE,
-		glm::value_ptr(ModelView));
-	glUniformMatrix4fv(
-		_plane_ProjectionLocation,
-		1, GL_FALSE,
-		glm::value_ptr(Projection));
-
-	glBindVertexArray(_plane_array);
-	glDrawArrays(GL_QUADS, 0, 4);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-
+	// clear blending
+	glDisable(GL_BLEND);
+	glEnable(GL_DEPTH_TEST);
+	
 	// unbind frame buffer
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, 0);
-
+	
 	//===============================================
-	// third rendering pass, draw into image3 buffer
+	// weight rendering pass, draw into weight buffer
 	//===============================================
 
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, _image_color);
+	glBindTexture(GL_TEXTURE_2D, _depth_color);
 	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, _image2_color);
+	glBindTexture(GL_TEXTURE_2D, _overlap_color);
 
 	// bind frame buffer
-	glBindFramebuffer(GL_FRAMEBUFFER, _image3_buffer);
+	glBindFramebuffer(GL_FRAMEBUFFER, _weight_buffer);
 
 	// clear frame buffer
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	glUseProgram(_avg_program);
+	// setup blending
+	glDisable(GL_DEPTH_TEST);
+	glBlendFunc(GL_ONE, GL_ONE);
+	glEnable(GL_BLEND);
 
-	float inv_width = 1.0 / static_cast<float>(_image_width);
-	float inv_height = 1.0 / static_cast<float>(_image_height);
+	// bind weight shader
+	glUseProgram(_weight_program);
 
-	glUniform1i(_avg_ColorTexLocation, 0);
-	glUniform1i(_avg_Color2TexLocation, 1);
-	glUniform1f(_avg_WidthLocation, inv_width);
-	glUniform1f(_avg_HeightLocation, inv_height);
+	// setup uniforms
+	if (_weight_DepthTexLocation != -1)
+		glUniform1i(_weight_DepthTexLocation, 0);
+	if (_weight_OverlapTexLocation != -1)
+		glUniform1i(_weight_OverlapTexLocation, 1);
+	glUniformMatrix4fv(
+		_weight_ModelViewLocation,
+		1, GL_FALSE,
+		glm::value_ptr(ModelView));
+	glUniformMatrix4fv(
+		_weight_ProjectionLocation,
+		1, GL_FALSE,
+		glm::value_ptr(Projection));
+
+	glBindVertexArray(_masses_array);
+	glDrawArrays(GL_POINTS, 0, _masses.size());
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	// clear blending
+	glDisable(GL_BLEND);
+	glEnable(GL_DEPTH_TEST);
+
+	// unbind frame buffer
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	//===============================================
+	// outline rendering pass, draw into outline buffer
+	//===============================================
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, _depth_color);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, _weight_color);
+
+	// bind frame buffer
+	//glBindFramebuffer(GL_FRAMEBUFFER, _outline_buffer);
+
+	// clear frame buffer
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	// setup blending
+	glDisable(GL_DEPTH_TEST);
+	glBlendFunc(GL_ONE, GL_ONE);
+	glEnable(GL_BLEND);
+
+	// bind outline shader
+	glUseProgram(_outline_program);
+
+	// setup uniforms
+	if (_outline_DepthTexLocation != -1)
+		glUniform1i(_outline_DepthTexLocation, 0);
+	if (_outline_WeightTexLocation != -1)
+		glUniform1i(_outline_WeightTexLocation, 1);
 
 	glBindVertexArray(_screen_array);
 	glDrawArrays(GL_QUADS, 0, 4);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
+	glBindVertexArray(_masses_array);
+	glDrawArrays(GL_POINTS, 0, _masses.size());
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	// clear blending
+	glDisable(GL_BLEND);
+	glEnable(GL_DEPTH_TEST);
+
 	// unbind frame buffer
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	//glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, 0);
-
-	//===============================
-	// set viewport for screen passes
-	//===============================
-
-	glViewport(0, 0, _screen_width, _screen_height);
 
 	//==========================================
 	// render a screen space quad with the image
 	//==========================================
 
+	/*
 	// bind quad shader
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, _image_color);
+	glBindTexture(GL_TEXTURE_2D, _overlap_color);
 	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, _image3_color);
+	glBindTexture(GL_TEXTURE_2D, _depth_color);
 
 	glUseProgram(_screen_program);
 
@@ -1612,6 +1759,7 @@ void SigAsiaDemo::MassList::render(
 
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, 0);
+	*/
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
@@ -1627,19 +1775,8 @@ void SigAsiaDemo::MassList::resizeWindow(
 {
 	_screen_width = width;
 	_screen_height = height;
-	// we assume that |v-p| ~= view_dist
-	float lambda = 1.0; //(far*near * view_dist)/(far - near) + 1.0;
-	_inv_rho = (tan(fov*0.5)*lambda)/(spring_length*static_cast<float>(width));
-	std::cout << "rho: " << 1.0f / _inv_rho << std::endl;
-	std::cout << "inv rho: " << _inv_rho << std::endl;
-	std::cout << "lambda: " << lambda << std::endl;
-	GLuint image_width =
-		static_cast<GLuint>(static_cast<float>(width) * _inv_rho);
-	GLuint image_height =
-		static_cast<GLuint>(static_cast<float>(height) * _inv_rho);
-	// TODO: remove
-	image_width = width;
-	image_height = height;
+	GLuint image_width = width;
+	GLuint image_height = height;
 	if (image_width != _image_width || image_height != _image_height) {
 		_image_width = image_width;
 		_image_height = image_height;

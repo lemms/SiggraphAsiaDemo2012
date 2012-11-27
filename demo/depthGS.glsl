@@ -1,5 +1,5 @@
 /*
-massGS.glsl
+depthGS.glsl
 Geometry shader for expanding points to quads.
 
 Laurence Emms

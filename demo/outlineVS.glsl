@@ -1,6 +1,6 @@
 /*
-avgVS.glsl
-Simple pass-through shader for the averaging screen quad.
+outlineVS.glsl
+Simple pass-through shader for the screen quad.
 
 Laurence Emms
 */
