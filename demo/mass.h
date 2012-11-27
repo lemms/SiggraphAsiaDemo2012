@@ -9,6 +9,17 @@ Laurence Emms
 #include <vector>
 
 namespace SigAsiaDemo {
+	bool verifyCompilation(unsigned int shader, const char *text, const char *type);
+	bool verifyLinking(unsigned int program);
+	bool loadShader(
+		const char *vs_file_name,
+		const char *gs_file_name,
+		const char *fs_file_name,
+		GLuint *program,
+		GLuint *vertex_shader,
+		GLuint *geometry_shader,
+		GLuint *fragment_shader);
+	
 	struct Mass {
 		public:
 			Mass(

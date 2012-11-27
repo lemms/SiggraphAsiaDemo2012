@@ -33,6 +33,10 @@ namespace SigAsiaDemo {
 			unsigned int _start;
 			unsigned int _end;
 
+			size_t _size_x;
+			size_t _size_y;
+			size_t _size_z;
+
 		private:
 			// position
 			float _x;
@@ -43,6 +47,7 @@ namespace SigAsiaDemo {
 			int _half_x;
 			int _half_y;
 			int _half_z;
+
 
 			float _spacing;
 
@@ -63,6 +68,9 @@ namespace SigAsiaDemo {
 	class CubeList {
 		public:
 			CubeList(
+				size_t res_x = 16,
+				size_t res_y = 16,
+				size_t res_z = 16,
 				float ks = 10000.0,
 				float kd = 1000.0,
 				unsigned int threads = 128);
@@ -79,8 +87,19 @@ namespace SigAsiaDemo {
 			void collideCubes(
 				float dt,
 				MassList &masses);
+			bool loadShaders();
+			void render(
+				glm::mat4 ModelView,
+				glm::mat4 Projection,
+				glm::mat3 Normal) const;
 		private:
 			std::vector<Cube> _cubes;
+			std::vector<float> _tri_positions;
+			std::vector<float> _tri_normals;
+
+			int _res_x;
+			int _res_y;
+			int _res_z;
 
 			// collisions
 			float _ks;
@@ -88,5 +107,18 @@ namespace SigAsiaDemo {
 
 			// CUDA
 			unsigned int _threads;
+
+			// shader
+			int _cube_ModelViewLocation;
+			int _cube_ProjectionLocation;
+			int _cube_NormalLocation;
+			GLuint _cube_vertex_shader;
+			GLuint _cube_fragment_shader;
+			GLuint _cube_program;
+
+			// buffers
+			GLuint _cube_array;
+			GLuint _cube_pos_buffer;
+			GLuint _cube_norm_buffer;
 	};
 }

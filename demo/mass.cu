@@ -767,7 +767,7 @@ void SigAsiaDemo::MassList::update(
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-bool verifyCompilation(unsigned int shader, const char *text, const char *type)
+bool SigAsiaDemo::verifyCompilation(unsigned int shader, const char *text, const char *type)
 {
 	GLint result = 0;
 	glGetShaderiv(
@@ -801,7 +801,7 @@ bool verifyCompilation(unsigned int shader, const char *text, const char *type)
 	return true;
 }
 
-bool verifyLinking(unsigned int program)
+bool SigAsiaDemo::verifyLinking(unsigned int program)
 {
 	GLint result = 0;
 	glGetProgramiv(
@@ -833,7 +833,7 @@ bool verifyLinking(unsigned int program)
 	return true;
 }
 
-bool loadShader(
+bool SigAsiaDemo::loadShader(
 	const char *vs_file_name,
 	const char *gs_file_name,
 	const char *fs_file_name,

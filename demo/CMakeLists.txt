@@ -35,6 +35,11 @@ endif (GLUT_FOUND)
 
 include_directories(${DIRS})
 
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cubeVS.glsl
+	${CMAKE_CURRENT_BINARY_DIR}/cubeVS.glsl COPYONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cubeFS.glsl
+	${CMAKE_CURRENT_BINARY_DIR}/cubeFS.glsl COPYONLY)
+
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/depthVS.glsl
 	${CMAKE_CURRENT_BINARY_DIR}/depthVS.glsl COPYONLY)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/depthGS.glsl

@@ -292,7 +292,9 @@ void Render()
 	std::cout << "[" << P[8]  << " " << P[9]  <<  " " << P[10] <<  " " << P[11] <<  std::endl;
 	std::cout << "[" << P[12] << " " << P[13] <<  " " << P[14] <<  " " << P[15] <<  std::endl;
 	*/
-	masses.render(camera.GetModelView(), camera.GetProjection());
+	// TODO: check
+	//masses.render(camera.GetModelView(), camera.GetProjection());
+	cubes.render(camera.GetModelView(), camera.GetProjection(), camera.GetNormal());
 
 	glutSwapBuffers();
 }
@@ -406,6 +408,7 @@ int main(int argc, char **argv)
 	// load shaders
 	std::cout << "Load shaders." << std::endl;
 	masses.loadShaders();
+	cubes.loadShaders();
 
 	// load buffers
 	std::cout << "Load buffers." << std::endl;

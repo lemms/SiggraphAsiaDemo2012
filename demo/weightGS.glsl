@@ -15,7 +15,7 @@ in float radius_v[];
 out vec4 wpos_g;
 out vec4 ppos_g;
 out vec2 texcoord_g;
-out float radius_g;
+out vec4 center_g;
 
 uniform mat4 Projection;
 
@@ -31,27 +31,28 @@ void main()
 	ppos_g = Projection*wpos_g;
 	gl_Position = ppos_g;
 	texcoord_g = vec2(0.0, 0.0);
-	radius_g = radius;
+	wpos_g = gl_in[0].gl_Position;
+	center_g = gl_in[0].gl_Position;
 	EmitVertex();
 
 	wpos_g = gl_in[0].gl_Position + top_left;
 	ppos_g = Projection*wpos_g;
 	gl_Position = ppos_g;
 	texcoord_g = vec2(0.0, 1.0);
-	radius_g = radius;
+	center_g = gl_in[0].gl_Position;
 	EmitVertex();
 
 	wpos_g = gl_in[0].gl_Position + bottom_right;
 	ppos_g = Projection*wpos_g;
 	gl_Position = ppos_g;
 	texcoord_g = vec2(1.0, 0.0);
-	radius_g = radius;
+	center_g = gl_in[0].gl_Position;
 	EmitVertex();
 
 	wpos_g = gl_in[0].gl_Position + top_right;
 	ppos_g = Projection*wpos_g;
 	gl_Position = ppos_g;
 	texcoord_g = vec2(1.0, 1.0);
-	radius_g = radius;
+	center_g = gl_in[0].gl_Position;
 	EmitVertex();
 }

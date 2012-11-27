@@ -13,6 +13,7 @@ Laurence Emms
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/matrix_inverse.hpp>
 
 #include "camera.h"
 
@@ -107,4 +108,9 @@ glm::mat4 SigAsiaDemo::Camera::GetProjection()
 glm::mat4 SigAsiaDemo::Camera::GetModelView()
 {
 	return glm::lookAt(_p, _l, _u);
+}
+
+glm::mat3 SigAsiaDemo::Camera::GetNormal()
+{
+	return glm::inverseTranspose(glm::mat3(glm::lookAt(_p, _l, _u)));
 }

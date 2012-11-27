@@ -34,6 +34,7 @@ namespace SigAsiaDemo {
 
 			glm::mat4 GetProjection();
 			glm::mat4 GetModelView();
+			glm::mat3 GetNormal();
 		private:
 			// projection
 			float _fovy;
