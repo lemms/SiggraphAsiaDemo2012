@@ -53,9 +53,10 @@ namespace SigAsiaDemo {
 
 			// properties
 			float _mass;
-			float _radius;
 
 		public:
+			float _radius;
+
 			// bounds
 			float _min_x;
 			float _min_y;
@@ -96,6 +97,7 @@ namespace SigAsiaDemo {
 			std::vector<Cube> _cubes;
 			std::vector<float> _tri_positions;
 			std::vector<float> _tri_normals;
+			std::vector<float> _tri_colors;
 
 			int _res_x;
 			int _res_y;
@@ -120,5 +122,6 @@ namespace SigAsiaDemo {
 			GLuint _cube_array;
 			GLuint _cube_pos_buffer;
 			GLuint _cube_norm_buffer;
+			GLuint _cube_col_buffer;
 	};
 }

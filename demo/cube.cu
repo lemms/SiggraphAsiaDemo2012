@@ -380,7 +380,8 @@ SigAsiaDemo::CubeList::CubeList(
 		_cube_program(0),
 		_cube_array(0),
 		_cube_pos_buffer(0),
-		_cube_norm_buffer(0)
+		_cube_norm_buffer(0),
+		_cube_col_buffer(0)
 {}
 
 void SigAsiaDemo::CubeList::setConstants(
@@ -744,8 +745,12 @@ void SigAsiaDemo::CubeList::computeBounds(
 
 	_tri_positions.clear();
 	_tri_normals.clear();
+	_tri_colors.clear();
 	for (std::vector<Cube>::iterator cube = _cubes.begin();
 		cube != _cubes.end(); cube++) {
+		float centroid_x = 0.0;
+		float centroid_y = 0.0;
+		float centroid_z = 0.0;
 		float min_x = FLT_MAX;
 		float min_y = FLT_MAX;
 		float min_z = FLT_MAX;
@@ -767,7 +772,16 @@ void SigAsiaDemo::CubeList::computeBounds(
 				max_y = mass->_y + mass->_radius;
 			if (mass->_z + mass->_radius > max_z)
 				max_z = mass->_z + mass->_radius;
+
+			centroid_x += mass->_x;
+			centroid_y += mass->_y;
+			centroid_z += mass->_z;
 		}
+
+		float inv_size = 1.0 / static_cast<float>(cube->_end - cube->_start);
+		centroid_x *= inv_size;
+		centroid_y *= inv_size;
+		centroid_z *= inv_size;
 
 		cube->_min_x = min_x;
 		cube->_min_y = min_y;
@@ -807,6 +821,45 @@ void SigAsiaDemo::CubeList::computeBounds(
 
 		//std::cout << "Fill _tri_positions & _tri_normals" << std::endl;
 
+		float plane_size = 500.0;
+		_tri_positions.push_back(-plane_size);
+		_tri_positions.push_back(0.0);
+		_tri_positions.push_back(-plane_size);
+		_tri_normals.push_back(0.0); _tri_normals.push_back(1.0); _tri_normals.push_back(0.0);
+		_tri_colors.push_back(0.0); _tri_colors.push_back(1.0); _tri_colors.push_back(0.0);
+
+		_tri_positions.push_back(plane_size);
+		_tri_positions.push_back(0.0);
+		_tri_positions.push_back(-plane_size);
+		_tri_normals.push_back(0.0); _tri_normals.push_back(1.0); _tri_normals.push_back(0.0);
+		_tri_colors.push_back(0.0); _tri_colors.push_back(1.0); _tri_colors.push_back(0.0);
+
+		_tri_positions.push_back(-plane_size);
+		_tri_positions.push_back(0.0);
+		_tri_positions.push_back(plane_size);
+		_tri_normals.push_back(0.0); _tri_normals.push_back(1.0); _tri_normals.push_back(0.0);
+		_tri_colors.push_back(0.0); _tri_colors.push_back(1.0); _tri_colors.push_back(0.0);
+
+		_tri_positions.push_back(-plane_size);
+		_tri_positions.push_back(0.0);
+		_tri_positions.push_back(plane_size);
+		_tri_normals.push_back(0.0); _tri_normals.push_back(1.0); _tri_normals.push_back(0.0);
+		_tri_colors.push_back(0.0); _tri_colors.push_back(1.0); _tri_colors.push_back(0.0);
+
+		_tri_positions.push_back(plane_size);
+		_tri_positions.push_back(0.0);
+		_tri_positions.push_back(-plane_size);
+		_tri_normals.push_back(0.0); _tri_normals.push_back(1.0); _tri_normals.push_back(0.0);
+		_tri_colors.push_back(0.0); _tri_colors.push_back(1.0); _tri_colors.push_back(0.0);
+
+		_tri_positions.push_back(plane_size);
+		_tri_positions.push_back(0.0);
+		_tri_positions.push_back(plane_size);
+		_tri_normals.push_back(0.0); _tri_normals.push_back(1.0); _tri_normals.push_back(0.0);
+		_tri_colors.push_back(0.0); _tri_colors.push_back(1.0); _tri_colors.push_back(0.0);
+
+		float cube_scale = 1.3;
+
 		size_t x_size = cube->_size_x+1;
 		size_t y_size = cube->_size_y+1;
 		size_t z_size = cube->_size_z+1;
@@ -817,160 +870,301 @@ void SigAsiaDemo::CubeList::computeBounds(
 		for (size_t i = 0; i < x_size-1; ++i) {
 			for (size_t j = 0; j < y_size-1; ++j) {
 				// front face
-				{
-					size_t i00 = cube->_start + i + j * x_size;
-					size_t i10 = cube->_start + (i+1) + j * x_size;
-					size_t i01 = cube->_start + i + (j+1) * x_size;
-					size_t i11 = cube->_start + (i+1) + (j+1) * x_size;
-					Mass *mass00 = masses.getMass(i00);
-					Mass *mass10 = masses.getMass(i10);
-					Mass *mass01 = masses.getMass(i01);
-					Mass *mass11 = masses.getMass(i11);
+				size_t i00 = cube->_start + i + j * x_size;
+				size_t i10 = cube->_start + (i+1) + j * x_size;
+				size_t i01 = cube->_start + i + (j+1) * x_size;
+				size_t i11 = cube->_start + (i+1) + (j+1) * x_size;
+				Mass *mass00 = masses.getMass(i00);
+				Mass *mass10 = masses.getMass(i10);
+				Mass *mass01 = masses.getMass(i01);
+				Mass *mass11 = masses.getMass(i11);
 
-					float x1000 = mass10->_x - mass00->_x;
-					float y1000 = mass10->_y - mass00->_y;
-					float z1000 = mass10->_z - mass00->_z;
-					float x0100 = mass01->_x - mass00->_x;
-					float y0100 = mass01->_y - mass00->_y;
-					float z0100 = mass01->_z - mass00->_z;
+				// vector from centroid to mass00
+				float v00x = (mass00->_x - centroid_x);
+				float v00y = (mass00->_y - centroid_y);
+				float v00z = (mass00->_z - centroid_z);
+				float v00_l = 1.0 / sqrt(v00x*v00x + v00y*v00y + v00z*v00z);
+				// normalize and scale by radius
+				v00x *= v00_l * cube->_radius * cube_scale;
+				v00y *= v00_l * cube->_radius * cube_scale;
+				v00z *= v00_l * cube->_radius * cube_scale;
+				float mass00x = mass00->_x + v00x;
+				float mass00y = mass00->_y + v00y;
+				float mass00z = mass00->_z + v00z;
 
-					/*
-					float x1011 = mass10->_x - mass11->_x;
-					float y1011 = mass10->_y - mass11->_y;
-					float z1011 = mass10->_z - mass11->_z;
-					float x0111 = mass01->_x - mass11->_x;
-					float y0111 = mass01->_y - mass11->_y;
-					float z0111 = mass01->_z - mass11->_z;
-					*/
+				// vector from centroid to mass01
+				float v01x = (mass01->_x - centroid_x);
+				float v01y = (mass01->_y - centroid_y);
+				float v01z = (mass01->_z - centroid_z);
+				float v01_l = 1.0 / sqrt(v01x*v01x + v01y*v01y + v01z*v01z);
+				// normalize and scale by radius
+				v01x *= v01_l * cube->_radius * cube_scale;
+				v01y *= v01_l * cube->_radius * cube_scale;
+				v01z *= v01_l * cube->_radius * cube_scale;
+				float mass01x = mass01->_x + v01x;
+				float mass01y = mass01->_y + v01y;
+				float mass01z = mass01->_z + v01z;
 
-					float nx = y1000*z0100 - y0100*z1000;
-					float ny = -(x1000*z0100 - x0100*z1000);
-					float nz = x1000*y0100 - x0100*y1000;
-					float l_n = 1.0/sqrt(nx*nx + ny*ny + nz*nz);
+				// vector from centroid to mass10
+				float v10x = (mass10->_x - centroid_x);
+				float v10y = (mass10->_y - centroid_y);
+				float v10z = (mass10->_z - centroid_z);
+				float v10_l = 1.0 / sqrt(v10x*v10x + v10y*v10y + v10z*v10z);
+				// normalize and scale by radius
+				v10x *= v10_l * cube->_radius * cube_scale;
+				v10y *= v10_l * cube->_radius * cube_scale;
+				v10z *= v10_l * cube->_radius * cube_scale;
+				float mass10x = mass10->_x + v10x;
+				float mass10y = mass10->_y + v10y;
+				float mass10z = mass10->_z + v10z;
 
-					_tri_positions.push_back(mass00->_x);
-					_tri_positions.push_back(mass00->_y);
-					_tri_positions.push_back(mass00->_z);
-					_tri_normals.push_back(nx*l_n);
-					_tri_normals.push_back(ny*l_n);
-					_tri_normals.push_back(nz*l_n);
+				// vector from centroid to mass11
+				float v11x = (mass11->_x - centroid_x);
+				float v11y = (mass11->_y - centroid_y);
+				float v11z = (mass11->_z - centroid_z);
+				float v11_l = 1.0 / sqrt(v11x*v11x + v11y*v11y + v11z*v11z);
+				// normalize and scale by radius
+				v11x *= v11_l * cube->_radius * cube_scale;
+				v11y *= v11_l * cube->_radius * cube_scale;
+				v11z *= v11_l * cube->_radius * cube_scale;
+				float mass11x = mass11->_x + v11x;
+				float mass11y = mass11->_y + v11y;
+				float mass11z = mass11->_z + v11z;
 
-					_tri_positions.push_back(mass10->_x);
-					_tri_positions.push_back(mass10->_y);
-					_tri_positions.push_back(mass10->_z);
-					_tri_normals.push_back(nx*l_n);
-					_tri_normals.push_back(ny*l_n);
-					_tri_normals.push_back(nz*l_n);
+				float x1000 = mass10x - mass00x;
+				float y1000 = mass10y - mass00y;
+				float z1000 = mass10z - mass00z;
+				float x0100 = mass01x - mass00x;
+				float y0100 = mass01y - mass00y;
+				float z0100 = mass01z - mass00z;
 
-					_tri_positions.push_back(mass01->_x);
-					_tri_positions.push_back(mass01->_y);
-					_tri_positions.push_back(mass01->_z);
-					_tri_normals.push_back(nx*l_n);
-					_tri_normals.push_back(ny*l_n);
-					_tri_normals.push_back(nz*l_n);
+				/*
+				float x1011 = mass10x - mass11x;
+				float y1011 = mass10y - mass11y;
+				float z1011 = mass10z - mass11z;
+				float x0111 = mass01x - mass11x;
+				float y0111 = mass01y - mass11y;
+				float z0111 = mass01z - mass11z;
+				*/
 
-					_tri_positions.push_back(mass01->_x);
-					_tri_positions.push_back(mass01->_y);
-					_tri_positions.push_back(mass01->_z);
-					_tri_normals.push_back(nx*l_n);
-					_tri_normals.push_back(ny*l_n);
-					_tri_normals.push_back(nz*l_n);
+				float nx = -(y1000*z0100 - y0100*z1000);
+				float ny = x1000*z0100 - x0100*z1000;
+				float nz = -(x1000*y0100 - x0100*y1000);
+				float l_n = 1.0/sqrt(nx*nx + ny*ny + nz*nz);
 
-					_tri_positions.push_back(mass10->_x);
-					_tri_positions.push_back(mass10->_y);
-					_tri_positions.push_back(mass10->_z);
-					_tri_normals.push_back(nx*l_n);
-					_tri_normals.push_back(ny*l_n);
-					_tri_normals.push_back(nz*l_n);
+				_tri_positions.push_back(mass00x);
+				_tri_positions.push_back(mass00y);
+				_tri_positions.push_back(mass00z);
+				_tri_normals.push_back(nx*l_n);
+				_tri_normals.push_back(ny*l_n);
+				_tri_normals.push_back(nz*l_n);
+				_tri_colors.push_back(1.0);
+				_tri_colors.push_back(0.0);
+				_tri_colors.push_back(0.0);
 
-					_tri_positions.push_back(mass11->_x);
-					_tri_positions.push_back(mass11->_y);
-					_tri_positions.push_back(mass11->_z);
-					_tri_normals.push_back(nx*l_n);
-					_tri_normals.push_back(ny*l_n);
-					_tri_normals.push_back(nz*l_n);
-				}
-				// back face
-				{
-					size_t i00 = cube->_start + i + j * x_size + (z_size-1) * xy_size;
-					size_t i10 = cube->_start + (i+1) + j * x_size + (z_size-1) * xy_size;
-					size_t i01 = cube->_start + i + (j+1) * x_size + (z_size-1) * xy_size;
-					size_t i11 = cube->_start + (i+1) + (j+1) * x_size + (z_size-1) * xy_size;
-					Mass *mass00 = masses.getMass(i00);
-					Mass *mass10 = masses.getMass(i10);
-					Mass *mass01 = masses.getMass(i01);
-					Mass *mass11 = masses.getMass(i11);
+				_tri_positions.push_back(mass10x);
+				_tri_positions.push_back(mass10y);
+				_tri_positions.push_back(mass10z);
+				_tri_normals.push_back(nx*l_n);
+				_tri_normals.push_back(ny*l_n);
+				_tri_normals.push_back(nz*l_n);
+				_tri_colors.push_back(1.0);
+				_tri_colors.push_back(0.0);
+				_tri_colors.push_back(0.0);
 
-					float x1000 = mass10->_x - mass00->_x;
-					float y1000 = mass10->_y - mass00->_y;
-					float z1000 = mass10->_z - mass00->_z;
-					float x0100 = mass01->_x - mass00->_x;
-					float y0100 = mass01->_y - mass00->_y;
-					float z0100 = mass01->_z - mass00->_z;
+				_tri_positions.push_back(mass01x);
+				_tri_positions.push_back(mass01y);
+				_tri_positions.push_back(mass01z);
+				_tri_normals.push_back(nx*l_n);
+				_tri_normals.push_back(ny*l_n);
+				_tri_normals.push_back(nz*l_n);
+				_tri_colors.push_back(1.0);
+				_tri_colors.push_back(0.0);
+				_tri_colors.push_back(0.0);
 
-					/*
-					float x1011 = mass10->_x - mass11->_x;
-					float y1011 = mass10->_y - mass11->_y;
-					float z1011 = mass10->_z - mass11->_z;
-					float x0111 = mass01->_x - mass11->_x;
-					float y0111 = mass01->_y - mass11->_y;
-					float z0111 = mass01->_z - mass11->_z;
-					*/
+				_tri_positions.push_back(mass01x);
+				_tri_positions.push_back(mass01y);
+				_tri_positions.push_back(mass01z);
+				_tri_normals.push_back(nx*l_n);
+				_tri_normals.push_back(ny*l_n);
+				_tri_normals.push_back(nz*l_n);
+				_tri_colors.push_back(1.0);
+				_tri_colors.push_back(0.0);
+				_tri_colors.push_back(0.0);
 
-					float nx = y1000*z0100 - y0100*z1000;
-					float ny = -(x1000*z0100 - x0100*z1000);
-					float nz = x1000*y0100 - x0100*y1000;
-					float l_n = 1.0/sqrt(nx*nx + ny*ny + nz*nz);
+				_tri_positions.push_back(mass10x);
+				_tri_positions.push_back(mass10y);
+				_tri_positions.push_back(mass10z);
+				_tri_normals.push_back(nx*l_n);
+				_tri_normals.push_back(ny*l_n);
+				_tri_normals.push_back(nz*l_n);
+				_tri_colors.push_back(1.0);
+				_tri_colors.push_back(0.0);
+				_tri_colors.push_back(0.0);
 
-					_tri_positions.push_back(mass00->_x);
-					_tri_positions.push_back(mass00->_y);
-					_tri_positions.push_back(mass00->_z);
-					_tri_normals.push_back(nx*l_n);
-					_tri_normals.push_back(ny*l_n);
-					_tri_normals.push_back(nz*l_n);
-
-					_tri_positions.push_back(mass10->_x);
-					_tri_positions.push_back(mass10->_y);
-					_tri_positions.push_back(mass10->_z);
-					_tri_normals.push_back(nx*l_n);
-					_tri_normals.push_back(ny*l_n);
-					_tri_normals.push_back(nz*l_n);
-
-					_tri_positions.push_back(mass01->_x);
-					_tri_positions.push_back(mass01->_y);
-					_tri_positions.push_back(mass01->_z);
-					_tri_normals.push_back(nx*l_n);
-					_tri_normals.push_back(ny*l_n);
-					_tri_normals.push_back(nz*l_n);
-
-					_tri_positions.push_back(mass01->_x);
-					_tri_positions.push_back(mass01->_y);
-					_tri_positions.push_back(mass01->_z);
-					_tri_normals.push_back(nx*l_n);
-					_tri_normals.push_back(ny*l_n);
-					_tri_normals.push_back(nz*l_n);
-
-					_tri_positions.push_back(mass10->_x);
-					_tri_positions.push_back(mass10->_y);
-					_tri_positions.push_back(mass10->_z);
-					_tri_normals.push_back(nx*l_n);
-					_tri_normals.push_back(ny*l_n);
-					_tri_normals.push_back(nz*l_n);
-
-					_tri_positions.push_back(mass11->_x);
-					_tri_positions.push_back(mass11->_y);
-					_tri_positions.push_back(mass11->_z);
-					_tri_normals.push_back(nx*l_n);
-					_tri_normals.push_back(ny*l_n);
-					_tri_normals.push_back(nz*l_n);
-				}
+				_tri_positions.push_back(mass11x);
+				_tri_positions.push_back(mass11y);
+				_tri_positions.push_back(mass11z);
+				_tri_normals.push_back(nx*l_n);
+				_tri_normals.push_back(ny*l_n);
+				_tri_normals.push_back(nz*l_n);
+				_tri_colors.push_back(1.0);
+				_tri_colors.push_back(0.0);
+				_tri_colors.push_back(0.0);
 			}
 		}
 
-		// left and right face
+		for (size_t i = 0; i < x_size-1; ++i) {
+			for (size_t j = 0; j < y_size-1; ++j) {
+				// back face
+				size_t i00 = cube->_start + i + j * x_size + (z_size-1) * xy_size;
+				size_t i10 = cube->_start + (i+1) + j * x_size + (z_size-1) * xy_size;
+				size_t i01 = cube->_start + i + (j+1) * x_size + (z_size-1) * xy_size;
+				size_t i11 = cube->_start + (i+1) + (j+1) * x_size + (z_size-1) * xy_size;
+				Mass *mass00 = masses.getMass(i00);
+				Mass *mass10 = masses.getMass(i10);
+				Mass *mass01 = masses.getMass(i01);
+				Mass *mass11 = masses.getMass(i11);
+
+				// vector from centroid to mass00
+				float v00x = (mass00->_x - centroid_x);
+				float v00y = (mass00->_y - centroid_y);
+				float v00z = (mass00->_z - centroid_z);
+				float v00_l = 1.0 / sqrt(v00x*v00x + v00y*v00y + v00z*v00z);
+				// normalize and scale by radius
+				v00x *= v00_l * cube->_radius * cube_scale;
+				v00y *= v00_l * cube->_radius * cube_scale;
+				v00z *= v00_l * cube->_radius * cube_scale;
+				float mass00x = mass00->_x + v00x;
+				float mass00y = mass00->_y + v00y;
+				float mass00z = mass00->_z + v00z;
+
+				// vector from centroid to mass01
+				float v01x = (mass01->_x - centroid_x);
+				float v01y = (mass01->_y - centroid_y);
+				float v01z = (mass01->_z - centroid_z);
+				float v01_l = 1.0 / sqrt(v01x*v01x + v01y*v01y + v01z*v01z);
+				// normalize and scale by radius
+				v01x *= v01_l * cube->_radius * cube_scale;
+				v01y *= v01_l * cube->_radius * cube_scale;
+				v01z *= v01_l * cube->_radius * cube_scale;
+				float mass01x = mass01->_x + v01x;
+				float mass01y = mass01->_y + v01y;
+				float mass01z = mass01->_z + v01z;
+
+				// vector from centroid to mass10
+				float v10x = (mass10->_x - centroid_x);
+				float v10y = (mass10->_y - centroid_y);
+				float v10z = (mass10->_z - centroid_z);
+				float v10_l = 1.0 / sqrt(v10x*v10x + v10y*v10y + v10z*v10z);
+				// normalize and scale by radius
+				v10x *= v10_l * cube->_radius * cube_scale;
+				v10y *= v10_l * cube->_radius * cube_scale;
+				v10z *= v10_l * cube->_radius * cube_scale;
+				float mass10x = mass10->_x + v10x;
+				float mass10y = mass10->_y + v10y;
+				float mass10z = mass10->_z + v10z;
+
+				// vector from centroid to mass11
+				float v11x = (mass11->_x - centroid_x);
+				float v11y = (mass11->_y - centroid_y);
+				float v11z = (mass11->_z - centroid_z);
+				float v11_l = 1.0 / sqrt(v11x*v11x + v11y*v11y + v11z*v11z);
+				// normalize and scale by radius
+				v11x *= v11_l * cube->_radius * cube_scale;
+				v11y *= v11_l * cube->_radius * cube_scale;
+				v11z *= v11_l * cube->_radius * cube_scale;
+				float mass11x = mass11->_x + v11x;
+				float mass11y = mass11->_y + v11y;
+				float mass11z = mass11->_z + v11z;
+
+				float x1000 = mass10x - mass00x;
+				float y1000 = mass10y - mass00y;
+				float z1000 = mass10z - mass00z;
+				float x0100 = mass01x - mass00x;
+				float y0100 = mass01y - mass00y;
+				float z0100 = mass01z - mass00z;
+
+				/*
+				float x1011 = mass10x - mass11x;
+				float y1011 = mass10y - mass11y;
+				float z1011 = mass10z - mass11z;
+				float x0111 = mass01x - mass11x;
+				float y0111 = mass01y - mass11y;
+				float z0111 = mass01z - mass11z;
+				*/
+
+				float nx = y1000*z0100 - y0100*z1000;
+				float ny = -(x1000*z0100 - x0100*z1000);
+				float nz = x1000*y0100 - x0100*y1000;
+				float l_n = 1.0/sqrt(nx*nx + ny*ny + nz*nz);
+
+				_tri_positions.push_back(mass00x);
+				_tri_positions.push_back(mass00y);
+				_tri_positions.push_back(mass00z);
+				_tri_normals.push_back(nx*l_n);
+				_tri_normals.push_back(ny*l_n);
+				_tri_normals.push_back(nz*l_n);
+				_tri_colors.push_back(1.0);
+				_tri_colors.push_back(0.0);
+				_tri_colors.push_back(0.0);
+
+				_tri_positions.push_back(mass10x);
+				_tri_positions.push_back(mass10y);
+				_tri_positions.push_back(mass10z);
+				_tri_normals.push_back(nx*l_n);
+				_tri_normals.push_back(ny*l_n);
+				_tri_normals.push_back(nz*l_n);
+				_tri_colors.push_back(1.0);
+				_tri_colors.push_back(0.0);
+				_tri_colors.push_back(0.0);
+
+				_tri_positions.push_back(mass01x);
+				_tri_positions.push_back(mass01y);
+				_tri_positions.push_back(mass01z);
+				_tri_normals.push_back(nx*l_n);
+				_tri_normals.push_back(ny*l_n);
+				_tri_normals.push_back(nz*l_n);
+				_tri_colors.push_back(1.0);
+				_tri_colors.push_back(0.0);
+				_tri_colors.push_back(0.0);
+
+				_tri_positions.push_back(mass01x);
+				_tri_positions.push_back(mass01y);
+				_tri_positions.push_back(mass01z);
+				_tri_normals.push_back(nx*l_n);
+				_tri_normals.push_back(ny*l_n);
+				_tri_normals.push_back(nz*l_n);
+				_tri_colors.push_back(1.0);
+				_tri_colors.push_back(0.0);
+				_tri_colors.push_back(0.0);
+
+				_tri_positions.push_back(mass10x);
+				_tri_positions.push_back(mass10y);
+				_tri_positions.push_back(mass10z);
+				_tri_normals.push_back(nx*l_n);
+				_tri_normals.push_back(ny*l_n);
+				_tri_normals.push_back(nz*l_n);
+				_tri_colors.push_back(1.0);
+				_tri_colors.push_back(0.0);
+				_tri_colors.push_back(0.0);
+
+				_tri_positions.push_back(mass11x);
+				_tri_positions.push_back(mass11y);
+				_tri_positions.push_back(mass11z);
+				_tri_normals.push_back(nx*l_n);
+				_tri_normals.push_back(ny*l_n);
+				_tri_normals.push_back(nz*l_n);
+				_tri_colors.push_back(1.0);
+				_tri_colors.push_back(0.0);
+				_tri_colors.push_back(0.0);
+			}
+		}
+
+		// top and bottom face
 		for (size_t i = 0; i < x_size-1; ++i) {
 			for (size_t k = 0; k < z_size-1; ++k) {
-				// left face
+				// top face
 				{
 					size_t i00 = cube->_start + i + k * xy_size;
 					size_t i10 = cube->_start + (i+1) + k * xy_size;
@@ -981,20 +1175,72 @@ void SigAsiaDemo::CubeList::computeBounds(
 					Mass *mass01 = masses.getMass(i01);
 					Mass *mass11 = masses.getMass(i11);
 
-					float x1000 = mass10->_x - mass00->_x;
-					float y1000 = mass10->_y - mass00->_y;
-					float z1000 = mass10->_z - mass00->_z;
-					float x0100 = mass01->_x - mass00->_x;
-					float y0100 = mass01->_y - mass00->_y;
-					float z0100 = mass01->_z - mass00->_z;
+					// vector from centroid to mass00
+					float v00x = (mass00->_x - centroid_x);
+					float v00y = (mass00->_y - centroid_y);
+					float v00z = (mass00->_z - centroid_z);
+					float v00_l = 1.0 / sqrt(v00x*v00x + v00y*v00y + v00z*v00z);
+					// normalize and scale by radius
+					v00x *= v00_l * cube->_radius * cube_scale;
+					v00y *= v00_l * cube->_radius * cube_scale;
+					v00z *= v00_l * cube->_radius * cube_scale;
+					float mass00x = mass00->_x + v00x;
+					float mass00y = mass00->_y + v00y;
+					float mass00z = mass00->_z + v00z;
+
+					// vector from centroid to mass01
+					float v01x = (mass01->_x - centroid_x);
+					float v01y = (mass01->_y - centroid_y);
+					float v01z = (mass01->_z - centroid_z);
+					float v01_l = 1.0 / sqrt(v01x*v01x + v01y*v01y + v01z*v01z);
+					// normalize and scale by radius
+					v01x *= v01_l * cube->_radius * cube_scale;
+					v01y *= v01_l * cube->_radius * cube_scale;
+					v01z *= v01_l * cube->_radius * cube_scale;
+					float mass01x = mass01->_x + v01x;
+					float mass01y = mass01->_y + v01y;
+					float mass01z = mass01->_z + v01z;
+
+					// vector from centroid to mass10
+					float v10x = (mass10->_x - centroid_x);
+					float v10y = (mass10->_y - centroid_y);
+					float v10z = (mass10->_z - centroid_z);
+					float v10_l = 1.0 / sqrt(v10x*v10x + v10y*v10y + v10z*v10z);
+					// normalize and scale by radius
+					v10x *= v10_l * cube->_radius * cube_scale;
+					v10y *= v10_l * cube->_radius * cube_scale;
+					v10z *= v10_l * cube->_radius * cube_scale;
+					float mass10x = mass10->_x + v10x;
+					float mass10y = mass10->_y + v10y;
+					float mass10z = mass10->_z + v10z;
+
+					// vector from centroid to mass11
+					float v11x = (mass11->_x - centroid_x);
+					float v11y = (mass11->_y - centroid_y);
+					float v11z = (mass11->_z - centroid_z);
+					float v11_l = 1.0 / sqrt(v11x*v11x + v11y*v11y + v11z*v11z);
+					// normalize and scale by radius
+					v11x *= v11_l * cube->_radius * cube_scale;
+					v11y *= v11_l * cube->_radius * cube_scale;
+					v11z *= v11_l * cube->_radius * cube_scale;
+					float mass11x = mass11->_x + v11x;
+					float mass11y = mass11->_y + v11y;
+					float mass11z = mass11->_z + v11z;
+
+					float x1000 = mass10x - mass00x;
+					float y1000 = mass10y - mass00y;
+					float z1000 = mass10z - mass00z;
+					float x0100 = mass01x - mass00x;
+					float y0100 = mass01y - mass00y;
+					float z0100 = mass01z - mass00z;
 
 					/*
-					float x1011 = mass10->_x - mass11->_x;
-					float y1011 = mass10->_y - mass11->_y;
-					float z1011 = mass10->_z - mass11->_z;
-					float x0111 = mass01->_x - mass11->_x;
-					float y0111 = mass01->_y - mass11->_y;
-					float z0111 = mass01->_z - mass11->_z;
+					float x1011 = mass10x - mass11x;
+					float y1011 = mass10y - mass11y;
+					float z1011 = mass10z - mass11z;
+					float x0111 = mass01x - mass11x;
+					float y0111 = mass01y - mass11y;
+					float z0111 = mass01z - mass11z;
 					*/
 
 					float nx = y1000*z0100 - y0100*z1000;
@@ -1002,49 +1248,67 @@ void SigAsiaDemo::CubeList::computeBounds(
 					float nz = x1000*y0100 - x0100*y1000;
 					float l_n = 1.0/sqrt(nx*nx + ny*ny + nz*nz);
 
-					_tri_positions.push_back(mass00->_x);
-					_tri_positions.push_back(mass00->_y);
-					_tri_positions.push_back(mass00->_z);
+					_tri_positions.push_back(mass00x);
+					_tri_positions.push_back(mass00y);
+					_tri_positions.push_back(mass00z);
 					_tri_normals.push_back(nx*l_n);
 					_tri_normals.push_back(ny*l_n);
 					_tri_normals.push_back(nz*l_n);
+					_tri_colors.push_back(1.0);
+					_tri_colors.push_back(0.0);
+					_tri_colors.push_back(0.0);
 
-					_tri_positions.push_back(mass10->_x);
-					_tri_positions.push_back(mass10->_y);
-					_tri_positions.push_back(mass10->_z);
+					_tri_positions.push_back(mass10x);
+					_tri_positions.push_back(mass10y);
+					_tri_positions.push_back(mass10z);
 					_tri_normals.push_back(nx*l_n);
 					_tri_normals.push_back(ny*l_n);
 					_tri_normals.push_back(nz*l_n);
+					_tri_colors.push_back(1.0);
+					_tri_colors.push_back(0.0);
+					_tri_colors.push_back(0.0);
 
-					_tri_positions.push_back(mass01->_x);
-					_tri_positions.push_back(mass01->_y);
-					_tri_positions.push_back(mass01->_z);
+					_tri_positions.push_back(mass01x);
+					_tri_positions.push_back(mass01y);
+					_tri_positions.push_back(mass01z);
 					_tri_normals.push_back(nx*l_n);
 					_tri_normals.push_back(ny*l_n);
 					_tri_normals.push_back(nz*l_n);
+					_tri_colors.push_back(1.0);
+					_tri_colors.push_back(0.0);
+					_tri_colors.push_back(0.0);
 
-					_tri_positions.push_back(mass01->_x);
-					_tri_positions.push_back(mass01->_y);
-					_tri_positions.push_back(mass01->_z);
+					_tri_positions.push_back(mass01x);
+					_tri_positions.push_back(mass01y);
+					_tri_positions.push_back(mass01z);
 					_tri_normals.push_back(nx*l_n);
 					_tri_normals.push_back(ny*l_n);
 					_tri_normals.push_back(nz*l_n);
+					_tri_colors.push_back(1.0);
+					_tri_colors.push_back(0.0);
+					_tri_colors.push_back(0.0);
 
-					_tri_positions.push_back(mass10->_x);
-					_tri_positions.push_back(mass10->_y);
-					_tri_positions.push_back(mass10->_z);
+					_tri_positions.push_back(mass10x);
+					_tri_positions.push_back(mass10y);
+					_tri_positions.push_back(mass10z);
 					_tri_normals.push_back(nx*l_n);
 					_tri_normals.push_back(ny*l_n);
 					_tri_normals.push_back(nz*l_n);
+					_tri_colors.push_back(1.0);
+					_tri_colors.push_back(0.0);
+					_tri_colors.push_back(0.0);
 
-					_tri_positions.push_back(mass11->_x);
-					_tri_positions.push_back(mass11->_y);
-					_tri_positions.push_back(mass11->_z);
+					_tri_positions.push_back(mass11x);
+					_tri_positions.push_back(mass11y);
+					_tri_positions.push_back(mass11z);
 					_tri_normals.push_back(nx*l_n);
 					_tri_normals.push_back(ny*l_n);
 					_tri_normals.push_back(nz*l_n);
+					_tri_colors.push_back(1.0);
+					_tri_colors.push_back(0.0);
+					_tri_colors.push_back(0.0);
 				}
-				// right face
+				// bottom face
 				{
 					size_t i00 = cube->_start + i + (y_size-1) * x_size + k * xy_size;
 					size_t i10 = cube->_start + (i+1) + (y_size-1) * x_size + k * xy_size;
@@ -1055,73 +1319,143 @@ void SigAsiaDemo::CubeList::computeBounds(
 					Mass *mass01 = masses.getMass(i01);
 					Mass *mass11 = masses.getMass(i11);
 
-					float x1000 = mass10->_x - mass00->_x;
-					float y1000 = mass10->_y - mass00->_y;
-					float z1000 = mass10->_z - mass00->_z;
-					float x0100 = mass01->_x - mass00->_x;
-					float y0100 = mass01->_y - mass00->_y;
-					float z0100 = mass01->_z - mass00->_z;
+					// vector from centroid to mass00
+					float v00x = (mass00->_x - centroid_x);
+					float v00y = (mass00->_y - centroid_y);
+					float v00z = (mass00->_z - centroid_z);
+					float v00_l = 1.0 / sqrt(v00x*v00x + v00y*v00y + v00z*v00z);
+					// normalize and scale by radius
+					v00x *= v00_l * cube->_radius * cube_scale;
+					v00y *= v00_l * cube->_radius * cube_scale;
+					v00z *= v00_l * cube->_radius * cube_scale;
+					float mass00x = mass00->_x + v00x;
+					float mass00y = mass00->_y + v00y;
+					float mass00z = mass00->_z + v00z;
+
+					// vector from centroid to mass01
+					float v01x = (mass01->_x - centroid_x);
+					float v01y = (mass01->_y - centroid_y);
+					float v01z = (mass01->_z - centroid_z);
+					float v01_l = 1.0 / sqrt(v01x*v01x + v01y*v01y + v01z*v01z);
+					// normalize and scale by radius
+					v01x *= v01_l * cube->_radius * cube_scale;
+					v01y *= v01_l * cube->_radius * cube_scale;
+					v01z *= v01_l * cube->_radius * cube_scale;
+					float mass01x = mass01->_x + v01x;
+					float mass01y = mass01->_y + v01y;
+					float mass01z = mass01->_z + v01z;
+
+					// vector from centroid to mass10
+					float v10x = (mass10->_x - centroid_x);
+					float v10y = (mass10->_y - centroid_y);
+					float v10z = (mass10->_z - centroid_z);
+					float v10_l = 1.0 / sqrt(v10x*v10x + v10y*v10y + v10z*v10z);
+					// normalize and scale by radius
+					v10x *= v10_l * cube->_radius * cube_scale;
+					v10y *= v10_l * cube->_radius * cube_scale;
+					v10z *= v10_l * cube->_radius * cube_scale;
+					float mass10x = mass10->_x + v10x;
+					float mass10y = mass10->_y + v10y;
+					float mass10z = mass10->_z + v10z;
+
+					// vector from centroid to mass11
+					float v11x = (mass11->_x - centroid_x);
+					float v11y = (mass11->_y - centroid_y);
+					float v11z = (mass11->_z - centroid_z);
+					float v11_l = 1.0 / sqrt(v11x*v11x + v11y*v11y + v11z*v11z);
+					// normalize and scale by radius
+					v11x *= v11_l * cube->_radius * cube_scale;
+					v11y *= v11_l * cube->_radius * cube_scale;
+					v11z *= v11_l * cube->_radius * cube_scale;
+					float mass11x = mass11->_x + v11x;
+					float mass11y = mass11->_y + v11y;
+					float mass11z = mass11->_z + v11z;
+
+					float x1000 = mass10x - mass00x;
+					float y1000 = mass10y - mass00y;
+					float z1000 = mass10z - mass00z;
+					float x0100 = mass01x - mass00x;
+					float y0100 = mass01y - mass00y;
+					float z0100 = mass01z - mass00z;
 
 					/*
-					float x1011 = mass10->_x - mass11->_x;
-					float y1011 = mass10->_y - mass11->_y;
-					float z1011 = mass10->_z - mass11->_z;
-					float x0111 = mass01->_x - mass11->_x;
-					float y0111 = mass01->_y - mass11->_y;
-					float z0111 = mass01->_z - mass11->_z;
+					float x1011 = mass10x - mass11x;
+					float y1011 = mass10y - mass11y;
+					float z1011 = mass10z - mass11z;
+					float x0111 = mass01x - mass11x;
+					float y0111 = mass01y - mass11y;
+					float z0111 = mass01z - mass11z;
 					*/
 
-					float nx = y1000*z0100 - y0100*z1000;
-					float ny = -(x1000*z0100 - x0100*z1000);
-					float nz = x1000*y0100 - x0100*y1000;
+					float nx = -(y1000*z0100 - y0100*z1000);
+					float ny = x1000*z0100 - x0100*z1000;
+					float nz = -(x1000*y0100 - x0100*y1000);
 					float l_n = 1.0/sqrt(nx*nx + ny*ny + nz*nz);
 
-					_tri_positions.push_back(mass00->_x);
-					_tri_positions.push_back(mass00->_y);
-					_tri_positions.push_back(mass00->_z);
+					_tri_positions.push_back(mass00x);
+					_tri_positions.push_back(mass00y);
+					_tri_positions.push_back(mass00z);
 					_tri_normals.push_back(nx*l_n);
 					_tri_normals.push_back(ny*l_n);
 					_tri_normals.push_back(nz*l_n);
+					_tri_colors.push_back(1.0);
+					_tri_colors.push_back(0.0);
+					_tri_colors.push_back(0.0);
 
-					_tri_positions.push_back(mass10->_x);
-					_tri_positions.push_back(mass10->_y);
-					_tri_positions.push_back(mass10->_z);
+					_tri_positions.push_back(mass10x);
+					_tri_positions.push_back(mass10y);
+					_tri_positions.push_back(mass10z);
 					_tri_normals.push_back(nx*l_n);
 					_tri_normals.push_back(ny*l_n);
 					_tri_normals.push_back(nz*l_n);
+					_tri_colors.push_back(1.0);
+					_tri_colors.push_back(0.0);
+					_tri_colors.push_back(0.0);
 
-					_tri_positions.push_back(mass01->_x);
-					_tri_positions.push_back(mass01->_y);
-					_tri_positions.push_back(mass01->_z);
+					_tri_positions.push_back(mass01x);
+					_tri_positions.push_back(mass01y);
+					_tri_positions.push_back(mass01z);
 					_tri_normals.push_back(nx*l_n);
 					_tri_normals.push_back(ny*l_n);
 					_tri_normals.push_back(nz*l_n);
+					_tri_colors.push_back(1.0);
+					_tri_colors.push_back(0.0);
+					_tri_colors.push_back(0.0);
 
-					_tri_positions.push_back(mass01->_x);
-					_tri_positions.push_back(mass01->_y);
-					_tri_positions.push_back(mass01->_z);
+					_tri_positions.push_back(mass01x);
+					_tri_positions.push_back(mass01y);
+					_tri_positions.push_back(mass01z);
 					_tri_normals.push_back(nx*l_n);
 					_tri_normals.push_back(ny*l_n);
 					_tri_normals.push_back(nz*l_n);
+					_tri_colors.push_back(1.0);
+					_tri_colors.push_back(0.0);
+					_tri_colors.push_back(0.0);
 
-					_tri_positions.push_back(mass10->_x);
-					_tri_positions.push_back(mass10->_y);
-					_tri_positions.push_back(mass10->_z);
+					_tri_positions.push_back(mass10x);
+					_tri_positions.push_back(mass10y);
+					_tri_positions.push_back(mass10z);
 					_tri_normals.push_back(nx*l_n);
 					_tri_normals.push_back(ny*l_n);
 					_tri_normals.push_back(nz*l_n);
+					_tri_colors.push_back(1.0);
+					_tri_colors.push_back(0.0);
+					_tri_colors.push_back(0.0);
 
-					_tri_positions.push_back(mass11->_x);
-					_tri_positions.push_back(mass11->_y);
-					_tri_positions.push_back(mass11->_z);
+					_tri_positions.push_back(mass11x);
+					_tri_positions.push_back(mass11y);
+					_tri_positions.push_back(mass11z);
 					_tri_normals.push_back(nx*l_n);
 					_tri_normals.push_back(ny*l_n);
 					_tri_normals.push_back(nz*l_n);
+					_tri_colors.push_back(1.0);
+					_tri_colors.push_back(0.0);
+					_tri_colors.push_back(0.0);
 				}
 			}
 		}
 
-		// top and bottom face
+		// left and right face
 		for (size_t j = 0; j < y_size-1; ++j) {
 			for (size_t k = 0; k < z_size-1; ++k) {
 				// top face
@@ -1135,20 +1469,72 @@ void SigAsiaDemo::CubeList::computeBounds(
 					Mass *mass01 = masses.getMass(i01);
 					Mass *mass11 = masses.getMass(i11);
 
-					float x1000 = mass10->_x - mass00->_x;
-					float y1000 = mass10->_y - mass00->_y;
-					float z1000 = mass10->_z - mass00->_z;
-					float x0100 = mass01->_x - mass00->_x;
-					float y0100 = mass01->_y - mass00->_y;
-					float z0100 = mass01->_z - mass00->_z;
+					// vector from centroid to mass00
+					float v00x = (mass00->_x - centroid_x);
+					float v00y = (mass00->_y - centroid_y);
+					float v00z = (mass00->_z - centroid_z);
+					float v00_l = 1.0 / sqrt(v00x*v00x + v00y*v00y + v00z*v00z);
+					// normalize and scale by radius
+					v00x *= v00_l * cube->_radius * cube_scale;
+					v00y *= v00_l * cube->_radius * cube_scale;
+					v00z *= v00_l * cube->_radius * cube_scale;
+					float mass00x = mass00->_x + v00x;
+					float mass00y = mass00->_y + v00y;
+					float mass00z = mass00->_z + v00z;
+
+					// vector from centroid to mass01
+					float v01x = (mass01->_x - centroid_x);
+					float v01y = (mass01->_y - centroid_y);
+					float v01z = (mass01->_z - centroid_z);
+					float v01_l = 1.0 / sqrt(v01x*v01x + v01y*v01y + v01z*v01z);
+					// normalize and scale by radius
+					v01x *= v01_l * cube->_radius * cube_scale;
+					v01y *= v01_l * cube->_radius * cube_scale;
+					v01z *= v01_l * cube->_radius * cube_scale;
+					float mass01x = mass01->_x + v01x;
+					float mass01y = mass01->_y + v01y;
+					float mass01z = mass01->_z + v01z;
+
+					// vector from centroid to mass10
+					float v10x = (mass10->_x - centroid_x);
+					float v10y = (mass10->_y - centroid_y);
+					float v10z = (mass10->_z - centroid_z);
+					float v10_l = 1.0 / sqrt(v10x*v10x + v10y*v10y + v10z*v10z);
+					// normalize and scale by radius
+					v10x *= v10_l * cube->_radius * cube_scale;
+					v10y *= v10_l * cube->_radius * cube_scale;
+					v10z *= v10_l * cube->_radius * cube_scale;
+					float mass10x = mass10->_x + v10x;
+					float mass10y = mass10->_y + v10y;
+					float mass10z = mass10->_z + v10z;
+
+					// vector from centroid to mass11
+					float v11x = (mass11->_x - centroid_x);
+					float v11y = (mass11->_y - centroid_y);
+					float v11z = (mass11->_z - centroid_z);
+					float v11_l = 1.0 / sqrt(v11x*v11x + v11y*v11y + v11z*v11z);
+					// normalize and scale by radius
+					v11x *= v11_l * cube->_radius * cube_scale;
+					v11y *= v11_l * cube->_radius * cube_scale;
+					v11z *= v11_l * cube->_radius * cube_scale;
+					float mass11x = mass11->_x + v11x;
+					float mass11y = mass11->_y + v11y;
+					float mass11z = mass11->_z + v11z;
+
+					float x1000 = mass10x - mass00x;
+					float y1000 = mass10y - mass00y;
+					float z1000 = mass10z - mass00z;
+					float x0100 = mass01x - mass00x;
+					float y0100 = mass01y - mass00y;
+					float z0100 = mass01z - mass00z;
 
 					/*
-					float x1011 = mass10->_x - mass11->_x;
-					float y1011 = mass10->_y - mass11->_y;
-					float z1011 = mass10->_z - mass11->_z;
-					float x0111 = mass01->_x - mass11->_x;
-					float y0111 = mass01->_y - mass11->_y;
-					float z0111 = mass01->_z - mass11->_z;
+					float x1011 = mass10x - mass11x;
+					float y1011 = mass10y - mass11y;
+					float z1011 = mass10z - mass11z;
+					float x0111 = mass01x - mass11x;
+					float y0111 = mass01y - mass11y;
+					float z0111 = mass01z - mass11z;
 					*/
 
 					float nx = y1000*z0100 - y0100*z1000;
@@ -1156,49 +1542,67 @@ void SigAsiaDemo::CubeList::computeBounds(
 					float nz = x1000*y0100 - x0100*y1000;
 					float l_n = 1.0/sqrt(nx*nx + ny*ny + nz*nz);
 
-					_tri_positions.push_back(mass00->_x);
-					_tri_positions.push_back(mass00->_y);
-					_tri_positions.push_back(mass00->_z);
+					_tri_positions.push_back(mass00x);
+					_tri_positions.push_back(mass00y);
+					_tri_positions.push_back(mass00z);
 					_tri_normals.push_back(nx*l_n);
 					_tri_normals.push_back(ny*l_n);
 					_tri_normals.push_back(nz*l_n);
+					_tri_colors.push_back(1.0);
+					_tri_colors.push_back(0.0);
+					_tri_colors.push_back(0.0);
 
-					_tri_positions.push_back(mass10->_x);
-					_tri_positions.push_back(mass10->_y);
-					_tri_positions.push_back(mass10->_z);
+					_tri_positions.push_back(mass10x);
+					_tri_positions.push_back(mass10y);
+					_tri_positions.push_back(mass10z);
 					_tri_normals.push_back(nx*l_n);
 					_tri_normals.push_back(ny*l_n);
 					_tri_normals.push_back(nz*l_n);
+					_tri_colors.push_back(1.0);
+					_tri_colors.push_back(0.0);
+					_tri_colors.push_back(0.0);
 
-					_tri_positions.push_back(mass01->_x);
-					_tri_positions.push_back(mass01->_y);
-					_tri_positions.push_back(mass01->_z);
+					_tri_positions.push_back(mass01x);
+					_tri_positions.push_back(mass01y);
+					_tri_positions.push_back(mass01z);
 					_tri_normals.push_back(nx*l_n);
 					_tri_normals.push_back(ny*l_n);
 					_tri_normals.push_back(nz*l_n);
+					_tri_colors.push_back(1.0);
+					_tri_colors.push_back(0.0);
+					_tri_colors.push_back(0.0);
 
-					_tri_positions.push_back(mass01->_x);
-					_tri_positions.push_back(mass01->_y);
-					_tri_positions.push_back(mass01->_z);
+					_tri_positions.push_back(mass01x);
+					_tri_positions.push_back(mass01y);
+					_tri_positions.push_back(mass01z);
 					_tri_normals.push_back(nx*l_n);
 					_tri_normals.push_back(ny*l_n);
 					_tri_normals.push_back(nz*l_n);
+					_tri_colors.push_back(1.0);
+					_tri_colors.push_back(0.0);
+					_tri_colors.push_back(0.0);
 
-					_tri_positions.push_back(mass10->_x);
-					_tri_positions.push_back(mass10->_y);
-					_tri_positions.push_back(mass10->_z);
+					_tri_positions.push_back(mass10x);
+					_tri_positions.push_back(mass10y);
+					_tri_positions.push_back(mass10z);
 					_tri_normals.push_back(nx*l_n);
 					_tri_normals.push_back(ny*l_n);
 					_tri_normals.push_back(nz*l_n);
+					_tri_colors.push_back(1.0);
+					_tri_colors.push_back(0.0);
+					_tri_colors.push_back(0.0);
 
-					_tri_positions.push_back(mass11->_x);
-					_tri_positions.push_back(mass11->_y);
-					_tri_positions.push_back(mass11->_z);
+					_tri_positions.push_back(mass11x);
+					_tri_positions.push_back(mass11y);
+					_tri_positions.push_back(mass11z);
 					_tri_normals.push_back(nx*l_n);
 					_tri_normals.push_back(ny*l_n);
 					_tri_normals.push_back(nz*l_n);
+					_tri_colors.push_back(1.0);
+					_tri_colors.push_back(0.0);
+					_tri_colors.push_back(0.0);
 				}
-				// top face
+				// right face
 				{
 					size_t i00 = cube->_start + x_size-1 + j*x_size + k * xy_size;
 					size_t i10 = cube->_start + x_size-1 +(j+1)*x_size + k * xy_size;
@@ -1209,68 +1613,138 @@ void SigAsiaDemo::CubeList::computeBounds(
 					Mass *mass01 = masses.getMass(i01);
 					Mass *mass11 = masses.getMass(i11);
 
-					float x1000 = mass10->_x - mass00->_x;
-					float y1000 = mass10->_y - mass00->_y;
-					float z1000 = mass10->_z - mass00->_z;
-					float x0100 = mass01->_x - mass00->_x;
-					float y0100 = mass01->_y - mass00->_y;
-					float z0100 = mass01->_z - mass00->_z;
+					// vector from centroid to mass00
+					float v00x = (mass00->_x - centroid_x);
+					float v00y = (mass00->_y - centroid_y);
+					float v00z = (mass00->_z - centroid_z);
+					float v00_l = 1.0 / sqrt(v00x*v00x + v00y*v00y + v00z*v00z);
+					// normalize and scale by radius
+					v00x *= v00_l * cube->_radius * cube_scale;
+					v00y *= v00_l * cube->_radius * cube_scale;
+					v00z *= v00_l * cube->_radius * cube_scale;
+					float mass00x = mass00->_x + v00x;
+					float mass00y = mass00->_y + v00y;
+					float mass00z = mass00->_z + v00z;
+
+					// vector from centroid to mass01
+					float v01x = (mass01->_x - centroid_x);
+					float v01y = (mass01->_y - centroid_y);
+					float v01z = (mass01->_z - centroid_z);
+					float v01_l = 1.0 / sqrt(v01x*v01x + v01y*v01y + v01z*v01z);
+					// normalize and scale by radius
+					v01x *= v01_l * cube->_radius * cube_scale;
+					v01y *= v01_l * cube->_radius * cube_scale;
+					v01z *= v01_l * cube->_radius * cube_scale;
+					float mass01x = mass01->_x + v01x;
+					float mass01y = mass01->_y + v01y;
+					float mass01z = mass01->_z + v01z;
+
+					// vector from centroid to mass10
+					float v10x = (mass10->_x - centroid_x);
+					float v10y = (mass10->_y - centroid_y);
+					float v10z = (mass10->_z - centroid_z);
+					float v10_l = 1.0 / sqrt(v10x*v10x + v10y*v10y + v10z*v10z);
+					// normalize and scale by radius
+					v10x *= v10_l * cube->_radius * cube_scale;
+					v10y *= v10_l * cube->_radius * cube_scale;
+					v10z *= v10_l * cube->_radius * cube_scale;
+					float mass10x = mass10->_x + v10x;
+					float mass10y = mass10->_y + v10y;
+					float mass10z = mass10->_z + v10z;
+
+					// vector from centroid to mass11
+					float v11x = (mass11->_x - centroid_x);
+					float v11y = (mass11->_y - centroid_y);
+					float v11z = (mass11->_z - centroid_z);
+					float v11_l = 1.0 / sqrt(v11x*v11x + v11y*v11y + v11z*v11z);
+					// normalize and scale by radius
+					v11x *= v11_l * cube->_radius * cube_scale;
+					v11y *= v11_l * cube->_radius * cube_scale;
+					v11z *= v11_l * cube->_radius * cube_scale;
+					float mass11x = mass11->_x + v11x;
+					float mass11y = mass11->_y + v11y;
+					float mass11z = mass11->_z + v11z;
+
+					float x1000 = mass10x - mass00x;
+					float y1000 = mass10y - mass00y;
+					float z1000 = mass10z - mass00z;
+					float x0100 = mass01x - mass00x;
+					float y0100 = mass01y - mass00y;
+					float z0100 = mass01z - mass00z;
 
 					/*
-					float x1011 = mass10->_x - mass11->_x;
-					float y1011 = mass10->_y - mass11->_y;
-					float z1011 = mass10->_z - mass11->_z;
-					float x0111 = mass01->_x - mass11->_x;
-					float y0111 = mass01->_y - mass11->_y;
-					float z0111 = mass01->_z - mass11->_z;
+					float x1011 = mass10x - mass11x;
+					float y1011 = mass10y - mass11y;
+					float z1011 = mass10z - mass11z;
+					float x0111 = mass01x - mass11x;
+					float y0111 = mass01y - mass11y;
+					float z0111 = mass01z - mass11z;
 					*/
 
-					float nx = y1000*z0100 - y0100*z1000;
-					float ny = -(x1000*z0100 - x0100*z1000);
-					float nz = x1000*y0100 - x0100*y1000;
+					float nx = -(y1000*z0100 - y0100*z1000);
+					float ny = x1000*z0100 - x0100*z1000;
+					float nz = -(x1000*y0100 - x0100*y1000);
 					float l_n = 1.0/sqrt(nx*nx + ny*ny + nz*nz);
 
-					_tri_positions.push_back(mass00->_x);
-					_tri_positions.push_back(mass00->_y);
-					_tri_positions.push_back(mass00->_z);
+					_tri_positions.push_back(mass00x);
+					_tri_positions.push_back(mass00y);
+					_tri_positions.push_back(mass00z);
 					_tri_normals.push_back(nx*l_n);
 					_tri_normals.push_back(ny*l_n);
 					_tri_normals.push_back(nz*l_n);
+					_tri_colors.push_back(1.0);
+					_tri_colors.push_back(0.0);
+					_tri_colors.push_back(0.0);
 
-					_tri_positions.push_back(mass10->_x);
-					_tri_positions.push_back(mass10->_y);
-					_tri_positions.push_back(mass10->_z);
+					_tri_positions.push_back(mass10x);
+					_tri_positions.push_back(mass10y);
+					_tri_positions.push_back(mass10z);
 					_tri_normals.push_back(nx*l_n);
 					_tri_normals.push_back(ny*l_n);
 					_tri_normals.push_back(nz*l_n);
+					_tri_colors.push_back(1.0);
+					_tri_colors.push_back(0.0);
+					_tri_colors.push_back(0.0);
 
-					_tri_positions.push_back(mass01->_x);
-					_tri_positions.push_back(mass01->_y);
-					_tri_positions.push_back(mass01->_z);
+					_tri_positions.push_back(mass01x);
+					_tri_positions.push_back(mass01y);
+					_tri_positions.push_back(mass01z);
 					_tri_normals.push_back(nx*l_n);
 					_tri_normals.push_back(ny*l_n);
 					_tri_normals.push_back(nz*l_n);
+					_tri_colors.push_back(1.0);
+					_tri_colors.push_back(0.0);
+					_tri_colors.push_back(0.0);
 
-					_tri_positions.push_back(mass01->_x);
-					_tri_positions.push_back(mass01->_y);
-					_tri_positions.push_back(mass01->_z);
+					_tri_positions.push_back(mass01x);
+					_tri_positions.push_back(mass01y);
+					_tri_positions.push_back(mass01z);
 					_tri_normals.push_back(nx*l_n);
 					_tri_normals.push_back(ny*l_n);
 					_tri_normals.push_back(nz*l_n);
+					_tri_colors.push_back(1.0);
+					_tri_colors.push_back(0.0);
+					_tri_colors.push_back(0.0);
 
-					_tri_positions.push_back(mass10->_x);
-					_tri_positions.push_back(mass10->_y);
-					_tri_positions.push_back(mass10->_z);
+					_tri_positions.push_back(mass10x);
+					_tri_positions.push_back(mass10y);
+					_tri_positions.push_back(mass10z);
 					_tri_normals.push_back(nx*l_n);
 					_tri_normals.push_back(ny*l_n);
 					_tri_normals.push_back(nz*l_n);
+					_tri_colors.push_back(1.0);
+					_tri_colors.push_back(0.0);
+					_tri_colors.push_back(0.0);
 
-					_tri_positions.push_back(mass11->_x);
-					_tri_positions.push_back(mass11->_y);
-					_tri_positions.push_back(mass11->_z);
+					_tri_positions.push_back(mass11x);
+					_tri_positions.push_back(mass11y);
+					_tri_positions.push_back(mass11z);
 					_tri_normals.push_back(nx*l_n);
 					_tri_normals.push_back(ny*l_n);
 					_tri_normals.push_back(nz*l_n);
+					_tri_colors.push_back(1.0);
+					_tri_colors.push_back(0.0);
+					_tri_colors.push_back(0.0);
 				}
 			}
 		}
@@ -1496,6 +1970,18 @@ void SigAsiaDemo::CubeList::computeBounds(
 			&_tri_normals[0],
 			GL_DYNAMIC_DRAW);
 
+		if (_cube_col_buffer == 0) {
+			// generate GL buffer
+			glGenBuffers(1, &_cube_col_buffer);
+		}
+		glBindBuffer(GL_ARRAY_BUFFER, _cube_col_buffer);
+		//std::cout << "Fill colors buffer" << std::endl;
+		glBufferData(
+			GL_ARRAY_BUFFER,
+			_tri_colors.size()*sizeof(float),
+			&_tri_colors[0],
+			GL_DYNAMIC_DRAW);
+
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 		// vertex array
@@ -1507,11 +1993,14 @@ void SigAsiaDemo::CubeList::computeBounds(
 
 		glEnableVertexAttribArray(0);
 		glEnableVertexAttribArray(1);
+		glEnableVertexAttribArray(2);
 
 		glBindBuffer(GL_ARRAY_BUFFER, _cube_pos_buffer);
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
 		glBindBuffer(GL_ARRAY_BUFFER, _cube_norm_buffer);
 		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+		glBindBuffer(GL_ARRAY_BUFFER, _cube_col_buffer);
+		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, NULL);
 
 		glBindVertexArray(0);
 		//std::cout << "Done generating cube array" << std::endl;
