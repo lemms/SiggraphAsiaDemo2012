@@ -48,12 +48,12 @@ SigAsiaDemo::SpringList springs;
 SigAsiaDemo::CubeList cubes;
 
 size_t frame = 0;
-float dt = 5e-5;
+float dt = 1e-4;
 bool play = false;
 bool ground_collision = true;
 
 float resolution_multiplier = 0.02;
-float cube_spacing = 1.0;
+float cube_spacing = 1.8;
 float cube_radius = 1.0;
 
 void ParseArgs(int argc, char **argv)
@@ -341,42 +341,45 @@ int main(int argc, char **argv)
 	// fill masses
 	cout << "Fill masses." << endl;
 
-	springs.setConstants(10000.0, 1000.0);
-	cubes.setConstants(10000.0, 1000.0);
+	// set constants
+	float ks = 10000.0;
+	float kd = 1000.0;
+	springs.setConstants(ks, kd);
+	cubes.setConstants(ks, kd);
 
 	cout << "Setup cube." << endl;
 
 	cubes.push(SigAsiaDemo::Cube(
 		-40.0, 20.0, 0.0,	// position
-		10, 10, 10,			// size
+		4, 4, 4,			// size
 		cube_spacing,		// spacing
 		4.0,				// mass
 		cube_radius		// radius
 		));
 	cubes.push(SigAsiaDemo::Cube(
 		-20.0, 30.0, 0.0,	// position
-		10, 10, 10,			// size
+		4, 4, 4,			// size
 		cube_spacing,		// spacing
 		4.0,				// mass
 		cube_radius		// radius
 		));
 	cubes.push(SigAsiaDemo::Cube(
 		0.0, 40.0, 0.0,		// position
-		10, 10, 10,			// size
+		4, 4, 4,			// size
 		cube_spacing,	// spacing
 		4.0,				// mass
 		cube_radius	// radius
 		));
 	cubes.push(SigAsiaDemo::Cube(
 		20.0, 50.0, 0.0,	// position
-		10, 10, 10,			// size
+		4, 4, 4,			// size
 		cube_spacing,		// spacing
 		4.0,				// mass
 		cube_radius		// radius
 		));
 	cubes.push(SigAsiaDemo::Cube(
 		40.0, 60.0, 0.0,	// position
-		10, 10, 10,			// size
+		4, 4, 4,			// size
 		cube_spacing,		// spacing
 		4.0,				// mass
 		cube_radius		// radius
@@ -384,35 +387,179 @@ int main(int argc, char **argv)
 
 	cubes.push(SigAsiaDemo::Cube(
 		-40.0, 40.0, 0.0,	// position
-		10, 10, 10,			// size
+		4, 4, 4,			// size
 		cube_spacing,		// spacing
 		4.0,				// mass
 		cube_radius		// radius
 		));
 	cubes.push(SigAsiaDemo::Cube(
 		-20.0, 50.0, 0.0,	// position
-		10, 10, 10,			// size
+		4, 4, 4,			// size
 		cube_spacing,		// spacing
 		4.0,				// mass
 		cube_radius		// radius
 		));
 	cubes.push(SigAsiaDemo::Cube(
 		0.0, 60.0, 0.0,		// position
-		10, 10, 10,			// size
+		4, 4, 4,			// size
 		cube_spacing,		// spacing
 		4.0,				// mass
 		cube_radius		// radius
 		));
 	cubes.push(SigAsiaDemo::Cube(
 		20.0, 70.0, 0.0,	// position
-		10, 10, 10,			// size
+		4, 4, 4,			// size
 		cube_spacing,		// spacing
 		4.0,				// mass
 		cube_radius		// radius
 		));
 	cubes.push(SigAsiaDemo::Cube(
 		40.0, 80.0, 0.0,	// position
-		10, 10, 10,			// size
+		4, 4, 4,			// size
+		cube_spacing,		// spacing
+		4.0,				// mass
+		cube_radius		// radius
+		));
+
+	cubes.push(SigAsiaDemo::Cube(
+		-40.0, 60.0, 0.0,	// position
+		4, 4, 4,			// size
+		cube_spacing,		// spacing
+		4.0,				// mass
+		cube_radius		// radius
+		));
+	cubes.push(SigAsiaDemo::Cube(
+		-20.0, 70.0, 0.0,	// position
+		4, 4, 4,			// size
+		cube_spacing,		// spacing
+		4.0,				// mass
+		cube_radius		// radius
+		));
+	cubes.push(SigAsiaDemo::Cube(
+		0.0, 80.0, 0.0,		// position
+		4, 4, 4,			// size
+		cube_spacing,	// spacing
+		4.0,				// mass
+		cube_radius	// radius
+		));
+	cubes.push(SigAsiaDemo::Cube(
+		20.0, 90.0, 0.0,	// position
+		4, 4, 4,			// size
+		cube_spacing,		// spacing
+		4.0,				// mass
+		cube_radius		// radius
+		));
+	cubes.push(SigAsiaDemo::Cube(
+		40.0, 100.0, 0.0,	// position
+		4, 4, 4,			// size
+		cube_spacing,		// spacing
+		4.0,				// mass
+		cube_radius		// radius
+		));
+
+	cubes.push(SigAsiaDemo::Cube(
+		-40.0, 80.0, 0.0,	// position
+		4, 4, 4,			// size
+		cube_spacing,		// spacing
+		4.0,				// mass
+		cube_radius		// radius
+		));
+	cubes.push(SigAsiaDemo::Cube(
+		-20.0, 90.0, 0.0,	// position
+		4, 4, 4,			// size
+		cube_spacing,		// spacing
+		4.0,				// mass
+		cube_radius		// radius
+		));
+	cubes.push(SigAsiaDemo::Cube(
+		0.0, 100.0, 0.0,		// position
+		4, 4, 4,			// size
+		cube_spacing,	// spacing
+		4.0,				// mass
+		cube_radius	// radius
+		));
+	cubes.push(SigAsiaDemo::Cube(
+		20.0, 110.0, 0.0,	// position
+		4, 4, 4,			// size
+		cube_spacing,		// spacing
+		4.0,				// mass
+		cube_radius		// radius
+		));
+	cubes.push(SigAsiaDemo::Cube(
+		40.0, 120.0, 0.0,	// position
+		4, 4, 4,			// size
+		cube_spacing,		// spacing
+		4.0,				// mass
+		cube_radius		// radius
+		));
+
+	cubes.push(SigAsiaDemo::Cube(
+		-40.0, 100.0, 0.0,	// position
+		4, 4, 4,			// size
+		cube_spacing,		// spacing
+		4.0,				// mass
+		cube_radius		// radius
+		));
+	cubes.push(SigAsiaDemo::Cube(
+		-20.0, 110.0, 0.0,	// position
+		4, 4, 4,			// size
+		cube_spacing,		// spacing
+		4.0,				// mass
+		cube_radius		// radius
+		));
+	cubes.push(SigAsiaDemo::Cube(
+		0.0, 120.0, 0.0,		// position
+		4, 4, 4,			// size
+		cube_spacing,	// spacing
+		4.0,				// mass
+		cube_radius	// radius
+		));
+	cubes.push(SigAsiaDemo::Cube(
+		20.0, 130.0, 0.0,	// position
+		4, 4, 4,			// size
+		cube_spacing,		// spacing
+		4.0,				// mass
+		cube_radius		// radius
+		));
+	cubes.push(SigAsiaDemo::Cube(
+		40.0, 140.0, 0.0,	// position
+		4, 4, 4,			// size
+		cube_spacing,		// spacing
+		4.0,				// mass
+		cube_radius		// radius
+		));
+
+	cubes.push(SigAsiaDemo::Cube(
+		-40.0, 120.0, 0.0,	// position
+		4, 4, 4,			// size
+		cube_spacing,		// spacing
+		4.0,				// mass
+		cube_radius		// radius
+		));
+	cubes.push(SigAsiaDemo::Cube(
+		-20.0, 130.0, 0.0,	// position
+		4, 4, 4,			// size
+		cube_spacing,		// spacing
+		4.0,				// mass
+		cube_radius		// radius
+		));
+	cubes.push(SigAsiaDemo::Cube(
+		0.0, 140.0, 0.0,		// position
+		4, 4, 4,			// size
+		cube_spacing,	// spacing
+		4.0,				// mass
+		cube_radius	// radius
+		));
+	cubes.push(SigAsiaDemo::Cube(
+		20.0, 150.0, 0.0,	// position
+		4, 4, 4,			// size
+		cube_spacing,		// spacing
+		4.0,				// mass
+		cube_radius		// radius
+		));
+	cubes.push(SigAsiaDemo::Cube(
+		40.0, 160.0, 0.0,	// position
+		4, 4, 4,			// size
 		cube_spacing,		// spacing
 		4.0,				// mass
 		cube_radius		// radius

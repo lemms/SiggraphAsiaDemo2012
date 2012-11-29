@@ -32,7 +32,7 @@ namespace SigAsiaDemo {
 			SpringList(
 				float ks = 10000.0,
 				float kd = 1000.0,
-				unsigned int threads = 128);
+				unsigned int threads = 1024);
 			~SpringList();
 			void setConstants(float ks, float kd);
 			bool push(Spring spring);

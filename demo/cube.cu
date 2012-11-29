@@ -90,6 +90,7 @@ void SigAsiaDemo::Cube::create(
 	_max_y = static_cast<float>(_half_y)*_spacing + _y + _radius;
 	_max_z = static_cast<float>(_half_z)*_spacing + _z + _radius;
 
+
 	// add points
 	for (int i = -_half_x; i <= _half_x; ++i) {
 		for (int j = -_half_y; j <= _half_y; ++j) {
@@ -368,15 +369,9 @@ void SigAsiaDemo::Cube::create(
 }
 
 SigAsiaDemo::CubeList::CubeList(
-	size_t res_x,
-	size_t res_y,
-	size_t res_z,
 	float ks,
 	float kd,
 	unsigned int threads) :
-		_res_x(res_x),
-		_res_y(res_y),
-		_res_z(res_z),
 		_ks(ks),
 		_kd(kd),
 		_threads(threads),
@@ -532,21 +527,6 @@ void SigAsiaDemo::CubeList::computeBounds(
 		cube->_max_x = max_x;
 		cube->_max_y = max_y;
 		cube->_max_z = max_z;
-
-		float range_x = max_x - min_x;
-		float range_y = max_y - min_y;
-		float range_z = max_z - min_z;
-		
-		float res_xf = static_cast<float>(_res_x);
-		float res_yf = static_cast<float>(_res_y);
-		float res_zf = static_cast<float>(_res_z);
-
-		float ux = res_xf / range_x;
-		float uy = res_yf / range_y;
-		float uz = res_zf / range_z;
-		float delta_x = 1.0 / ux;
-		float delta_y = 1.0 / uy;
-		float delta_z = 1.0 / uz;
 
 		// generate surface mesh
 

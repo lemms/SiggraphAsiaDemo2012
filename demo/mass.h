@@ -63,7 +63,7 @@ namespace SigAsiaDemo {
 				float coeff_friction = 0.2,
 				float coeff_restitution = 0.2,
 				float plane_size = 512.0,
-				unsigned int threads = 128);
+				unsigned int threads = 1024);
 			~MassList();
 			bool push(Mass mass);
 			bool empty() const;

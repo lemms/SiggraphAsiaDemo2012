@@ -71,9 +71,6 @@ namespace SigAsiaDemo {
 	class CubeList {
 		public:
 			CubeList(
-				size_t res_x = 16,
-				size_t res_y = 16,
-				size_t res_z = 16,
 				float ks = 10000.0,
 				float kd = 1000.0,
 				unsigned int threads = 128);
@@ -100,10 +97,6 @@ namespace SigAsiaDemo {
 			std::vector<float> _tri_positions;
 			std::vector<float> _tri_normals;
 			std::vector<float> _tri_colors;
-
-			int _res_x;
-			int _res_y;
-			int _res_z;
 
 			// collisions
 			float _ks;
