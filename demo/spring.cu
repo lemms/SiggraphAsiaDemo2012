@@ -10,6 +10,7 @@ Laurence Emms
 #include <iomanip>
 #include <vector>
 #include <cmath>
+using namespace std;
 
 #ifdef WIN32
 #include <windows.h>
@@ -25,6 +26,8 @@ Laurence Emms
 
 #include "mass.h"
 #include "spring.h"
+#include "creator.h"
+#include "cube.h"
 
 SigAsiaDemo::Spring::Spring(
 	MassList &masses,
@@ -44,12 +47,12 @@ SigAsiaDemo::Spring::Spring(
 	Mass *m0 = masses.getMass(_mass0);
 	Mass *m1 = masses.getMass(_mass1);
 	if (!m0) {
-		std::cerr << "Spring pointing to null mass 0" << std::endl;
-		std::terminate();
+		cerr << "Spring pointing to null mass 0" << endl;
+		terminate();
 	}
 	if (!m1) {
-		std::cerr << "Spring pointing to null mass 1" << std::endl;
-		std::terminate();
+		cerr << "Spring pointing to null mass 1" << endl;
+		terminate();
 	}
 	float dx = m0->_x - m1->_x;
 	float dy = m0->_y - m1->_y;
@@ -74,22 +77,22 @@ SigAsiaDemo::SpringList::SpringList(
 SigAsiaDemo::SpringList::~SpringList()
 {
 	if (_computing) {
-		std::cerr << "Warning: Still computing!" << std::endl;
+		cerr << "Warning: Still computing!" << endl;
 	}
 	if (_device_springs) {
-		//std::cout << "Free springs." << std::endl;
+		// free springs
 		cudaFree(_device_springs);
 		_device_springs = 0;
 	}
 
 	if (_device_mass_spring_counts) {
-		//std::cout << "Free counts." << std::endl;
+		// free counts
 		cudaFree(_device_mass_spring_counts);
 		_device_mass_spring_counts = 0;
 	}
 
 	if (_device_mass_spring_indices) {
-		//std::cout << "Free indices." << std::endl;
+		// free indices
 		cudaFree(_device_mass_spring_indices);
 		_device_mass_spring_indices = 0;
 	}
@@ -126,7 +129,7 @@ size_t SigAsiaDemo::SpringList::size() const
 }
 
 // Note: this must be called before updating the mass list
-void SigAsiaDemo::SpringList::upload(MassList &masses)
+void SigAsiaDemo::SpringList::upload(MassList &masses, CubeList &cubes)
 {
 	if (_computing) {
 		// do nothing if computing
@@ -139,7 +142,7 @@ void SigAsiaDemo::SpringList::upload(MassList &masses)
 	// NOTE: we assume that the mass list has not changed, otherwise the spring
 	// list is invalid and needs to be changed as well
 	if (_changed) {
-		//std::cout << "Update mass -> spring mapping." << std::endl;
+		// Update mass -> spring mapping.
 		// NOTE: hopefully this won't change too often, otherwise a GPU 
 		// solution will have to be developed for updating this mapping
 
@@ -156,135 +159,95 @@ void SigAsiaDemo::SpringList::upload(MassList &masses)
 		_mass_spring_indices.resize(_springs.size() * 2);
 		_mass_spring_counts[0] = 0;
 
-		for (size_t i = 0; i < masses.size(); ++i) {
-			const Mass *m = masses.getMass(i);
-			if (!m) {
-				std::cerr << "Error: Failed to get mass " << i << std::endl;
-				std::terminate();
-			}
-			for (size_t j = 0; j < _springs.size(); ++j) {
-				if (_springs[j]._mass0 == i || _springs[j]._mass1 == i) {
-					if (_springs[j]._mass0 == i && _springs[j]._mass1 == i) {
-						std::cerr << \
-						"Error: Both spring indices point to the same mass." \
-						<< std::endl;
-						std::terminate();
-					}
-
-					// increment counts for this mass
-					//std::cout << "Mass has spring index: " << j << std::endl;
-					if (indices_index >= _mass_spring_indices.size()) {
-						std::cerr << "Error: indices_index exceeds expected \
-indices size." << std::endl;
-						std::terminate();
-					}
-					_mass_spring_indices[indices_index] = j;
-					indices_index++;
-					count++;
+		for (size_t c = 0; c < cubes.size(); ++c) {
+			Cube *cube = cubes.getCube(c);
+			cout << "cube: " << c << endl;
+			cout << "masses: " << cube->_start << ", " << cube->_end << endl;
+			cout << "springs: " << cube->_spring_start << ", " << cube->_spring_end << endl;
+			for (size_t i = cube->_start; i < cube->_end; ++i) {
+				const Mass *m = masses.getMass(i);
+				if (!m) {
+					cerr << "Error: Failed to get mass " << i << endl;
+					terminate();
 				}
+				for (size_t j = cube->_spring_start; j < cube->_spring_end; ++j) {
+					if (_springs[j]._mass0 == i || _springs[j]._mass1 == i) {
+						if (_springs[j]._mass0 == i && _springs[j]._mass1 == i) {
+							cerr << \
+							"Error: Both spring indices point to the same mass." \
+							<< endl;
+							terminate();
+						}
+
+						// increment counts for this mass
+						if (indices_index >= _mass_spring_indices.size()) {
+							cerr << "Error: indices_index exceeds expected \
+	indices size." << endl;
+							terminate();
+						}
+						_mass_spring_indices[indices_index] = j;
+						indices_index++;
+						count++;
+					}
+				}
+				if (counts_index >= _mass_spring_counts.size()) {
+					cerr << "Error: counts_index exceeds expected \
+	counts size." << endl;
+					terminate();
+				}
+				_mass_spring_counts[counts_index] = count;
+				counts_index++;
 			}
-			if (counts_index >= _mass_spring_counts.size()) {
-				std::cerr << "Error: counts_index exceeds expected \
-counts size." << std::endl;
-				std::terminate();
-			}
-			_mass_spring_counts[counts_index] = count;
-			counts_index++;
 		}
 		
-		// TODO: remove
-		/*
-		std::cout << "counts: " << _mass_spring_counts.size() << std::endl;
-		std::cout << "indices: " << _mass_spring_indices.size() << std::endl;
-		std::cout << "mass spring indices:" << std::endl;
-		for (size_t i = 0; i < masses.size(); ++i) {
-			std::cout << _mass_spring_counts[i] << " -> " \
-			<< _mass_spring_counts[i+1] << ":" << std::endl;
-
-			for (size_t j = _mass_spring_counts[i];
-				j < _mass_spring_counts[i+1]; ++j) {
-				std::cout << _mass_spring_indices[j] << ", ";
-			}
-
-			std::cout << std::endl;
-		}
-
-		std::cout << "Upload mass -> spring mapping." << std::endl;
-		if (_device_mass_spring_counts) {
-			std::cout << "Free counts." << std::endl;
-			cudaFree(_device_mass_spring_counts);
-			_device_mass_spring_counts = 0;
-		}
-		if (_device_mass_spring_indices) {
-			std::cout << "Free indices." << std::endl;
-			cudaFree(_device_mass_spring_indices);
-			_device_mass_spring_indices = 0;
-		}
-		*/
-
 		// allocate GPU buffers
-		//std::cout << std::fixed << std::setprecision(8) \
-		<< "Allocate GPU counts buffer of size " \
-		<< _mass_spring_counts.size()*sizeof(unsigned int)/1073741824.0 \
-		<< " GB." << std::endl;
 		cudaError_t result = cudaMalloc(
 			(void**)&_device_mass_spring_counts,
 			_mass_spring_counts.size()*sizeof(unsigned int));
 		if (result != cudaSuccess) {
-			std::cerr << "Error: CUDA failed to malloc memory." << std::endl;
-			std::terminate();
+			cerr << "Error: CUDA failed to malloc memory." << endl;
+			terminate();
 		}
 
-		//std::cout << std::fixed << std::setprecision(8) \
-		<< "Allocate GPU indices buffer of size " \
-		<< _mass_spring_indices.size()*sizeof(unsigned int)/1073741824.0 \
-		<< " GB." << std::endl;
 		result = cudaMalloc(
 			(void**)&_device_mass_spring_indices,
 			_mass_spring_indices.size()*sizeof(unsigned int));
 		if (result != cudaSuccess) {
-			std::cerr << "Error: CUDA failed to malloc memory." << std::endl;
-			std::terminate();
+			cerr << "Error: CUDA failed to malloc memory." << endl;
+			terminate();
 		}
 
 		// copy into GPU buffer
-		//std::cout << "Copy counts into GPU buffer." << std::endl;
 		cudaMemcpy(
 			_device_mass_spring_counts,
 			&_mass_spring_counts[0],
 			_mass_spring_counts.size()*sizeof(unsigned int),
 			cudaMemcpyHostToDevice);
 
-		//std::cout << "Copy indices into GPU buffer." << std::endl;
 		cudaMemcpy(
 			_device_mass_spring_indices,
 			&_mass_spring_indices[0],
 			_mass_spring_indices.size()*sizeof(unsigned int),
 			cudaMemcpyHostToDevice);
 
-		//std::cout << "Upload springs." << std::endl;
+		// upload springs
 		_changed = false;
 		if (_device_springs) {
-			//std::cout << "Free springs." << std::endl;
+			// free springs
 			cudaFree(_device_springs);
 			_device_springs = 0;
 		}
 
 		// allocate GPU buffer
-		//std::cout << std::fixed << std::setprecision(8) \
-		<< "Allocate GPU buffer of size " << \
-		_springs.size()*sizeof(Spring)/1073741824.0 \
-		<< " GB." << std::endl;
 		result = cudaMalloc(
 			(void**)&_device_springs,
 			_springs.size()*sizeof(Spring));
 		if (result != cudaSuccess) {
-			std::cerr << "Error: CUDA failed to malloc memory." << std::endl;
-			std::terminate();
+			cerr << "Error: CUDA failed to malloc memory." << endl;
+			terminate();
 		}
 
 		// copy into GPU buffer
-		//std::cout << "Copy springs into GPU buffer." << std::endl;
 		cudaMemcpy(
 			_device_springs,
 			&_springs[0],
@@ -298,13 +261,11 @@ counts size." << std::endl;
 void SigAsiaDemo::SpringList::download()
 {
 	if (_changed) {
-		std::cerr << "Error: Spring list changed while \
-data was being used in GPU computations." << std::endl;
-		std::terminate();
+		cerr << "Error: Spring list changed while \
+data was being used in GPU computations." << endl;
+		terminate();
 	} else {
-		//std::cout << "Download springs." << std::endl;
 		// copy into CPU buffer
-		//std::cout << "Copy springs into CPU buffer." << std::endl;
 		cudaMemcpy(
 			&_springs[0],
 			_device_springs,
@@ -317,13 +278,13 @@ data was being used in GPU computations." << std::endl;
 SigAsiaDemo::Spring *SigAsiaDemo::SpringList::getSpring(size_t index)
 {
 	if (_springs.empty()) {
-		std::cerr << "getSpring called on \
-empty spring list." << std::endl;
+		cerr << "getSpring called on \
+empty spring list." << endl;
 		return 0;
 	}
 	if (index >= _springs.size()) {
-		std::cerr << "Warning: getSpring called on index \
-out of bounds." << std::endl;
+		cerr << "Warning: getSpring called on index \
+out of bounds." << endl;
 		return 0;
 	}
 
@@ -433,8 +394,6 @@ __global__ void deviceApplySpringForces(
 void SigAsiaDemo::SpringList::applySpringForces(MassList &masses)
 {
 	if (_computing && !_springs.empty() && !masses.empty()) {
-		//std::cout << "Compute spring forces (" << _springs.size() << ")." \
-		<< std::endl;
 		deviceComputeSpringForces
 			<<<(_springs.size()+_threads-1)/_threads, _threads>>>(
 				_ks,
@@ -445,8 +404,6 @@ void SigAsiaDemo::SpringList::applySpringForces(MassList &masses)
 				masses.getDeviceMasses());
 		cudaThreadSynchronize();
 
-		//std::cout << "Accumulate mass forces (" << masses.size() << ")." \
-		<< std::endl;
 		deviceApplySpringForces
 			<<<(masses.size()+_threads-1)/_threads, _threads>>>(
 				_springs.size(),

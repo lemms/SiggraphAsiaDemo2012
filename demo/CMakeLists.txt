@@ -39,37 +39,12 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cubeVS.glsl
 	${CMAKE_CURRENT_BINARY_DIR}/cubeVS.glsl COPYONLY)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cubeFS.glsl
 	${CMAKE_CURRENT_BINARY_DIR}/cubeFS.glsl COPYONLY)
-
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/depthVS.glsl
-	${CMAKE_CURRENT_BINARY_DIR}/depthVS.glsl COPYONLY)
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/depthGS.glsl
-	${CMAKE_CURRENT_BINARY_DIR}/depthGS.glsl COPYONLY)
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/depthFS.glsl
-	${CMAKE_CURRENT_BINARY_DIR}/depthFS.glsl COPYONLY)
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/overlapVS.glsl
-	${CMAKE_CURRENT_BINARY_DIR}/overlapVS.glsl COPYONLY)
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/overlapGS.glsl
-	${CMAKE_CURRENT_BINARY_DIR}/overlapGS.glsl COPYONLY)
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/overlapFS.glsl
-	${CMAKE_CURRENT_BINARY_DIR}/overlapFS.glsl COPYONLY)
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/weightVS.glsl
-	${CMAKE_CURRENT_BINARY_DIR}/weightVS.glsl COPYONLY)
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/weightGS.glsl
-	${CMAKE_CURRENT_BINARY_DIR}/weightGS.glsl COPYONLY)
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/weightFS.glsl
-	${CMAKE_CURRENT_BINARY_DIR}/weightFS.glsl COPYONLY)
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/outlineVS.glsl
-	${CMAKE_CURRENT_BINARY_DIR}/outlineVS.glsl COPYONLY)
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/outlineFS.glsl
-	${CMAKE_CURRENT_BINARY_DIR}/outlineFS.glsl COPYONLY)
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/planeVS.glsl
-	${CMAKE_CURRENT_BINARY_DIR}/planeVS.glsl COPYONLY)
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/planeFS.glsl
-	${CMAKE_CURRENT_BINARY_DIR}/planeFS.glsl COPYONLY)
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/screenVS.glsl
-	${CMAKE_CURRENT_BINARY_DIR}/screenVS.glsl COPYONLY)
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/screenFS.glsl
-	${CMAKE_CURRENT_BINARY_DIR}/screenFS.glsl COPYONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/pointVS.glsl
+	${CMAKE_CURRENT_BINARY_DIR}/pointVS.glsl COPYONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/pointGS.glsl
+	${CMAKE_CURRENT_BINARY_DIR}/pointGS.glsl COPYONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/pointFS.glsl
+	${CMAKE_CURRENT_BINARY_DIR}/pointFS.glsl COPYONLY)
 
 cuda_add_executable(SiggraphAsiaDemo main.cu viewport.cu mass.cu spring.cu device.cu camera.cu cube.cu glew.c)
 target_link_libraries (SiggraphAsiaDemo ${LIBS})

@@ -13,7 +13,6 @@ using namespace std;
 #ifdef WIN32
 #include <windows.h>
 #define GLEW_STATIC
-#pragma (lib, "freeglut_static.lib")
 #define GLUT_DISABLE_ATEXIT_HACK
 #endif
 #include <GL/glew.h>
@@ -64,33 +63,26 @@ void ParseArgs(int argc, char **argv)
 		unsigned int height = viewport.GetHeight();
 		stringstream stream(argv[i]);
 		if (stream.str() == "-") {
-			std::cout << "usage: SiggraphAsiaDemo \
-[-w width] [-h height]" << std::endl;
+			cout << "usage: SiggraphAsiaDemo \
+[-w width] [-h height]" << endl;
 			exit(0);
 		}
 		if (stream.str() == "-w") {
 			if (i++ > argc)
 				return;
 			stream.str(argv[i]);
-			std::cout << stream.str() << std::endl;
+			cout << stream.str() << endl;
 			stream >> width;
 		}
 		if (stream.str() == "-h") {
 			if (i++ > argc)
 				return;
 			stream.str(argv[i]);
-			std::cout << stream.str() << std::endl;
+			cout << stream.str() << endl;
 			stream >> height;
 		}
 		viewport.ResizeWindow(width, height);
 		camera.ResizeWindow(width, height);
-		masses.resizeWindow(
-			viewport.GetNear(),
-			viewport.GetFar(),
-			viewport.GetFieldOfView(),
-			glm::length(camera.GetLook()-camera.GetPosition()),
-			cube_spacing*resolution_multiplier,
-			width, height);
 		glViewport(0, 0, viewport.GetWidth(), viewport.GetHeight());
 	}
 }
@@ -102,47 +94,47 @@ void PrintMassesAndSprings()
 	for (size_t i = 0; i < masses.size(); i++) {
 		SigAsiaDemo::Mass *mass = masses.getMass(i);
 		if (mass) {
-			std::cout << "Point Mass " << i << std::endl;
-			std::cout << "mass: " << mass->_mass << std::endl;
-			std::cout << "position: (";
-			std::cout << mass->_x << ", ";
-			std::cout << mass->_y << ", ";
-			std::cout << mass->_z << ")" << std::endl;
-			std::cout << "velocity: (";
-			std::cout << mass->_vx << ", ";
-			std::cout << mass->_vy << ", ";
-			std::cout << mass->_vz << ")" << std::endl;
-			std::cout << "temporary position: (";
-			std::cout << mass->_tx << ", ";
-			std::cout << mass->_ty << ", ";
-			std::cout << mass->_tz << ")" << std::endl;
-			std::cout << "temporary velocity: (";
-			std::cout << mass->_tvx << ", ";
-			std::cout << mass->_tvy << ", ";
-			std::cout << mass->_tvz << ")" << std::endl;
-			std::cout << "velocity k1: (";
-			std::cout << mass->_k1x << ", ";
-			std::cout << mass->_k1y << ", ";
-			std::cout << mass->_k1z << ")" << std::endl;
-			std::cout << "velocity k2: (";
-			std::cout << mass->_k2x << ", ";
-			std::cout << mass->_k2y << ", ";
-			std::cout << mass->_k2z << ")" << std::endl;
-			std::cout << "velocity k3: (";
-			std::cout << mass->_k3x << ", ";
-			std::cout << mass->_k3y << ", ";
-			std::cout << mass->_k3z << ")" << std::endl;
-			std::cout << "velocity k4: (";
-			std::cout << mass->_k4x << ", ";
-			std::cout << mass->_k4y << ", ";
-			std::cout << mass->_k4z << ")" << std::endl;
-			std::cout << "force: (";
-			std::cout << mass->_fx << ", ";
-			std::cout << mass->_fy << ", ";
-			std::cout << mass->_fz << ")" << std::endl;
-			std::cout << "radius: ";
-			std::cout << mass->_radius << std::endl;
-			std::cout <<std::endl;
+			cout << "Point Mass " << i << endl;
+			cout << "mass: " << mass->_mass << endl;
+			cout << "position: (";
+			cout << mass->_x << ", ";
+			cout << mass->_y << ", ";
+			cout << mass->_z << ")" << endl;
+			cout << "velocity: (";
+			cout << mass->_vx << ", ";
+			cout << mass->_vy << ", ";
+			cout << mass->_vz << ")" << endl;
+			cout << "temporary position: (";
+			cout << mass->_tx << ", ";
+			cout << mass->_ty << ", ";
+			cout << mass->_tz << ")" << endl;
+			cout << "temporary velocity: (";
+			cout << mass->_tvx << ", ";
+			cout << mass->_tvy << ", ";
+			cout << mass->_tvz << ")" << endl;
+			cout << "velocity k1: (";
+			cout << mass->_k1x << ", ";
+			cout << mass->_k1y << ", ";
+			cout << mass->_k1z << ")" << endl;
+			cout << "velocity k2: (";
+			cout << mass->_k2x << ", ";
+			cout << mass->_k2y << ", ";
+			cout << mass->_k2z << ")" << endl;
+			cout << "velocity k3: (";
+			cout << mass->_k3x << ", ";
+			cout << mass->_k3y << ", ";
+			cout << mass->_k3z << ")" << endl;
+			cout << "velocity k4: (";
+			cout << mass->_k4x << ", ";
+			cout << mass->_k4y << ", ";
+			cout << mass->_k4z << ")" << endl;
+			cout << "force: (";
+			cout << mass->_fx << ", ";
+			cout << mass->_fy << ", ";
+			cout << mass->_fz << ")" << endl;
+			cout << "radius: ";
+			cout << mass->_radius << endl;
+			cout <<endl;
 		}
 	}
 
@@ -151,86 +143,49 @@ void PrintMassesAndSprings()
 	for (size_t i = 0; i < springs.size(); i++) {
 		SigAsiaDemo::Spring *spring = springs.getSpring(i);
 		if (spring) {
-			std::cout << "Spring " << i << std::endl;
-			std::cout << "mass 0: " << spring->_mass0 << std::endl;
-			std::cout << "mass 1: " << spring->_mass1 << std::endl;
-			std::cout << "l0: " << spring->_l0 << std::endl;
-			std::cout << "f0: (";
-			std::cout << spring->_fx0 << ", ";
-			std::cout << spring->_fy0 << ", ";
-			std::cout << spring->_fz0 << ")" << std::endl;
-			std::cout << "f1: (";
-			std::cout << spring->_fx1 << ", ";
-			std::cout << spring->_fy1 << ", ";
-			std::cout << spring->_fz1 << ")" << std::endl;
-			std::cout <<std::endl;
+			cout << "Spring " << i << endl;
+			cout << "mass 0: " << spring->_mass0 << endl;
+			cout << "mass 1: " << spring->_mass1 << endl;
+			cout << "l0: " << spring->_l0 << endl;
+			cout << "f0: (";
+			cout << spring->_fx0 << ", ";
+			cout << spring->_fy0 << ", ";
+			cout << spring->_fz0 << ")" << endl;
+			cout << "f1: (";
+			cout << spring->_fx1 << ", ";
+			cout << spring->_fy1 << ", ";
+			cout << spring->_fz1 << ")" << endl;
+			cout <<endl;
 		}
 	}
 }
 
 void Step()
 {
-	//std::cout << "Frame: " << frame << std::endl;
-	//std::cout << "compute bounds." << std::endl;
 	cubes.computeBounds(masses);
 	cubes.collideCubes(dt, masses);
-	/*
-	// print bounds
-	for (size_t i = 0; i < cubes.size(); ++i) {
-		SigAsiaDemo::Cube *cube = cubes.getCube(i);
-		if (cube) {
-			std::cout << "Cube " << i << ":" << std::endl;
-			std::cout << "[" << cube->_min_x << ", " \
-			<< cube->_max_x << "]" << std::endl;
-			std::cout << "[" << cube->_min_y << ", " \
-			<< cube->_max_y << "]" << std::endl;
-			std::cout << "[" << cube->_min_z << ", " \
-			<< cube->_max_z << "]" << std::endl;
-		}
-	}
-	*/
 
-	//std::cout << "upload masses." << std::endl;
 	masses.upload();
-	//std::cout << "upload springs." << std::endl;
-	springs.upload(masses);
+	springs.upload(masses, cubes);
 
-	//std::cout << "start frame." << std::endl;
 	masses.startFrame();
 
-	//std::cout << "evaluate k1." << std::endl;
-	//std::cout << "clear forces." << std::endl;
 	masses.clearForces();
-	//std::cout << "apply spring forces." << std::endl;
 	springs.applySpringForces(masses);
-	//std::cout << "evaluate." << std::endl;
 	masses.evaluateK1(dt, ground_collision);
 
-	//std::cout << "evaluate k2." << std::endl;
-	//std::cout << "clear forces." << std::endl;
 	masses.clearForces();
-	//std::cout << "apply spring forces." << std::endl;
 	springs.applySpringForces(masses);
-	//std::cout << "evaluate." << std::endl;
 	masses.evaluateK2(dt, ground_collision);
 
-	//std::cout << "evaluate k3." << std::endl;
-	//std::cout << "clear forces." << std::endl;
 	masses.clearForces();
-	//std::cout << "apply spring forces." << std::endl;
 	springs.applySpringForces(masses);
-	//std::cout << "evaluate." << std::endl;
 	masses.evaluateK3(dt, ground_collision);
 
-	//std::cout << "evaluate k4." << std::endl;
-	//std::cout << "clear forces." << std::endl;
 	masses.clearForces();
-	//std::cout << "apply spring forces." << std::endl;
 	springs.applySpringForces(masses);
-	//std::cout << "evaluate." << std::endl;
 	masses.evaluateK4(dt, ground_collision);
 
-	//std::cout << "update." << std::endl;
 	masses.update(dt, ground_collision);
 	masses.endFrame();
 
@@ -243,58 +198,26 @@ void Idle()
 {
 	if (play) {
 		Step();
-		//std::cout << "Stepping, frame: " << frame << std::endl;
-		// TODO: come up with a better metric
-		if (frame % 5 == 0)
-			glutPostRedisplay();
+		glutPostRedisplay();
 	}
-
-	// TODO: remove
-	/*
-	if (frame == 1000) {
-		PrintMassesAndSprings();
-
-		exit(0);
-	}
-	*/
 }
 
 void Reshape(int width, int height)
 {
 	viewport.ResizeWindow(width, height);
 	camera.ResizeWindow(width, height);
-	masses.resizeWindow(
-		viewport.GetNear(),
-		viewport.GetFar(),
-		viewport.GetFieldOfView(),
-		glm::length(camera.GetLook()-camera.GetPosition()),
-		cube_spacing*resolution_multiplier,
-		width, height);
 	glViewport(0, 0, viewport.GetWidth(), viewport.GetHeight());
 }
 
+bool render_points = false;
 void Render()
 {
-	//std::cout << "Render" << std::endl;
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	
-	/*
-	const float *MV = glm::value_ptr(camera.GetModelView());
-	const float *P = glm::value_ptr(camera.GetProjection());
-	std::cout << "MV:" << std::endl;
-	std::cout << "[" << MV[0]  << " " << MV[1]  <<  " " << MV[2]  <<  " " << MV[3]  <<  std::endl;
-	std::cout << "[" << MV[4]  << " " << MV[5]  <<  " " << MV[6]  <<  " " << MV[7]  <<  std::endl;
-	std::cout << "[" << MV[8]  << " " << MV[9]  <<  " " << MV[10] <<  " " << MV[11] <<  std::endl;
-	std::cout << "[" << MV[12] << " " << MV[13] <<  " " << MV[14] <<  " " << MV[15] <<  std::endl;
-	std::cout << "P:" << std::endl;
-	std::cout << "[" << P[0]  << " " << P[1]  <<  " " << P[2]  <<  " " << P[3]  <<  std::endl;
-	std::cout << "[" << P[4]  << " " << P[5]  <<  " " << P[6]  <<  " " << P[7]  <<  std::endl;
-	std::cout << "[" << P[8]  << " " << P[9]  <<  " " << P[10] <<  " " << P[11] <<  std::endl;
-	std::cout << "[" << P[12] << " " << P[13] <<  " " << P[14] <<  " " << P[15] <<  std::endl;
-	*/
-	// TODO: check
-	//masses.render(camera.GetModelView(), camera.GetProjection());
-	cubes.render(camera.GetModelView(), camera.GetProjection(), camera.GetNormal());
+
+	if (render_points)
+		masses.render(camera.GetModelView(), camera.GetProjection());
+	else
+		cubes.render(camera.GetModelView(), camera.GetProjection(), camera.GetNormal());
 
 	glutSwapBuffers();
 }
@@ -302,7 +225,7 @@ void Render()
 void Keys(unsigned char key, int x, int y)
 {
 	float px = 0.0, py = 0.0, pz = 0.0;
-	//float lx = 0.0, ly = 0.0, lz = 0.0;
+	if (key == 'p') render_points = !render_points;
 	if (key == 'q') px = 10.0;
 	if (key == 'a') px = -10.0;
 	if (key == 'w') py = 10.0;
@@ -310,17 +233,8 @@ void Keys(unsigned char key, int x, int y)
 	if (key == 'e') pz = 10.0;
 	if (key == 'd') pz = -10.0;
 	if (px != 0.0 || py != 0.0 || pz != 0.0) {
-		//std::cout << "Move camera: " << px << ", " << py << ", " << pz \
-		<< std::endl;
 		unsigned int width = viewport.GetWidth();
 		unsigned int height = viewport.GetHeight();
-		masses.resizeWindow(
-			viewport.GetNear(),
-			viewport.GetFar(),
-			viewport.GetFieldOfView(),
-			glm::length(camera.GetLook()-camera.GetPosition()),
-			cube_spacing*resolution_multiplier,
-			width, height);
 		glutPostRedisplay();
 	}
 	camera.MovePosition(px, py, pz);
@@ -332,21 +246,25 @@ void Keys(unsigned char key, int x, int y)
 
 	if (key == 'z') {
 		Step();
-		std::cout << "Stepping, frame: " << frame << std::endl;
 		glutPostRedisplay();
 	}
 
 	if (key == 27) {
-		//PrintMassesAndSprings();
-
 		exit(0);
 	}
 }
 void SpecialKeys(int key, int x, int y)
 {
-	if (key == GLUT_KEY_F1)
-		// TODO: display help text
-		std::cout << "Help here" << std::endl;
+	if (key == GLUT_KEY_F1) {
+		cout << "Controls: " << endl;
+		cout << "Move camera x: q/a" << endl;
+		cout << "Move camera y: w/s" << endl;
+		cout << "Move camera z: e/d" << endl;
+		cout << "Play simulation: c" << endl;
+		cout << "Stop simulation: v" << endl;
+		cout << "Step simulation: z" << endl;
+		cout << "Esc to exit" << endl;
+	}
 }
 
 int main(int argc, char **argv)
@@ -387,77 +305,45 @@ int main(int argc, char **argv)
 	// initialize GLEW
 	GLenum result = glewInit();
 	if (result != GLEW_OK) {
-		std::cerr << "Error: Failed to initialize GLEW." << std::endl;
+		cerr << "Error: Failed to initialize GLEW." << endl;
 		return 1;
 	}
-	std::cout << "Using GLEW " << glewGetString(GLEW_VERSION) \
-	<< "." << std::endl;
+	cout << "Using GLEW " << glewGetString(GLEW_VERSION) \
+	<< "." << endl;
 	if (!GLEW_VERSION_4_2)
 	{
-		std::cerr << "Error: OpenGL 4.2 not supported." << std::endl;
+		cerr << "Error: OpenGL 4.2 not supported." << endl;
 		return 1;
 	}
-	std::cout << "Using OpenGL " << glGetString(GL_VERSION) << "." \
-	<< std::endl;
+	cout << "Using OpenGL " << glGetString(GL_VERSION) << "." \
+	<< endl;
 
 
 	// set CUDA/OpenGL device
-	std::cout << "Set CUDA/OpenGL device." << std::endl;
+	cout << "Set CUDA/OpenGL device." << endl;
 	SigAsiaDemo::setGLDevice(device);
 
 	// load shaders
-	std::cout << "Load shaders." << std::endl;
+	cout << "Load shaders." << endl;
 	masses.loadShaders();
 	cubes.loadShaders();
 
-	// load buffers
-	std::cout << "Load buffers." << std::endl;
-	masses.loadBuffers();
-
 	// initialize OpenGL
-	std::cout << "Initialize OpenGL." << std::endl;
+	cout << "Initialize OpenGL." << endl;
 	glEnable(GL_DEPTH_TEST);
 	glClearColor(0.7, 0.7, 1.0, 1.0);
 
 	// resize viewport
-	std::cout << "Resize viewport." << std::endl;
+	cout << "Resize viewport." << endl;
 	glViewport(0, 0, viewport.GetWidth(), viewport.GetHeight());
 
 	// fill masses
-	std::cout << "Fill masses." << std::endl;
+	cout << "Fill masses." << endl;
 
 	springs.setConstants(10000.0, 1000.0);
 	cubes.setConstants(10000.0, 1000.0);
 
-	/*
-	// TODO: replace by creators
-	float offset = 20.0f;
-	unsigned int m = 20;
-	for (unsigned int i = 0; i < m; i++) {
-		if (i == m-1) {
-			masses.push(SigAsiaDemo::Mass(
-				1.0,
-				0.0, static_cast<float>(i*2) + offset, 0.0,
-				0.0, 0.0, 0.0,
-				0,
-				1.0));
-		} else {
-			masses.push(SigAsiaDemo::Mass(
-				1.0,
-				0.0, static_cast<float>(i*2) + offset, 0.0,
-				0.0, 0.0, 0.0,
-				0,
-				1.0));
-		}
-	}
-	
-	std::cout << "Fill springs." << std::endl;
-	for (unsigned int i = 0; i < m-1; i++) {
-		springs.push(SigAsiaDemo::Spring(masses, i, i+1, 10000.0, 1000.0));
-	}
-	*/
-
-	std::cout << "Setup cube." << std::endl;
+	cout << "Setup cube." << endl;
 
 	cubes.push(SigAsiaDemo::Cube(
 		-40.0, 20.0, 0.0,	// position
@@ -466,7 +352,6 @@ int main(int argc, char **argv)
 		4.0,				// mass
 		cube_radius		// radius
 		));
-	/*
 	cubes.push(SigAsiaDemo::Cube(
 		-20.0, 30.0, 0.0,	// position
 		10, 10, 10,			// size
@@ -474,7 +359,6 @@ int main(int argc, char **argv)
 		4.0,				// mass
 		cube_radius		// radius
 		));
-	*/
 	cubes.push(SigAsiaDemo::Cube(
 		0.0, 40.0, 0.0,		// position
 		10, 10, 10,			// size
@@ -482,7 +366,6 @@ int main(int argc, char **argv)
 		4.0,				// mass
 		cube_radius*0.5	// radius
 		));
-	/*
 	cubes.push(SigAsiaDemo::Cube(
 		20.0, 50.0, 0.0,	// position
 		10, 10, 10,			// size
@@ -490,7 +373,6 @@ int main(int argc, char **argv)
 		4.0,				// mass
 		cube_radius		// radius
 		));
-	*/
 	cubes.push(SigAsiaDemo::Cube(
 		40.0, 60.0, 0.0,	// position
 		10, 10, 10,			// size
@@ -506,7 +388,6 @@ int main(int argc, char **argv)
 		4.0,				// mass
 		cube_radius		// radius
 		));
-	/*
 	cubes.push(SigAsiaDemo::Cube(
 		-20.0, 50.0, 0.0,	// position
 		10, 10, 10,			// size
@@ -514,7 +395,6 @@ int main(int argc, char **argv)
 		4.0,				// mass
 		cube_radius		// radius
 		));
-	*/
 	cubes.push(SigAsiaDemo::Cube(
 		0.0, 60.0, 0.0,		// position
 		10, 10, 10,			// size
@@ -522,7 +402,6 @@ int main(int argc, char **argv)
 		4.0,				// mass
 		cube_radius		// radius
 		));
-	/*
 	cubes.push(SigAsiaDemo::Cube(
 		20.0, 70.0, 0.0,	// position
 		10, 10, 10,			// size
@@ -530,7 +409,6 @@ int main(int argc, char **argv)
 		4.0,				// mass
 		cube_radius		// radius
 		));
-	*/
 	cubes.push(SigAsiaDemo::Cube(
 		40.0, 80.0, 0.0,	// position
 		10, 10, 10,			// size
@@ -539,19 +417,19 @@ int main(int argc, char **argv)
 		cube_radius		// radius
 		));
 
-	std::cout << "Create cubes." << std::endl;
+	cout << "Create cubes." << endl;
 	cubes.create(masses, springs);
 
-	std::cout << "Added " << masses.size() << " masses." << std::endl;
-	std::cout << "Added " << springs.size() << " springs." << std::endl;
-	std::cout << "Creation complete." << std::endl;
+	cout << "Added " << masses.size() << " masses." << endl;
+	cout << "Added " << springs.size() << " springs." << endl;
+	cout << "Creation complete." << endl;
 
-	std::cout << "Initialize masses." << std::endl;
+	cout << "Initialize masses." << endl;
 	Step();
-	std::cout << "Initialization complete." << std::endl;
+	cout << "Initialization complete." << endl;
 
 	// register callbacks
-	std::cout << "Register callbacks." << std::endl;
+	cout << "Register callbacks." << endl;
 	glutIdleFunc(Idle);
 	glutDisplayFunc(Render);
 	glutReshapeFunc(Reshape);
@@ -559,7 +437,12 @@ int main(int argc, char **argv)
 	glutSpecialFunc(SpecialKeys);
 
 	// enter GLUT event processing cycle
-	std::cout << "Enter GLUT event processing cycle." << std::endl;
+	cout << "Enter GLUT event processing cycle." << endl;
+	cout << endl;
+	cout << "=================" << endl;
+	cout << "Press F1 for help" << endl;
+	cout << "=================" << endl;
+	cout << endl;
 	glutMainLoop();
 
 	return 0;

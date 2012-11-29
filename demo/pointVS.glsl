@@ -1,5 +1,5 @@
 /*
-weightVS.glsl
+pointVS.glsl
 Simple pass-through shader for point masses.
 
 Laurence Emms
@@ -22,4 +22,3 @@ void main()
 	// vertex position
 	gl_Position = ModelView*vec4(position.xyz, 1.0);
 }
-

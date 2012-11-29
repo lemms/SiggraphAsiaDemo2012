@@ -95,20 +95,8 @@ namespace SigAsiaDemo {
 				float dt,
 				bool ground_collision = true);
 			bool loadShaders();
-			void clearBuffers();
-			bool loadBuffers();
 			void render(glm::mat4 ModelView, glm::mat4 Projection) const;
-			void resizeWindow(
-				float near,
-				float far,
-				float fov,
-				float view_dist,
-				float spring_length,
-				unsigned int width,
-				unsigned int height);
 		private:
-			GLuint _screen_width;
-			GLuint _screen_height;
 			// vertex buffer object with (position, radius)
 			std::vector<Mass> _masses;
 			GLuint _masses_array;
@@ -124,89 +112,15 @@ namespace SigAsiaDemo {
 			float _coeff_restitution;
 			Mass *_device_masses;
 
-			// ground plane
-			float _plane_size;
-			GLuint _plane_array;
-			GLuint _plane_buffer;
-
-			// screen_quad
-			GLuint _screen_array;
-			GLuint _screen_pos_buffer;
-			GLuint _screen_tex_buffer;
-
 			// shaders
 
-			// depth shader
-			int _depth_ModelViewLocation;
-			int _depth_ProjectionLocation;
-			GLuint _depth_vertex_shader;
-			GLuint _depth_geometry_shader;
-			GLuint _depth_fragment_shader;
-			GLuint _depth_program;
-
-			// overlap shader
-			int _overlap_ModelViewLocation;
-			int _overlap_ProjectionLocation;
-			int _overlap_DepthTexLocation;
-			GLuint _overlap_vertex_shader;
-			GLuint _overlap_geometry_shader;
-			GLuint _overlap_fragment_shader;
-			GLuint _overlap_program;
-
-			// weight shader
-			int _weight_ModelViewLocation;
-			int _weight_ProjectionLocation;
-			int _weight_DepthTexLocation;
-			int _weight_OverlapTexLocation;
-			GLuint _weight_vertex_shader;
-			GLuint _weight_geometry_shader;
-			GLuint _weight_fragment_shader;
-			GLuint _weight_program;
-
-			// outline shader
-			int _outline_DepthTexLocation;
-			int _outline_WeightTexLocation;
-			GLuint _outline_vertex_shader;
-			GLuint _outline_geometry_shader;
-			GLuint _outline_fragment_shader;
-			GLuint _outline_program;
-
-			int _plane_ModelViewLocation;
-			int _plane_ProjectionLocation;
-			GLuint _plane_vertex_shader;
-			GLuint _plane_fragment_shader;
-			GLuint _plane_program;
-
-			int _screen_PositionTexLocation;
-			int _screen_NormalTexLocation;
-			int _screen_WidthLocation;
-			int _screen_HeightLocation;
-			GLuint _screen_vertex_shader;
-			GLuint _screen_fragment_shader;
-			GLuint _screen_program;
-
-			// buffers
-			float _inv_rho;
-			GLuint _image_width;
-			GLuint _image_height;
-
-			// depth pass
-			GLuint _depth_buffer;
-			GLuint _depth_color;
-			GLuint _depth_depth;
-			// overlap pass
-			GLuint _overlap_buffer;
-			GLuint _overlap_color;
-			GLuint _overlap_depth;
-			// weight pass
-			GLuint _weight_buffer;
-			GLuint _weight_color;
-			GLuint _weight_depth;
-
-			// outline pass
-			GLuint _outline_buffer;
-			GLuint _outline_color;
-			GLuint _outline_depth;
+			// point shader
+			int _point_ModelViewLocation;
+			int _point_ProjectionLocation;
+			GLuint _point_vertex_shader;
+			GLuint _point_geometry_shader;
+			GLuint _point_fragment_shader;
+			GLuint _point_program;
 
 			// CUDA
 			unsigned int _threads;

@@ -32,6 +32,8 @@ namespace SigAsiaDemo {
 			// indices
 			unsigned int _start;
 			unsigned int _end;
+			unsigned int _spring_start;
+			unsigned int _spring_end;
 
 			size_t _size_x;
 			size_t _size_y;

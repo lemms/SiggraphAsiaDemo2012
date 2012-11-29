@@ -9,6 +9,7 @@ Laurence Emms
 
 namespace SigAsiaDemo {
 	class MassList;
+	class CubeList;
 	class Spring {
 		public:
 			Spring(
@@ -37,7 +38,7 @@ namespace SigAsiaDemo {
 			bool push(Spring spring);
 			bool empty() const;
 			size_t size() const;
-			void upload(MassList &masses);
+			void upload(MassList &masses, CubeList &cubes);
 			void download();
 			Spring *getSpring(size_t index);
 			// returns 0 if Spring is uploaded to the GPU

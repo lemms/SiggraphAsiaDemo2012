@@ -12,6 +12,7 @@ Laurence Emms
 #include <fstream>
 #include <iterator>
 #include <cmath>
+using namespace std;
 
 #ifdef WIN32
 #include <windows.h>
@@ -58,8 +59,6 @@ SigAsiaDemo::MassList::MassList(
 	float coeff_restitution,
 	float plane_size,
 	unsigned int threads) :
-	_screen_width(1024),
-	_screen_height(768),
 	_masses_array(0),
 	_masses_buffer(0),
 	_computing(false),
@@ -67,66 +66,12 @@ SigAsiaDemo::MassList::MassList(
 	_coeff_friction(coeff_friction),
 	_coeff_restitution(coeff_restitution),
 	_device_masses(0),
-	_plane_size(plane_size),
-	_plane_array(0),
-	_plane_buffer(0),
-	_screen_array(0),
-	_screen_pos_buffer(0),
-	_screen_tex_buffer(0),
-	_depth_ModelViewLocation(0),
-	_depth_ProjectionLocation(0),
-	_depth_vertex_shader(0),
-	_depth_geometry_shader(0),
-	_depth_fragment_shader(0),
-	_depth_program(0),
-	_overlap_ModelViewLocation(0),
-	_overlap_ProjectionLocation(0),
-	_overlap_DepthTexLocation(0),
-	_overlap_vertex_shader(0),
-	_overlap_geometry_shader(0),
-	_overlap_fragment_shader(0),
-	_overlap_program(0),
-	_weight_ModelViewLocation(0),
-	_weight_ProjectionLocation(0),
-	_weight_DepthTexLocation(0),
-	_weight_OverlapTexLocation(0),
-	_weight_vertex_shader(0),
-	_weight_geometry_shader(0),
-	_weight_fragment_shader(0),
-	_weight_program(0),
-	_outline_DepthTexLocation(0),
-	_outline_WeightTexLocation(0),
-	_outline_vertex_shader(0),
-	_outline_geometry_shader(0),
-	_outline_fragment_shader(0),
-	_outline_program(0),
-	_plane_ModelViewLocation(0),
-	_plane_ProjectionLocation(0),
-	_plane_vertex_shader(0),
-	_plane_fragment_shader(0),
-	_plane_program(0),
-	_screen_PositionTexLocation(0),
-	_screen_NormalTexLocation(0),
-	_screen_WidthLocation(0),
-	_screen_HeightLocation(0),
-	_screen_vertex_shader(0),
-	_screen_fragment_shader(0),
-	_screen_program(0),
-	_inv_rho(1.0),
-	_image_width(1024),
-	_image_height(768),
-	_depth_buffer(0),
-	_depth_color(0),
-	_depth_depth(0),
-	_overlap_buffer(0),
-	_overlap_color(0),
-	_overlap_depth(0),
-	_weight_buffer(0),
-	_weight_color(0),
-	_weight_depth(0),
-	_outline_buffer(0),
-	_outline_color(0),
-	_outline_depth(0),
+	_point_ModelViewLocation(0),
+	_point_ProjectionLocation(0),
+	_point_vertex_shader(0),
+	_point_geometry_shader(0),
+	_point_fragment_shader(0),
+	_point_program(0),
 	_threads(threads)
 {
 }
@@ -135,7 +80,8 @@ SigAsiaDemo::MassList::~MassList()
 {
 	if (_device_masses) {
 		cudaThreadSynchronize();
-		//std::cout << "Free masses." << std::endl;
+		
+		// free masses
 		cudaFree(_device_masses);
 		_device_masses = 0;
 	}
@@ -167,13 +113,12 @@ void SigAsiaDemo::MassList::upload(bool force_copy)
 {
 	if (_computing) {
 		// do nothing if computing
-		std::cout << "Can not upload, computing." << std::endl;
+		cout << "Can not upload, computing." << endl;
 		return;
 	}
 
 	if (force_copy) {
 		// copy into GPU buffer
-		//std::cout << "Copy masses into GPU buffer." << std::endl;
 		cudaMemcpy(
 			_device_masses,
 			&_masses[0],
@@ -181,30 +126,26 @@ void SigAsiaDemo::MassList::upload(bool force_copy)
 			cudaMemcpyHostToDevice);
 	} else {
 		if (_changed) {
-			//std::cout << "Upload masses." << std::endl;
+			// upload masses
 			_changed = false;
 			if (_device_masses) {
 				cudaThreadSynchronize();
-				//std::cout << "Free masses." << std::endl;
+
+				// free masses
 				cudaFree(_device_masses);
 				_device_masses = 0;
 			}
 
 			// allocate GPU buffer
-			//std::cout << std::fixed << std::setprecision(8) \
-			<< "Allocate GPU buffer of size " << \
-			_masses.size()*sizeof(Mass)/1073741824.0 \
-			<< " GB." << std::endl;
 			cudaError_t result = cudaMalloc(
 				(void**)&_device_masses,
 				_masses.size()*sizeof(Mass));
 			if (result != cudaSuccess) {
-				std::cerr << "Error: CUDA failed to malloc memory." << std::endl;
+				cerr << "Error: CUDA failed to malloc memory." << endl;
 				std::terminate();
 			}
 
 			// copy into GPU buffer
-			//std::cout << "Copy masses into GPU buffer." << std::endl;
 			cudaMemcpy(
 				_device_masses,
 				&_masses[0],
@@ -217,13 +158,11 @@ void SigAsiaDemo::MassList::upload(bool force_copy)
 void SigAsiaDemo::MassList::download()
 {
 	if (_computing && _changed) {
-		std::cerr << "Error: Mass list changed while \
-data was being used in GPU computations." << std::endl;
+		cerr << "Error: Mass list changed while \
+data was being used in GPU computations." << endl;
 		std::terminate();
 	} else {
-		//std::cout << "Download masses" << std::endl;
 		// copy into CPU buffer
-		//std::cout << "Copy masses into CPU buffer." << std::endl;
 		cudaMemcpy(
 			&_masses[0],
 			_device_masses,
@@ -235,13 +174,13 @@ data was being used in GPU computations." << std::endl;
 SigAsiaDemo::Mass *SigAsiaDemo::MassList::getMass(size_t index)
 {
 	if (_masses.empty()) {
-		std::cerr << "Warning: getMass called on \
-empty mass list." << std::endl;
+		cerr << "Warning: getMass called on \
+empty mass list." << endl;
 		return 0;
 	}
 	if (index >= _masses.size()) {
-		std::cerr << "Warning: getMass called on index \
-out of bounds." << std::endl;
+		cerr << "Warning: getMass called on index \
+out of bounds." << endl;
 		return 0;
 	}
 
@@ -271,8 +210,6 @@ void SigAsiaDemo::MassList::startFrame()
 {
 	_computing = true;
 	if (!_masses.empty()) {
-		//std::cout << "Start frame (" \
-		<< _masses.size() << ")." << std::endl;
 		deviceStartFrame<<<(_masses.size()+_threads-1)/_threads, _threads>>>(
 			_masses.size(),
 			_device_masses);
@@ -310,8 +247,6 @@ void SigAsiaDemo::MassList::clearForces(
 	float gravity)
 {
 	if (_computing && !_masses.empty()) {
-		//std::cout << "Clear forces and add gravity (" \
-		<< _masses.size() << ")." << std::endl;
 		deviceClearForces<<<(_masses.size()+_threads-1)/_threads, _threads>>>(
 			_masses.size(),
 			fx, fy, fz,
@@ -367,7 +302,6 @@ void SigAsiaDemo::MassList::evaluateK1(
 	bool ground_collision)
 {
 	if (_computing && !_masses.empty()) {
-		//std::cout << "Evaluate K1 (" << _masses.size() << ")." << std::endl;
 		deviceEvaluateK1<<<(_masses.size()+_threads-1)/_threads, _threads>>>(
 			dt,
 			_coeff_friction,
@@ -426,7 +360,6 @@ void SigAsiaDemo::MassList::evaluateK2(
 	bool ground_collision)
 {
 	if (_computing && !_masses.empty()) {
-		//std::cout << "Evaluate K2 (" << _masses.size() << ")." << std::endl;
 		deviceEvaluateK2<<<(_masses.size()+_threads-1)/_threads, _threads>>>(
 			dt,
 			_coeff_friction,
@@ -485,7 +418,6 @@ void SigAsiaDemo::MassList::evaluateK3(
 	bool ground_collision)
 {
 	if (_computing && !_masses.empty()) {
-		//std::cout << "Evaluate K3 (" << _masses.size() << ")." << std::endl;
 		deviceEvaluateK3<<<(_masses.size()+_threads-1)/_threads, _threads>>>(
 			dt,
 			_coeff_friction,
@@ -523,7 +455,6 @@ void SigAsiaDemo::MassList::evaluateK4(
 	bool ground_collision)
 {
 	if (_computing && !_masses.empty()) {
-		//std::cout << "Evaluate K4 (" << _masses.size() << ")." << std::endl;
 		deviceEvaluateK4<<<(_masses.size()+_threads-1)/_threads, _threads>>>(
 			dt,
 			_masses.size(),
@@ -627,66 +558,9 @@ void SigAsiaDemo::MassList::update(
 			_masses_buffer,
 			cudaGraphicsMapFlagsNone);
 		if (_cuda_masses_resource == 0) {
-			std::cerr << "Error: Failed to register GL buffer." << std::endl;
+			cerr << "Error: Failed to register GL buffer." << endl;
 			return;
 		}
-	}
-	if (_plane_buffer == 0) {
-		std::cout << "Generate ground plane buffer." << std::endl;
-		glGenBuffers(1, &_plane_buffer);
-		glBindBuffer(GL_ARRAY_BUFFER, _plane_buffer);
-		// allocate space for position
-		float _plane_data[] = 
-			{
-				_plane_size, 0.0, _plane_size, 1.0,
-				-_plane_size, 0.0, _plane_size, 1.0,
-				-_plane_size, 0.0, -_plane_size, 1.0,
-				_plane_size, 0.0, -_plane_size, 1.0
-			};
-		glBufferData(
-			GL_ARRAY_BUFFER,
-			16*sizeof(float),
-			_plane_data,
-			GL_DYNAMIC_DRAW);
-	}
-	if (_screen_pos_buffer == 0) {
-		std::cout << "Generate screen quad position buffer." << std::endl;
-		glGenBuffers(1, &_screen_pos_buffer);
-		glBindBuffer(GL_ARRAY_BUFFER, _screen_pos_buffer);
-		// allocate space for position
-		float _screen_data[] = 
-			{
-				1.0, 1.0, 0.0, 1.0,
-				-1.0, 1.0, 0.0, 1.0,
-				-1.0, -1.0, 0.0, 1.0,
-				1.0, -1.0, 0.0, 1.0
-			};
-		glBufferData(
-			GL_ARRAY_BUFFER,
-			16*sizeof(float),
-			_screen_data,
-			GL_DYNAMIC_DRAW);
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-	}
-	if (_screen_tex_buffer == 0) {
-		std::cout << "Generate screen texture coordinates buffer." << std::endl;
-		glGenBuffers(1, &_screen_tex_buffer);
-		glBindBuffer(GL_ARRAY_BUFFER, _screen_tex_buffer);
-		// allocate space for uvs
-		float _screen_data[] = 
-			{
-				1.0, 1.0,
-				0.0, 1.0,
-				0.0, 0.0,
-				1.0, 0.0
-			};
-		glBufferData(
-			GL_ARRAY_BUFFER,
-			8*sizeof(float),
-			_screen_data,
-			GL_DYNAMIC_DRAW);
-
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
 
 	// generate arrays
@@ -702,38 +576,6 @@ void SigAsiaDemo::MassList::update(
 		glBindVertexArray(0);
 	}
 
-	if (_plane_buffer != 0) {
-		//std::cout << "Bind plane array." << std::endl;
-		if (_plane_array == 0) {
-			std::cout << "Generate vertex arrays." << std::endl;
-			glGenVertexArrays(1, &_plane_array);
-		}
-		glBindVertexArray(_plane_array);
-
-		glEnableVertexAttribArray(0);
-
-		glBindBuffer(GL_ARRAY_BUFFER, _plane_buffer);
-		glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, NULL);
-		glBindVertexArray(0);
-	}
-
-	if (_screen_pos_buffer != 0 && _screen_tex_buffer != 0) {
-		//std::cout << "Bind screen array." << std::endl;
-		if (_screen_array == 0) {
-			std::cout << "Generate vertex arrays." << std::endl;
-			glGenVertexArrays(1, &_screen_array);
-		}
-		glBindVertexArray(_screen_array);
-
-		glEnableVertexAttribArray(0);
-		glEnableVertexAttribArray(1);
-
-		glBindBuffer(GL_ARRAY_BUFFER, _screen_pos_buffer);
-		glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, NULL);
-		glBindBuffer(GL_ARRAY_BUFFER, _screen_tex_buffer);
-		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, NULL);
-		glBindVertexArray(0);
-	}
 
 	// map CUDA resource
 	size_t buffer_size = 0;
@@ -747,8 +589,6 @@ void SigAsiaDemo::MassList::update(
 
 	// update positions and upload to GL
 	if (_computing && !_masses.empty()) {
-		//std::cout << "Update masses (" << _masses.size() << ")." \
-		<< std::endl;
 		deviceUpdate<<<(_masses.size()+_threads-1)/_threads, _threads>>>(
 			dt,
 			_coeff_friction,
@@ -775,8 +615,8 @@ bool SigAsiaDemo::verifyCompilation(unsigned int shader, const char *text, const
 		GL_COMPILE_STATUS,
 		&result);
 	if (result == GL_FALSE) {
-		std::cerr << "Error: Failed to compile " << type \
-		<< " shader." << std::endl;
+		cerr << "Error: Failed to compile " << type \
+		<< " shader." << endl;
 		GLint length = 0;
 		glGetShaderiv(
 			shader,
@@ -790,10 +630,10 @@ bool SigAsiaDemo::verifyCompilation(unsigned int shader, const char *text, const
 				length,
 				&length_written,
 				log);
-			std::cerr << "Shader: " << std::endl;
-			std::cerr << text << std::endl;
-			std::cerr << "Log:" << std::endl;
-			std::cerr << log << std::endl;
+			cerr << "Shader: " << endl;
+			cerr << text << endl;
+			cerr << "Log:" << endl;
+			cerr << log << endl;
 			delete[] log;
 		}
 		return false;
@@ -809,8 +649,8 @@ bool SigAsiaDemo::verifyLinking(unsigned int program)
 		GL_LINK_STATUS,
 		&result);
 	if (result == GL_FALSE) {
-		std::cerr << "Error: Failed to compile shader program." \
-		<< std::endl;
+		cerr << "Error: Failed to compile shader program." \
+		<< endl;
 		GLint length = 0;
 		glGetProgramiv(
 			program,
@@ -824,8 +664,8 @@ bool SigAsiaDemo::verifyLinking(unsigned int program)
 				length,
 				&length_written,
 				log);
-			std::cerr << "Log:" << std::endl;
-			std::cerr << log << std::endl;
+			cerr << "Log:" << endl;
+			cerr << log << endl;
 			delete[] log;
 		}
 		return false;
@@ -851,8 +691,8 @@ bool SigAsiaDemo::loadShader(
 		// read and compile shaders
 		*vertex_shader = glCreateShader(GL_VERTEX_SHADER);
 		if (*vertex_shader == 0) {
-			std::cerr << "Warning: Failed to create vertex shader." \
-			<< std::endl;
+			cerr << "Warning: Failed to create vertex shader." \
+			<< endl;
 			return false;
 		}
 		std::ifstream vs_file(vs_file_name);
@@ -871,8 +711,8 @@ bool SigAsiaDemo::loadShader(
 		if (geometry_shader && gs_file_name) {
 			*geometry_shader = glCreateShader(GL_GEOMETRY_SHADER);
 			if (*geometry_shader == 0) {
-				std::cerr << "Warning: Failed to create geometry shader." \
-				<< std::endl;
+				cerr << "Warning: Failed to create geometry shader." \
+				<< endl;
 			}
 			std::ifstream gs_file(gs_file_name);
 			std::string gs_string(
@@ -890,8 +730,8 @@ bool SigAsiaDemo::loadShader(
 
 		*fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
 		if (*fragment_shader == 0) {
-			std::cerr << "Error: Failed to create fragment shader." \
-			<< std::endl;
+			cerr << "Error: Failed to create fragment shader." \
+			<< endl;
 			return false;
 		}
 		std::ifstream fs_file(fs_file_name);
@@ -910,8 +750,8 @@ bool SigAsiaDemo::loadShader(
 		// create program
 		*program = glCreateProgram();
 		if (*program == 0) {
-			std::cerr << "Error: Failed to create shader program." \
-			<< std::endl;
+			cerr << "Error: Failed to create shader program." \
+			<< endl;
 			return false;
 		}
 
@@ -938,426 +778,41 @@ bool SigAsiaDemo::loadShader(
 bool SigAsiaDemo::MassList::loadShaders()
 {
 
-	std::cout << "Load depth shader" << std::endl;
+	cout << "Load point shader" << endl;
 	bool success = false;
 	success = loadShader(
-		"depthVS.glsl",
-		"depthGS.glsl",
-		"depthFS.glsl",
-		&_depth_program,
-		&_depth_vertex_shader,
-		&_depth_geometry_shader,
-		&_depth_fragment_shader);
+		"pointVS.glsl",
+		"pointGS.glsl",
+		"pointFS.glsl",
+		&_point_program,
+		&_point_vertex_shader,
+		&_point_geometry_shader,
+		&_point_fragment_shader);
 	if (!success)
 		return false;
 
-	glUseProgram(_depth_program);
+	glUseProgram(_point_program);
 
 	// get uniforms
-	_depth_ModelViewLocation = glGetUniformLocation(
-		_depth_program, "ModelView");
-	if (_depth_ModelViewLocation == -1) {
-		std::cerr << "Error: Failed to get ModelView location." \
-			<< std::endl;
+	_point_ModelViewLocation = glGetUniformLocation(
+		_point_program, "ModelView");
+	if (_point_ModelViewLocation == -1) {
+		cerr << "Error: Failed to get ModelView location." \
+			<< endl;
 		return false;
 	}
 
-	_depth_ProjectionLocation = glGetUniformLocation(
-		_depth_program, "Projection");
-	if (_depth_ProjectionLocation == -1) {
-		std::cerr << "Error: Failed to get Projection location." \
-			<< std::endl;
-		return false;
-	}
-
-	std::cout << "Load overlap shader" << std::endl;
-	success = false;
-	success = loadShader(
-		"overlapVS.glsl",
-		"overlapGS.glsl",
-		"overlapFS.glsl",
-		&_overlap_program,
-		&_overlap_vertex_shader,
-		&_overlap_geometry_shader,
-		&_overlap_fragment_shader);
-	if (!success)
-		return false;
-
-	glUseProgram(_overlap_program);
-
-	// get uniforms
-	_overlap_ModelViewLocation = glGetUniformLocation(
-		_overlap_program, "ModelView");
-	if (_overlap_ModelViewLocation == -1) {
-		std::cerr << "Error: Failed to get ModelView location." \
-			<< std::endl;
-		return false;
-	}
-
-	_overlap_ProjectionLocation = glGetUniformLocation(
-		_overlap_program, "Projection");
-	if (_overlap_ProjectionLocation == -1) {
-		std::cerr << "Error: Failed to get Projection location." \
-			<< std::endl;
-		return false;
-	}
-
-	_overlap_DepthTexLocation = glGetUniformLocation(
-			_overlap_program, "depth_tex");
-	if (_overlap_DepthTexLocation == -1) {
-		std::cerr << "Error: Failed to get Depth Tex location." \
-			<< std::endl;
-	}
-
-	std::cout << "Load weight shader" << std::endl;
-	success = loadShader(
-		"weightVS.glsl",
-		"weightGS.glsl",
-		"weightFS.glsl",
-		&_weight_program,
-		&_weight_vertex_shader,
-		&_weight_geometry_shader,
-		&_weight_fragment_shader);
-	if (!success)
-		return false;
-
-	glUseProgram(_weight_program);
-
-	// get uniforms
-	_weight_ModelViewLocation = glGetUniformLocation(
-			_weight_program, "ModelView");
-	if (_weight_ModelViewLocation == -1) {
-		std::cerr << "Error: Failed to get ModelView location." \
-			<< std::endl;
-		return false;
-	}
-
-	_weight_ProjectionLocation = glGetUniformLocation(
-			_weight_program, "Projection");
-	if (_weight_ProjectionLocation == -1) {
-		std::cerr << "Error: Failed to get Projection location." \
-			<< std::endl;
-		return false;
-	}
-
-	_weight_DepthTexLocation = glGetUniformLocation(
-			_weight_program, "depth_tex");
-	if (_weight_DepthTexLocation == -1) {
-		std::cerr << "Error: Failed to get Depth Tex location." \
-			<< std::endl;
-	}
-
-	_weight_OverlapTexLocation = glGetUniformLocation(
-			_weight_program, "overlap_tex");
-	if (_weight_OverlapTexLocation == -1) {
-		std::cerr << "Error: Failed to get Overlap Tex location." \
-			<< std::endl;
-	}
-
-	std::cout << "Load outline shader" << std::endl;
-	success = loadShader(
-		"outlineVS.glsl",
-		"",
-		"outlineFS.glsl",
-		&_outline_program,
-		&_outline_vertex_shader,
-		0,
-		&_outline_fragment_shader);
-	if (!success)
-		return false;
-
-	glUseProgram(_outline_program);
-
-	// get uniforms
-	_outline_DepthTexLocation = glGetUniformLocation(
-			_outline_program, "depth_tex");
-	if (_outline_DepthTexLocation == -1) {
-		std::cerr << "Error: Failed to get Depth Tex location." \
-			<< std::endl;
-	}
-
-	_outline_WeightTexLocation = glGetUniformLocation(
-			_outline_program, "weight_tex");
-	if (_outline_WeightTexLocation == -1) {
-		std::cerr << "Error: Failed to get Weight Tex location." \
-			<< std::endl;
-	}
-
-	std::cout << "Load plane shader" << std::endl;
-	success = loadShader(
-		"planeVS.glsl",
-		"",
-		"planeFS.glsl",
-		&_plane_program,
-		&_plane_vertex_shader,
-		0,
-		&_plane_fragment_shader);
-	if (!success)
-		return false;
-
-	glUseProgram(_plane_program);
-
-	// get uniforms
-	_plane_ModelViewLocation = glGetUniformLocation(
-		_plane_program, "ModelView");
-	if (_plane_ModelViewLocation == -1) {
-		std::cerr << "Error: Failed to get ModelView location." \
-			<< std::endl;
-		return false;
-	}
-
-	_plane_ProjectionLocation = glGetUniformLocation(
-		_plane_program, "Projection");
-	if (_plane_ProjectionLocation == -1) {
-		std::cerr << "Error: Failed to get Projection location." \
-			<< std::endl;
-		return false;
-	}
-
-	std::cout << "Load screen shader" << std::endl;
-	success = loadShader(
-		"screenVS.glsl",
-		"",
-		"screenFS.glsl",
-		&_screen_program,
-		&_screen_vertex_shader,
-		0,
-		&_screen_fragment_shader);
-	if (!success)
-		return false;
-
-	glUseProgram(_screen_program);
-
-	// get uniforms
-	_screen_PositionTexLocation = glGetUniformLocation(
-		_screen_program, "position_tex");
-	if (_screen_PositionTexLocation == -1) {
-		std::cerr << "Error: Failed to get Position Tex location." \
-			<< std::endl;
-	}
-
-	_screen_NormalTexLocation = glGetUniformLocation(
-		_screen_program, "normal_tex");
-	if (_screen_NormalTexLocation == -1) {
-		std::cerr << "Error: Failed to get Normal Tex location." \
-			<< std::endl;
-	}
-
-	_screen_WidthLocation = glGetUniformLocation(
-		_screen_program, "inv_image_width");
-	if (_screen_WidthLocation == -1) {
-		std::cerr << "Error: Failed to get Width location." \
-			<< std::endl;
-		return false;
-	}
-
-	_screen_HeightLocation = glGetUniformLocation(
-		_screen_program, "inv_image_height");
-	if (_screen_HeightLocation == -1) {
-		std::cerr << "Error: Failed to get Height location." \
-			<< std::endl;
+	_point_ProjectionLocation = glGetUniformLocation(
+		_point_program, "Projection");
+	if (_point_ProjectionLocation == -1) {
+		cerr << "Error: Failed to get Projection location." \
+			<< endl;
 		return false;
 	}
 
 	glUseProgram(0);
 
-	std::cout << "Finished loading shaders" << std::endl;
-
-	return true;
-}
-
-void SigAsiaDemo::MassList::clearBuffers()
-{
-	if (_depth_color != 0) {
-		glDeleteTextures(1, &_depth_color);
-		_depth_color = 0;
-	}
-	if (_depth_depth != 0) {
-		glDeleteRenderbuffers(1, &_depth_depth);
-		_depth_depth = 0;
-	}
-	if (_depth_buffer != 0) {
-		glDeleteFramebuffers(1, &_depth_buffer);
-		_depth_buffer = 0;
-	}
-
-	if (_overlap_color != 0) {
-		glDeleteTextures(1, &_overlap_color);
-		_overlap_color = 0;
-	}
-	if (_overlap_depth != 0) {
-		glDeleteRenderbuffers(1, &_overlap_depth);
-		_overlap_depth = 0;
-	}
-	if (_overlap_buffer != 0) {
-		glDeleteFramebuffers(1, &_overlap_buffer);
-		_overlap_buffer = 0;
-	}
-
-	if (_weight_color != 0) {
-		glDeleteTextures(1, &_weight_color);
-		_weight_color = 0;
-	}
-	if (_weight_depth != 0) {
-		glDeleteRenderbuffers(1, &_weight_depth);
-		_weight_depth = 0;
-	}
-	if (_weight_buffer != 0) {
-		glDeleteFramebuffers(1, &_weight_buffer);
-		_weight_buffer = 0;
-	}
-
-	if (_outline_color != 0) {
-		glDeleteTextures(1, &_outline_color);
-		_outline_color = 0;
-	}
-	if (_outline_depth != 0) {
-		glDeleteRenderbuffers(1, &_outline_depth);
-		_outline_depth = 0;
-	}
-	if (_outline_buffer != 0) {
-		glDeleteFramebuffers(1, &_outline_buffer);
-		_outline_buffer = 0;
-	}
-}
-
-bool SigAsiaDemo::MassList::loadBuffers()
-{
-	if (!GLEW_ARB_texture_float) {
-		std::cout << "Warning: No floating point texture support." << std::endl;
-	}
-
-	if (_depth_buffer == 0) {
-		// generate offscreen rendering buffer
-		glGenFramebuffers(1, &_depth_buffer);
-		glBindFramebuffer(GL_FRAMEBUFFER, _depth_buffer);
-
-		glGenTextures(1, &_depth_color);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, _depth_color);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, _image_width, _image_height,
-			0, GL_RGBA, GL_FLOAT, NULL);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
-			GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
-			GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-			GL_TEXTURE_2D, _depth_color, 0);
-
-		glGenRenderbuffers(1, &_depth_depth);
-		glBindRenderbuffer(GL_RENDERBUFFER, _depth_depth);
-		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT,
-			_image_width, _image_height);
-		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
-			GL_RENDERBUFFER, _depth_depth);
-		
-		GLenum targets[] = {GL_COLOR_ATTACHMENT0};
-		glDrawBuffers(1, targets);
-
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	}
-
-	if (_overlap_buffer == 0) {
-		// generate offscreen rendering buffer
-		glGenFramebuffers(1, &_overlap_buffer);
-		glBindFramebuffer(GL_FRAMEBUFFER, _overlap_buffer);
-
-		glGenTextures(1, &_overlap_color);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, _overlap_color);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, _image_width, _image_height,
-			0, GL_RGBA, GL_FLOAT, NULL);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
-			GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
-			GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-			GL_TEXTURE_2D, _overlap_color, 0);
-
-		glGenRenderbuffers(1, &_overlap_depth);
-		glBindRenderbuffer(GL_RENDERBUFFER, _overlap_depth);
-		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT,
-			_image_width, _image_height);
-		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
-			GL_RENDERBUFFER, _overlap_depth);
-		
-		GLenum targets[] = {GL_COLOR_ATTACHMENT0};
-		glDrawBuffers(1, targets);
-
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	}
-
-	if (_weight_buffer == 0) {
-		// generate offscreen rendering buffer
-		glGenFramebuffers(1, &_weight_buffer);
-		glBindFramebuffer(GL_FRAMEBUFFER, _weight_buffer);
-
-		glGenTextures(1, &_weight_color);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, _weight_color);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, _image_width, _image_height,
-			0, GL_RGBA, GL_FLOAT, NULL);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
-			GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
-			GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-			GL_TEXTURE_2D, _weight_color, 0);
-
-		glGenRenderbuffers(1, &_weight_depth);
-		glBindRenderbuffer(GL_RENDERBUFFER, _weight_depth);
-		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT,
-			_image_width, _image_height);
-		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
-			GL_RENDERBUFFER, _weight_depth);
-		
-		GLenum targets[] = {GL_COLOR_ATTACHMENT0};
-		glDrawBuffers(1, targets);
-
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	}
-
-	if (_outline_buffer == 0) {
-		// generate offscreen rendering buffer
-		glGenFramebuffers(1, &_outline_buffer);
-		glBindFramebuffer(GL_FRAMEBUFFER, _outline_buffer);
-
-		glGenTextures(1, &_outline_color);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, _outline_color);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, _image_width, _image_height,
-			0, GL_RGBA, GL_FLOAT, NULL);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
-			GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
-			GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-			GL_TEXTURE_2D, _outline_color, 0);
-
-		glGenRenderbuffers(1, &_outline_depth);
-		glBindRenderbuffer(GL_RENDERBUFFER, _outline_depth);
-		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT,
-			_image_width, _image_height);
-		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
-			GL_RENDERBUFFER, _outline_depth);
-		
-		GLenum targets[] = {GL_COLOR_ATTACHMENT0};
-		glDrawBuffers(1, targets);
-
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	}
+	cout << "Finished loading shaders" << endl;
 
 	return true;
 }
@@ -1366,196 +821,33 @@ void SigAsiaDemo::MassList::render(
 	glm::mat4 ModelView,
 	glm::mat4 Projection) const
 {
-	if (_depth_program == 0) {
-		std::cerr << "Warning: _depth_program not set." \
-		<< std::endl;
-		return;
-	}
-	if (_overlap_program == 0) {
-		std::cerr << "Warning: _overlap_program not set." \
-		<< std::endl;
-		return;
-	}
-	if (_weight_program == 0) {
-		std::cerr << "Warning: _weight_program not set." \
-		<< std::endl;
-		return;
-	}
-	if (_outline_program == 0) {
-		std::cerr << "Warning: _outline_program not set." \
-		<< std::endl;
-		return;
-	}
-	if (_plane_program == 0) {
-		std::cerr << "Warning: _plane_program not set." \
-		<< std::endl;
-		return;
-	}
-	if (_screen_program == 0) {
-		std::cerr << "Warning: _screen_program not set." \
-		<< std::endl;
+	if (_point_program == 0) {
+		cerr << "Warning: _point_program not set." \
+		<< endl;
 		return;
 	}
 
-	if (_depth_ModelViewLocation == -1) {
-		std::cerr << "Warning: _depth_ModelViewLocation not set." \
-		<< std::endl;
+	if (_point_ModelViewLocation == -1) {
+		cerr << "Warning: _point_ModelViewLocation not set." \
+		<< endl;
 		return;
 	}
-	if (_depth_ProjectionLocation == -1) {
-		std::cerr << "Warning: _depth_ProjectionLocation not set." \
-		<< std::endl;
-		return;
-	}
-	if (_overlap_ModelViewLocation == -1) {
-		std::cerr << "Warning: _overlap_ModelViewLocation not set." \
-		<< std::endl;
-		return;
-	}
-	if (_overlap_ProjectionLocation == -1) {
-		std::cerr << "Warning: _overlap_ProjectionLocation not set." \
-		<< std::endl;
-		return;
-	}
-	if (_overlap_DepthTexLocation == -1) {
-		std::cerr << "Warning: _overlap_DepthTexLocation not set." \
-		<< std::endl;
-	}
-	if (_weight_ModelViewLocation == -1) {
-		std::cerr << "Warning: _weight_ModelViewLocation not set." \
-		<< std::endl;
-		return;
-	}
-	if (_weight_ProjectionLocation == -1) {
-		std::cerr << "Warning: _weight_ProjectionLocation not set." \
-		<< std::endl;
-		return;
-	}
-	if (_weight_DepthTexLocation == -1) {
-		std::cerr << "Warning: _weight_DepthTexLocation not set." \
-		<< std::endl;
-	}
-	if (_weight_OverlapTexLocation == -1) {
-		std::cerr << "Warning: _weight_OverlapTexLocation not set." \
-		<< std::endl;
-	}
-	if (_outline_DepthTexLocation == -1) {
-		std::cerr << "Warning: _outline_DepthTexLocation not set." \
-		<< std::endl;
-	}
-	if (_outline_WeightTexLocation == -1) {
-		std::cerr << "Warning: _outline_WeightTexLocation not set." \
-		<< std::endl;
-	}
-	if (_plane_ModelViewLocation == -1) {
-		std::cerr << "Warning: _plane_ModelViewLocation not set." \
-		<< std::endl;
-		return;
-	}
-	if (_plane_ProjectionLocation == -1) {
-		std::cerr << "Warning: _plane_ProjectionLocation not set." \
-		<< std::endl;
-		return;
-	}
-	if (_screen_PositionTexLocation == -1) {
-		std::cerr << "Warning: _screen_PositionTexLocation not set." \
-		<< std::endl;
-	}
-	if (_screen_NormalTexLocation == -1) {
-		std::cerr << "Warning: _screen_NormalTexLocation not set." \
-		<< std::endl;
-	}
-	if (_screen_WidthLocation == -1) {
-		std::cerr << "Warning: _screen_WidthLocation not set." \
-		<< std::endl;
-		return;
-	}
-	if (_screen_HeightLocation == -1) {
-		std::cerr << "Warning: _screen_HeightLocation not set." \
-		<< std::endl;
-		return;
-	}
-	if (_masses_array == 0) {
-		std::cerr << "Warning: _masses_array not set." \
-		<< std::endl;
-		return;
-	}
-	if (_plane_array == 0) {
-		std::cerr << "Warning: _plane_array not set." \
-		<< std::endl;
-		return;
-	}
-	if (_screen_array == 0) {
-		std::cerr << "Warning: _screen_array not set." \
-		<< std::endl;
+	if (_point_ProjectionLocation == -1) {
+		cerr << "Warning: _point_ProjectionLocation not set." \
+		<< endl;
 		return;
 	}
 
-	if (_depth_color == 0) {
-		std::cerr << "Warning: _depth_color not set." \
-		<< std::endl;
-		return;
-	}
-	if (_overlap_color == 0) {
-		std::cerr << "Warning: _overlap_color not set." \
-		<< std::endl;
-		return;
-	}
-	if (_weight_color == 0) {
-		std::cerr << "Warning: _weight_color not set." \
-		<< std::endl;
-		return;
-	}
-	if (_outline_color == 0) {
-		std::cerr << "Warning: _outline_color not set." \
-		<< std::endl;
-		return;
-	}
-
-	if (_depth_buffer == 0) {
-		std::cerr << "Warning: _depth_color not set." \
-		<< std::endl;
-		return;
-	}
-	if (_overlap_buffer == 0) {
-		std::cerr << "Warning: _overlap_buffer not set." \
-		<< std::endl;
-		return;
-	}
-	if (_weight_buffer == 0) {
-		std::cerr << "Warning: _weight_buffer not set." \
-		<< std::endl;
-		return;
-	}
-	if (_outline_buffer == 0) {
-		std::cerr << "Warning: _outline_buffer not set." \
-		<< std::endl;
-		return;
-	}
-
-	float inv_width = 1.0 / static_cast<float>(_image_width);
-	float inv_height = 1.0 / static_cast<float>(_image_height);
-
-	//=============================================
-	// depth rendering pass, draw into depth buffer
-	//=============================================
-
-	// bind frame buffer
-	glBindFramebuffer(GL_FRAMEBUFFER, _depth_buffer);
-
-	// clear frame buffer
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-	// bind depth shader
-	glUseProgram(_depth_program);
+	// bind point shader
+	glUseProgram(_point_program);
 
 	// setup uniforms
 	glUniformMatrix4fv(
-		_depth_ModelViewLocation,
+		_point_ModelViewLocation,
 		1, GL_FALSE,
 		glm::value_ptr(ModelView));
 	glUniformMatrix4fv(
-		_depth_ProjectionLocation,
+		_point_ProjectionLocation,
 		1, GL_FALSE,
 		glm::value_ptr(Projection));
 
@@ -1563,226 +855,6 @@ void SigAsiaDemo::MassList::render(
 	glDrawArrays(GL_POINTS, 0, _masses.size());
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-	glUseProgram(_plane_program);
-
-	glUniformMatrix4fv(
-		_plane_ModelViewLocation,
-		1, GL_FALSE,
-		glm::value_ptr(ModelView));
-	glUniformMatrix4fv(
-		_plane_ProjectionLocation,
-		1, GL_FALSE,
-		glm::value_ptr(Projection));
-
-	glBindVertexArray(_plane_array);
-	glDrawArrays(GL_QUADS, 0, 4);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-	// unbind frame buffer
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-	//=============================================
-	// overlap rendering pass, draw into overlap buffer
-	//=============================================
-
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, _depth_color);
-
-	// bind frame buffer
-	glBindFramebuffer(GL_FRAMEBUFFER, _overlap_buffer);
-
-	// clear frame buffer
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-	// setup blending
-	glDisable(GL_DEPTH_TEST);
-	glBlendFunc(GL_ONE, GL_ONE);
-	glEnable(GL_BLEND);
-
-	// bind overlap shader
-	glUseProgram(_overlap_program);
-
-	// setup uniforms
-	if (_overlap_DepthTexLocation != -1)
-		glUniform1i(_overlap_DepthTexLocation, 0);
-	glUniformMatrix4fv(
-		_overlap_ModelViewLocation,
-		1, GL_FALSE,
-		glm::value_ptr(ModelView));
-	glUniformMatrix4fv(
-		_overlap_ProjectionLocation,
-		1, GL_FALSE,
-		glm::value_ptr(Projection));
-
-	glBindVertexArray(_masses_array);
-	glDrawArrays(GL_POINTS, 0, _masses.size());
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-	// clear blending
-	glDisable(GL_BLEND);
-	glEnable(GL_DEPTH_TEST);
-	
-	// unbind frame buffer
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, 0);
-	
-	//===============================================
-	// weight rendering pass, draw into weight buffer
-	//===============================================
-
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, _depth_color);
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, _overlap_color);
-
-	// bind frame buffer
-	glBindFramebuffer(GL_FRAMEBUFFER, _weight_buffer);
-
-	// clear frame buffer
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-	// setup blending
-	glDisable(GL_DEPTH_TEST);
-	glBlendFunc(GL_ONE, GL_ONE);
-	glEnable(GL_BLEND);
-
-	// bind weight shader
-	glUseProgram(_weight_program);
-
-	// setup uniforms
-	if (_weight_DepthTexLocation != -1)
-		glUniform1i(_weight_DepthTexLocation, 0);
-	if (_weight_OverlapTexLocation != -1)
-		glUniform1i(_weight_OverlapTexLocation, 1);
-	glUniformMatrix4fv(
-		_weight_ModelViewLocation,
-		1, GL_FALSE,
-		glm::value_ptr(ModelView));
-	glUniformMatrix4fv(
-		_weight_ProjectionLocation,
-		1, GL_FALSE,
-		glm::value_ptr(Projection));
-
-	glBindVertexArray(_masses_array);
-	glDrawArrays(GL_POINTS, 0, _masses.size());
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-	// clear blending
-	glDisable(GL_BLEND);
-	glEnable(GL_DEPTH_TEST);
-
-	// unbind frame buffer
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, 0);
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, 0);
-
-	//===============================================
-	// outline rendering pass, draw into outline buffer
-	//===============================================
-
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, _depth_color);
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, _weight_color);
-
-	// bind frame buffer
-	//glBindFramebuffer(GL_FRAMEBUFFER, _outline_buffer);
-
-	// clear frame buffer
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-	// setup blending
-	glDisable(GL_DEPTH_TEST);
-	glBlendFunc(GL_ONE, GL_ONE);
-	glEnable(GL_BLEND);
-
-	// bind outline shader
-	glUseProgram(_outline_program);
-
-	// setup uniforms
-	if (_outline_DepthTexLocation != -1)
-		glUniform1i(_outline_DepthTexLocation, 0);
-	if (_outline_WeightTexLocation != -1)
-		glUniform1i(_outline_WeightTexLocation, 1);
-
-	glBindVertexArray(_screen_array);
-	glDrawArrays(GL_QUADS, 0, 4);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-	glBindVertexArray(_masses_array);
-	glDrawArrays(GL_POINTS, 0, _masses.size());
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-	// clear blending
-	glDisable(GL_BLEND);
-	glEnable(GL_DEPTH_TEST);
-
-	// unbind frame buffer
-	//glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, 0);
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, 0);
-
-	//==========================================
-	// render a screen space quad with the image
-	//==========================================
-
-	/*
-	// bind quad shader
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, _overlap_color);
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, _depth_color);
-
-	glUseProgram(_screen_program);
-
-	if (_screen_PositionTexLocation != -1)
-		glUniform1i(_screen_PositionTexLocation, 0);
-	if (_screen_NormalTexLocation != -1)
-		glUniform1i(_screen_NormalTexLocation, 1);
-	glUniform1f(_screen_WidthLocation, inv_width);
-	glUniform1f(_screen_HeightLocation, inv_height);
-
-	glBindVertexArray(_screen_array);
-	glDrawArrays(GL_QUADS, 0, 4);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-	// unbind shader
+	// clear shader
 	glUseProgram(0);
-
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, 0);
-	*/
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, 0);
-}
-
-void SigAsiaDemo::MassList::resizeWindow(
-	float near,
-	float far,
-	float fov,
-	float view_dist,
-	float spring_length,
-	unsigned int width,
-	unsigned int height)
-{
-	_screen_width = width;
-	_screen_height = height;
-	GLuint image_width = width;
-	GLuint image_height = height;
-	if (image_width != _image_width || image_height != _image_height) {
-		_image_width = image_width;
-		_image_height = image_height;
-		std::cout << "New image dimensions: [" << _image_width << ", " \
-			<< _image_height << "]" << std::endl;
-		clearBuffers();
-		loadBuffers();
-	}
 }

@@ -45,6 +45,8 @@ SigAsiaDemo::Cube::Cube(
 	float radius) :
 		_start(0),
 		_end(0),
+		_spring_start(0),
+		_spring_end(0),
 		_x(x),
 		_y(y),
 		_z(z),
@@ -73,7 +75,9 @@ void SigAsiaDemo::Cube::create(
 	SpringList &springs)
 {
 	_start = masses.size();
-	std::cout << "Starting at index " << _start << "." << std::endl;
+	_spring_start = springs.size();
+	std::cout << "Starting at mass index " << _start << "." << std::endl;
+	std::cout << "Starting at spring index " << _spring_start << "." << std::endl;
 
 	int side = _size_x+1;
 	int plane = side*side;
@@ -102,9 +106,10 @@ void SigAsiaDemo::Cube::create(
 		}
 	}
 	_end = masses.size();
-	std::cout << "Ending at index " << _end << "." << std::endl;
+	std::cout << "Ending at mass index " << _end << "." << std::endl;
 
 	// add structural springs
+	
 	for (int i = -_half_x; i <= _half_x; ++i) {
 		for (int j = -_half_y; j <= _half_y; ++j) {
 			for (int k = -_half_z; k <= _half_z; ++k) {
@@ -357,6 +362,9 @@ void SigAsiaDemo::Cube::create(
 			}
 		}
 	}
+
+	_spring_end = springs.size();
+	std::cout << "Ending at spring index " << _spring_end << "." << std::endl;
 }
 
 SigAsiaDemo::CubeList::CubeList(
@@ -427,271 +435,6 @@ SigAsiaDemo::Cube *SigAsiaDemo::CubeList::getCube(
 	return NULL;
 }
 
-void compute_triangle(
-	float threshold,
-	size_t ind_0,
-	float x0, float y0, float z0,
-	float nx0, float ny0, float nz0,
-	size_t ind_1,
-	float x1, float y1, float z1,
-	float nx1, float ny1, float nz1,
-	size_t ind_2,
-	float x2, float y2, float z2,
-	float nx2, float ny2, float nz2,
-	size_t ind_3,
-	float x3, float y3, float z3,
-	float nx3, float ny3, float nz3,
-	std::vector<float> &weights,
-	std::vector<float> &tri_positions,
-	std::vector<float> &tri_normals)
-{
-	if (	weights[ind_0] < threshold &&
-		weights[ind_1] >= threshold &&
-		weights[ind_2] >= threshold &&
-		weights[ind_3] >= threshold) {
-		tri_positions.push_back((x0+x1)*0.5);
-		tri_positions.push_back((y0+y1)*0.5);
-		tri_positions.push_back((z0+z1)*0.5);
-		tri_normals.push_back((nx0+nx1)*0.5);
-		tri_normals.push_back((ny0+ny1)*0.5);
-		tri_normals.push_back((nz0+nz1)*0.5);
-
-		tri_positions.push_back((x0+x2)*0.5);
-		tri_positions.push_back((y0+y2)*0.5);
-		tri_positions.push_back((z0+z2)*0.5);
-		tri_normals.push_back((nx0+nx2)*0.5);
-		tri_normals.push_back((ny0+ny2)*0.5);
-		tri_normals.push_back((nz0+nz2)*0.5);
-
-		tri_positions.push_back((x0+x3)*0.5);
-		tri_positions.push_back((y0+y3)*0.5);
-		tri_positions.push_back((z0+z3)*0.5);
-		tri_normals.push_back((nx0+nx3)*0.5);
-		tri_normals.push_back((ny0+ny3)*0.5);
-		tri_normals.push_back((nz0+nz3)*0.5);
-	}
-	if (	weights[ind_0] >= threshold &&
-		weights[ind_1] < threshold &&
-		weights[ind_2] < threshold &&
-		weights[ind_3] < threshold) {
-		tri_positions.push_back((x0+x1)*0.5);
-		tri_positions.push_back((y0+y1)*0.5);
-		tri_positions.push_back((z0+z1)*0.5);
-		tri_normals.push_back((nx0+nx1)*0.5);
-		tri_normals.push_back((ny0+ny1)*0.5);
-		tri_normals.push_back((nz0+nz1)*0.5);
-
-		tri_positions.push_back((x0+x3)*0.5);
-		tri_positions.push_back((y0+y3)*0.5);
-		tri_positions.push_back((z0+z3)*0.5);
-		tri_normals.push_back((nx0+nx3)*0.5);
-		tri_normals.push_back((ny0+ny3)*0.5);
-		tri_normals.push_back((nz0+nz3)*0.5);
-
-		tri_positions.push_back((x0+x2)*0.5);
-		tri_positions.push_back((y0+y2)*0.5);
-		tri_positions.push_back((z0+z2)*0.5);
-		tri_normals.push_back((nx0+nx2)*0.5);
-		tri_normals.push_back((ny0+ny2)*0.5);
-		tri_normals.push_back((nz0+nz2)*0.5);
-	}
-}
-
-void compute_quad(
-	float threshold,
-	size_t ind_0,
-	float x0, float y0, float z0,
-	float nx0, float ny0, float nz0,
-	size_t ind_1,
-	float x1, float y1, float z1,
-	float nx1, float ny1, float nz1,
-	size_t ind_2,
-	float x2, float y2, float z2,
-	float nx2, float ny2, float nz2,
-	size_t ind_3,
-	float x3, float y3, float z3,
-	float nx3, float ny3, float nz3,
-	std::vector<float> &weights,
-	std::vector<float> &tri_positions,
-	std::vector<float> &tri_normals)
-{
-	if (	weights[ind_0] < threshold &&
-		weights[ind_1] < threshold &&
-		weights[ind_2] >= threshold &&
-		weights[ind_3] >= threshold) {
-		tri_positions.push_back((x0+x3)*0.5);
-		tri_positions.push_back((y0+y3)*0.5);
-		tri_positions.push_back((z0+z3)*0.5);
-		tri_normals.push_back((nx0+nx3)*0.5);
-		tri_normals.push_back((ny0+ny3)*0.5);
-		tri_normals.push_back((nz0+nz3)*0.5);
-
-		tri_positions.push_back((x1+x3)*0.5);
-		tri_positions.push_back((y1+y3)*0.5);
-		tri_positions.push_back((z1+z3)*0.5);
-		tri_normals.push_back((nx1+nx3)*0.5);
-		tri_normals.push_back((ny1+ny3)*0.5);
-		tri_normals.push_back((nz1+nz3)*0.5);
-
-		tri_positions.push_back((x0+x2)*0.5);
-		tri_positions.push_back((y0+y2)*0.5);
-		tri_positions.push_back((z0+z2)*0.5);
-		tri_normals.push_back((nx0+nx2)*0.5);
-		tri_normals.push_back((ny0+ny2)*0.5);
-		tri_normals.push_back((nz0+nz2)*0.5);
-
-		tri_positions.push_back((x0+x2)*0.5);
-		tri_positions.push_back((y0+y2)*0.5);
-		tri_positions.push_back((z0+z2)*0.5);
-		tri_normals.push_back((nx0+nx2)*0.5);
-		tri_normals.push_back((ny0+ny2)*0.5);
-		tri_normals.push_back((nz0+nz2)*0.5);
-
-		tri_positions.push_back((x1+x3)*0.5);
-		tri_positions.push_back((y1+y3)*0.5);
-		tri_positions.push_back((z1+z3)*0.5);
-		tri_normals.push_back((nx1+nx3)*0.5);
-		tri_normals.push_back((ny1+ny3)*0.5);
-		tri_normals.push_back((nz1+nz3)*0.5);
-
-		tri_positions.push_back((x1+x2)*0.5);
-		tri_positions.push_back((y1+y2)*0.5);
-		tri_positions.push_back((z1+z2)*0.5);
-		tri_normals.push_back((nx1+nx2)*0.5);
-		tri_normals.push_back((ny1+ny2)*0.5);
-		tri_normals.push_back((nz1+nz2)*0.5);
-	}
-	if (	weights[ind_0] >= threshold &&
-		weights[ind_1] < threshold &&
-		weights[ind_2] < threshold &&
-		weights[ind_3] < threshold) {
-		tri_positions.push_back((x0+x3)*0.5);
-		tri_positions.push_back((y0+y3)*0.5);
-		tri_positions.push_back((z0+z3)*0.5);
-		tri_normals.push_back((nx0+nx3)*0.5);
-		tri_normals.push_back((ny0+ny3)*0.5);
-		tri_normals.push_back((nz0+nz3)*0.5);
-
-		tri_positions.push_back((x0+x2)*0.5);
-		tri_positions.push_back((y0+y2)*0.5);
-		tri_positions.push_back((z0+z2)*0.5);
-		tri_normals.push_back((nx0+nx2)*0.5);
-		tri_normals.push_back((ny0+ny2)*0.5);
-		tri_normals.push_back((nz0+nz2)*0.5);
-
-		tri_positions.push_back((x1+x3)*0.5);
-		tri_positions.push_back((y1+y3)*0.5);
-		tri_positions.push_back((z1+z3)*0.5);
-		tri_normals.push_back((nx1+nx3)*0.5);
-		tri_normals.push_back((ny1+ny3)*0.5);
-		tri_normals.push_back((nz1+nz3)*0.5);
-
-		tri_positions.push_back((x0+x2)*0.5);
-		tri_positions.push_back((y0+y2)*0.5);
-		tri_positions.push_back((z0+z2)*0.5);
-		tri_normals.push_back((nx0+nx2)*0.5);
-		tri_normals.push_back((ny0+ny2)*0.5);
-		tri_normals.push_back((nz0+nz2)*0.5);
-
-		tri_positions.push_back((x1+x2)*0.5);
-		tri_positions.push_back((y1+y2)*0.5);
-		tri_positions.push_back((z1+z2)*0.5);
-		tri_normals.push_back((nx1+nx2)*0.5);
-		tri_normals.push_back((ny1+ny2)*0.5);
-		tri_normals.push_back((nz1+nz2)*0.5);
-
-		tri_positions.push_back((x1+x3)*0.5);
-		tri_positions.push_back((y1+y3)*0.5);
-		tri_positions.push_back((z1+z3)*0.5);
-		tri_normals.push_back((nx1+nx3)*0.5);
-		tri_normals.push_back((ny1+ny3)*0.5);
-		tri_normals.push_back((nz1+nz3)*0.5);
-	}
-}
-
-void compute_triangles(
-	float threshold,
-	size_t ind_0,
-	float x0, float y0, float z0,
-	float nx0, float ny0, float nz0,
-	size_t ind_1,
-	float x1, float y1, float z1,
-	float nx1, float ny1, float nz1,
-	size_t ind_2,
-	float x2, float y2, float z2,
-	float nx2, float ny2, float nz2,
-	size_t ind_3,
-	float x3, float y3, float z3,
-	float nx3, float ny3, float nz3,
-	std::vector<float> &weights,
-	std::vector<float> &tri_positions,
-	std::vector<float> &tri_normals)
-{
-	// if all weights in this tetrahedron are > threshold or < threshold, no triangle is drawn
-
-	// triangle conditions
-	// index 0
-	compute_triangle(threshold,
-		ind_0, x0, y0, z0, nx0, ny0, nz0,
-		ind_1, x1, y1, z1, nx1, ny1, nz1,
-		ind_2, x2, y2, z2, nx2, ny2, nz2,
-		ind_3, x3, y3, z3, nx3, ny3, nz3,
-		weights, tri_positions, tri_normals);
-	// index 1
-	compute_triangle(threshold,
-		ind_1, x1, y1, z1, nx1, ny1, nz1,
-		ind_2, x2, y2, z2, nx2, ny2, nz2,
-		ind_3, x3, y3, z3, nx3, ny3, nz3,
-		ind_0, x0, y0, z0, nx0, ny0, nz0,
-		weights, tri_positions, tri_normals);
-	// index 2
-	compute_triangle(threshold,
-		ind_2, x2, y2, z2, nx2, ny2, nz2,
-		ind_3, x3, y3, z3, nx3, ny3, nz3,
-		ind_0, x0, y0, z0, nx0, ny0, nz0,
-		ind_1, x1, y1, z1, nx1, ny1, nz1,
-		weights, tri_positions, tri_normals);
-	// index 3
-	compute_triangle(threshold,
-		ind_3, x3, y3, z3, nx3, ny3, nz3,
-		ind_0, x0, y0, z0, nx0, ny0, nz0,
-		ind_1, x1, y1, z1, nx1, ny1, nz1,
-		ind_2, x2, y2, z2, nx2, ny2, nz2,
-		weights, tri_positions, tri_normals);
-
-	// index 3
-	compute_triangle(threshold,
-		ind_3, x3, y3, z3, nx3, ny3, nz3,
-		ind_0, x0, y0, z0, nx0, ny0, nz0,
-		ind_1, x1, y1, z1, nx1, ny1, nz1,
-		ind_2, x2, y2, z2, nx2, ny2, nz2,
-		weights, tri_positions, tri_normals);
-
-	// index 01
-	compute_quad(threshold,
-		ind_0, x0, y0, z0, nx0, ny0, nz0,
-		ind_1, x1, y1, z1, nx1, ny1, nz1,
-		ind_2, x2, y2, z2, nx2, ny2, nz2,
-		ind_3, x3, y3, z3, nx3, ny3, nz3,
-		weights, tri_positions, tri_normals);
-
-	// index 12
-	compute_quad(threshold,
-		ind_1, x1, y1, z1, nx1, ny1, nz1,
-		ind_2, x2, y2, z2, nx2, ny2, nz2,
-		ind_3, x3, y3, z3, nx3, ny3, nz3,
-		ind_0, x0, y0, z0, nx0, ny0, nz0,
-		weights, tri_positions, tri_normals);
-
-	// index 02
-	compute_quad(threshold,
-		ind_0, x0, y0, z0, nx0, ny0, nz0,
-		ind_2, x2, y2, z2, nx2, ny2, nz2,
-		ind_1, x1, y1, z1, nx1, ny1, nz1,
-		ind_3, x3, y3, z3, nx3, ny3, nz3,
-		weights, tri_positions, tri_normals);
-}
-
 bool SigAsiaDemo::CubeList::loadShaders()
 {
 	std::cout << "Load cube shader" << std::endl;
@@ -740,7 +483,6 @@ bool SigAsiaDemo::CubeList::loadShaders()
 void SigAsiaDemo::CubeList::computeBounds(
 	MassList &masses)
 {
-	// TODO: convert this to use parallel prefix min/max?
 	masses.download();
 
 	_tri_positions.clear();
@@ -806,20 +548,7 @@ void SigAsiaDemo::CubeList::computeBounds(
 		float delta_y = 1.0 / uy;
 		float delta_z = 1.0 / uz;
 
-		/*
-		std::cout << "Start: " << cube->_start << std::endl;
-		std::cout << "End: " << cube->_end << std::endl;
-		std::cout << "[" << cube->_min_x << ", " \
-		<< cube->_max_x << "]" << std::endl;
-		std::cout << "[" << cube->_min_y << ", " \
-		<< cube->_max_y << "]" << std::endl;
-		std::cout << "[" << cube->_min_z << ", " \
-		<< cube->_max_z << "]" << std::endl;
-		*/
-
 		// generate surface mesh
-
-		//std::cout << "Fill _tri_positions & _tri_normals" << std::endl;
 
 		float plane_size = 500.0;
 		_tri_positions.push_back(-plane_size);
@@ -864,7 +593,6 @@ void SigAsiaDemo::CubeList::computeBounds(
 		size_t y_size = cube->_size_y+1;
 		size_t z_size = cube->_size_z+1;
 		size_t xy_size = x_size * y_size;
-		//size_t index = cube->_start + i + j * x_size + k * xy_size;
 
 		// front and back face
 		for (size_t i = 0; i < x_size-1; ++i) {
@@ -937,15 +665,6 @@ void SigAsiaDemo::CubeList::computeBounds(
 				float x0100 = mass01x - mass00x;
 				float y0100 = mass01y - mass00y;
 				float z0100 = mass01z - mass00z;
-
-				/*
-				float x1011 = mass10x - mass11x;
-				float y1011 = mass10y - mass11y;
-				float z1011 = mass10z - mass11z;
-				float x0111 = mass01x - mass11x;
-				float y0111 = mass01y - mass11y;
-				float z0111 = mass01z - mass11z;
-				*/
 
 				float nx = -(y1000*z0100 - y0100*z1000);
 				float ny = x1000*z0100 - x0100*z1000;
@@ -1084,15 +803,6 @@ void SigAsiaDemo::CubeList::computeBounds(
 				float x0100 = mass01x - mass00x;
 				float y0100 = mass01y - mass00y;
 				float z0100 = mass01z - mass00z;
-
-				/*
-				float x1011 = mass10x - mass11x;
-				float y1011 = mass10y - mass11y;
-				float z1011 = mass10z - mass11z;
-				float x0111 = mass01x - mass11x;
-				float y0111 = mass01y - mass11y;
-				float z0111 = mass01z - mass11z;
-				*/
 
 				float nx = y1000*z0100 - y0100*z1000;
 				float ny = -(x1000*z0100 - x0100*z1000);
@@ -1234,15 +944,6 @@ void SigAsiaDemo::CubeList::computeBounds(
 					float y0100 = mass01y - mass00y;
 					float z0100 = mass01z - mass00z;
 
-					/*
-					float x1011 = mass10x - mass11x;
-					float y1011 = mass10y - mass11y;
-					float z1011 = mass10z - mass11z;
-					float x0111 = mass01x - mass11x;
-					float y0111 = mass01y - mass11y;
-					float z0111 = mass01z - mass11z;
-					*/
-
 					float nx = y1000*z0100 - y0100*z1000;
 					float ny = -(x1000*z0100 - x0100*z1000);
 					float nz = x1000*y0100 - x0100*y1000;
@@ -1377,15 +1078,6 @@ void SigAsiaDemo::CubeList::computeBounds(
 					float x0100 = mass01x - mass00x;
 					float y0100 = mass01y - mass00y;
 					float z0100 = mass01z - mass00z;
-
-					/*
-					float x1011 = mass10x - mass11x;
-					float y1011 = mass10y - mass11y;
-					float z1011 = mass10z - mass11z;
-					float x0111 = mass01x - mass11x;
-					float y0111 = mass01y - mass11y;
-					float z0111 = mass01z - mass11z;
-					*/
 
 					float nx = -(y1000*z0100 - y0100*z1000);
 					float ny = x1000*z0100 - x0100*z1000;
@@ -1528,15 +1220,6 @@ void SigAsiaDemo::CubeList::computeBounds(
 					float y0100 = mass01y - mass00y;
 					float z0100 = mass01z - mass00z;
 
-					/*
-					float x1011 = mass10x - mass11x;
-					float y1011 = mass10y - mass11y;
-					float z1011 = mass10z - mass11z;
-					float x0111 = mass01x - mass11x;
-					float y0111 = mass01y - mass11y;
-					float z0111 = mass01z - mass11z;
-					*/
-
 					float nx = y1000*z0100 - y0100*z1000;
 					float ny = -(x1000*z0100 - x0100*z1000);
 					float nz = x1000*y0100 - x0100*y1000;
@@ -1672,15 +1355,6 @@ void SigAsiaDemo::CubeList::computeBounds(
 					float y0100 = mass01y - mass00y;
 					float z0100 = mass01z - mass00z;
 
-					/*
-					float x1011 = mass10x - mass11x;
-					float y1011 = mass10y - mass11y;
-					float z1011 = mass10z - mass11z;
-					float x0111 = mass01x - mass11x;
-					float y0111 = mass01y - mass11y;
-					float z0111 = mass01z - mass11z;
-					*/
-
 					float nx = -(y1000*z0100 - y0100*z1000);
 					float ny = x1000*z0100 - x0100*z1000;
 					float nz = -(x1000*y0100 - x0100*y1000);
@@ -1748,211 +1422,15 @@ void SigAsiaDemo::CubeList::computeBounds(
 				}
 			}
 		}
-
-		/*
-		float threshold = 0.1;
-
-		size_t ind_y = (_res_y+1);
-		size_t ind_z = ind_y * (_res_z+1);
-		size_t weights_size = (_res_x+1)*ind_z;
-		std::vector<float> normals(weights_size*3);
-		std::vector<float> weights(weights_size);
-		for (unsigned int i = 0; i < weights_size; ++i) {
-			normals[i*3  ] = 0.0;
-			normals[i*3+1] = 0.0;
-			normals[i*3+2] = 0.0;
-			weights[i] = 0.0;
-		}
-
-		for (unsigned int i = cube->_start; i < cube->_end; i++) {
-			Mass *mass = masses.getMass(i);
-			int xi = static_cast<int>((mass->_x - min_x) * ux);
-			int yi = static_cast<int>((mass->_y - min_y) * uy);
-			int zi = static_cast<int>((mass->_z - min_z) * uz);
-			
-			int rx = mass->_radius * ux;
-			int ry = mass->_radius * uy;
-			int rz = mass->_radius * uz;
-
-			for (int i = xi - rx; i <= xi + rx; ++i) {
-				if (i < 0 || i > _res_x)
-					continue;
-				for (int j = yi - ry; j <= yi + ry; ++j) {
-					if (j < 0 || j > _res_y)
-						continue;
-					for (int k = zi - rz; k <= zi + rz; ++k) {
-						if (k < 0 || k > _res_z)
-							continue;
-						float x = min_x + static_cast<float>(i) * delta_x;
-						float y = min_y + static_cast<float>(j) * delta_y;
-						float z = min_z + static_cast<float>(k) * delta_z;
-						size_t index = i + j*ind_y + k*ind_z;
-						float dx = mass->_x - x;
-						float dy = mass->_y - y;
-						float dz = mass->_z - z;
-
-						float r_sq = dx*dx + dy*dy + dz*dz;
-						float inv_r = 1.0 / sqrt(r_sq);
-						float weight = 1.0 / r_sq;
-						float nx = dx * inv_r * weight;
-						float ny = dy * inv_r * weight;
-						float nz = dz * inv_r * weight;
-						weights[index] += weight;
-						normals[index*3  ] += nx;
-						normals[index*3+1] += ny;
-						normals[index*3+2] += nz;
-					}
-				}
-			}
-
-			for (size_t i = 0; i < _res_x; ++i) {
-				for (size_t j = 0; j < _res_y; ++j) {
-					for (size_t k = 0; k < _res_z; ++k) {
-						size_t i000 = i + j*ind_y + k*ind_z;
-						size_t i100 = (i+1) + j*ind_y + k*ind_z;
-						size_t i010 = i + (j+1)*ind_y + k*ind_z;
-						size_t i110 = (i+1) + (j+1)*ind_y + k*ind_z;
-						size_t i001 = i + j*ind_y + (k+1)*ind_z;
-						size_t i101 = (i+1) + j*ind_y + (k+1)*ind_z;
-						size_t i011 = i + (j+1)*ind_y + (k+1)*ind_z;
-						size_t i111 = (i+1) + (j+1)*ind_y + (k+1)*ind_z;
-
-						// get cube corners
-						float x000 = min_x + static_cast<float>(i)*delta_x;
-						float y000 = min_y + static_cast<float>(j)*delta_y;
-						float z000 = min_z + static_cast<float>(k)*delta_z;
-
-						float x100 = min_x + static_cast<float>(i+1)*delta_x;
-						float y100 = min_y + static_cast<float>(j)*delta_y;
-						float z100 = min_z + static_cast<float>(k)*delta_z;
-
-						float x010 = min_x + static_cast<float>(i)*delta_x;
-						float y010 = min_y + static_cast<float>(j+1)*delta_y;
-						float z010 = min_z + static_cast<float>(k)*delta_z;
-
-						float x110 = min_x + static_cast<float>(i+1)*delta_x;
-						float y110 = min_y + static_cast<float>(j+1)*delta_y;
-						float z110 = min_z + static_cast<float>(k)*delta_z;
-
-						float x001 = min_x + static_cast<float>(i)*delta_x;
-						float y001 = min_y + static_cast<float>(j)*delta_y;
-						float z001 = min_z + static_cast<float>(k+1)*delta_z;
-
-						float x101 = min_x + static_cast<float>(i+1)*delta_x;
-						float y101 = min_y + static_cast<float>(j)*delta_y;
-						float z101 = min_z + static_cast<float>(k+1)*delta_z;
-
-						float x011 = min_x + static_cast<float>(i)*delta_x;
-						float y011 = min_y + static_cast<float>(j+1)*delta_y;
-						float z011 = min_z + static_cast<float>(k+1)*delta_z;
-
-						float x111 = min_x + static_cast<float>(i+1)*delta_x;
-						float y111 = min_y + static_cast<float>(j+1)*delta_y;
-						float z111 = min_z + static_cast<float>(k+1)*delta_z;
-						
-						float n000_x = normals[i000*3];
-						float n000_y = normals[i000*3+1];
-						float n000_z = normals[i000*3+2];
-						float n100_x = normals[i100*3];
-						float n100_y = normals[i100*3+1];
-						float n100_z = normals[i100*3+2];
-						float n010_x = normals[i010*3];
-						float n010_y = normals[i010*3+1];
-						float n010_z = normals[i010*3+2];
-						float n110_x = normals[i110*3];
-						float n110_y = normals[i110*3+1];
-						float n110_z = normals[i110*3+2];
-						float n001_x = normals[i001*3];
-						float n001_y = normals[i001*3+1];
-						float n001_z = normals[i001*3+2];
-						float n101_x = normals[i101*3];
-						float n101_y = normals[i101*3+1];
-						float n101_z = normals[i101*3+2];
-						float n011_x = normals[i011*3];
-						float n011_y = normals[i011*3+1];
-						float n011_z = normals[i011*3+2];
-						float n111_x = normals[i111*3];
-						float n111_y = normals[i111*3+1];
-						float n111_z = normals[i111*3+2];
-
-						// get weights and normals
-
-						// tetrahedron 0
-						compute_triangles(
-							threshold,
-							i000, x000, y000, z000, n000_x, n000_y, n000_z,
-							i100, x100, y100, z100, n100_x, n100_y, n100_z,
-							i010, x010, y010, z010, n010_x, n010_y, n010_z,
-							i011, x011, y011, z011, n011_x, n011_y, n011_z,
-							weights,
-							_tri_positions,
-							_tri_normals);
-						// tetrahedron 1
-						compute_triangles(
-							threshold,
-							i100, x100, y100, z100, n100_x, n100_y, n100_z,
-							i010, x010, y010, z010, n010_x, n010_y, n010_z,
-							i011, x011, y011, z011, n011_x, n011_y, n011_z,
-							i110, x110, y110, z110, n110_x, n110_y, n110_z,
-							weights,
-							_tri_positions,
-							_tri_normals);
-						// tetrahedron 2
-						compute_triangles(
-							threshold,
-							i000, x000, y000, z000, n000_x, n000_y, n000_z,
-							i100, x100, y100, z100, n100_x, n100_y, n100_z,
-							i001, x001, y001, z001, n001_x, n001_y, n001_z,
-							i011, x011, y011, z011, n011_x, n011_y, n011_z,
-							weights,
-							_tri_positions,
-							_tri_normals);
-						// tetrahedron 3
-						compute_triangles(
-							threshold,
-							i100, x100, y100, z100, n100_x, n100_y, n100_z,
-							i110, x110, y110, z110, n110_x, n110_y, n110_z,
-							i011, x011, y011, z011, n011_x, n011_y, n011_z,
-							i111, x111, y111, z111, n111_x, n111_y, n111_z,
-							weights,
-							_tri_positions,
-							_tri_normals);
-						// tetrahedron 4
-						compute_triangles(
-							threshold,
-							i001, x001, y001, z001, n001_x, n001_y, n001_z,
-							i100, x100, y100, z100, n100_x, n100_y, n100_z,
-							i101, x101, y101, z101, n101_x, n101_y, n101_z,
-							i011, x011, y011, z011, n011_x, n011_y, n011_z,
-							weights,
-							_tri_positions,
-							_tri_normals);
-						// tetrahedron 5
-						compute_triangles(
-							threshold,
-							i100, x100, y100, z100, n100_x, n100_y, n100_z,
-							i101, x101, y101, z101, n101_x, n101_y, n101_z,
-							i011, x011, y011, z011, n011_x, n011_y, n011_z,
-							i111, x111, y111, z111, n111_x, n111_y, n111_z,
-							weights,
-							_tri_positions,
-							_tri_normals);
-					}
-				}
-			}
-		}
-		*/
 	}
 
 	// buffers
 	if (_tri_positions.size() > 0 && _tri_normals.size() > 0) {
-		//std::cout << "Generate cube buffers" << std::endl;
 		if (_cube_pos_buffer == 0) {
 			// generate GL buffer
 			glGenBuffers(1, &_cube_pos_buffer);
 		}
 		glBindBuffer(GL_ARRAY_BUFFER, _cube_pos_buffer);
-		//std::cout << "Fill pos buffer" << std::endl;
 		glBufferData(
 			GL_ARRAY_BUFFER,
 			_tri_positions.size()*sizeof(float),
@@ -1963,7 +1441,6 @@ void SigAsiaDemo::CubeList::computeBounds(
 			glGenBuffers(1, &_cube_norm_buffer);
 		}
 		glBindBuffer(GL_ARRAY_BUFFER, _cube_norm_buffer);
-		//std::cout << "Fill normals buffer" << std::endl;
 		glBufferData(
 			GL_ARRAY_BUFFER,
 			_tri_normals.size()*sizeof(float),
@@ -1975,7 +1452,6 @@ void SigAsiaDemo::CubeList::computeBounds(
 			glGenBuffers(1, &_cube_col_buffer);
 		}
 		glBindBuffer(GL_ARRAY_BUFFER, _cube_col_buffer);
-		//std::cout << "Fill colors buffer" << std::endl;
 		glBufferData(
 			GL_ARRAY_BUFFER,
 			_tri_colors.size()*sizeof(float),
@@ -1985,7 +1461,6 @@ void SigAsiaDemo::CubeList::computeBounds(
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 		// vertex array
-		//std::cout << "Generate cube array" << std::endl;
 		if (_cube_array == 0) {
 			glGenVertexArrays(1, &_cube_array);
 		}
@@ -2003,7 +1478,6 @@ void SigAsiaDemo::CubeList::computeBounds(
 		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, NULL);
 
 		glBindVertexArray(0);
-		//std::cout << "Done generating cube array" << std::endl;
 	}
 }
 
@@ -2094,45 +1568,8 @@ void SigAsiaDemo::CubeList::collideCubes(
 				_cubes[i]._min_z > _cubes[j]._max_z ||
 				_cubes[j]._min_z > _cubes[i]._max_z) {
 				// no overlap
-
-				/*
-				std::cout << "Cube " << i << " does not overlap " \
-				<< j << std::endl;
-				std::cout << "Cube " << i << ":" << std::endl;
-				std::cout << "[" << _cubes[i]._min_x << ", " \
-				<< _cubes[i]._max_x << "]" << std::endl;
-				std::cout << "[" << _cubes[i]._min_y << ", " \
-				<< _cubes[i]._max_y << "]" << std::endl;
-				std::cout << "[" << _cubes[i]._min_z << ", " \
-				<< _cubes[i]._max_z << "]" << std::endl;
-				std::cout << "Cube " << j << ":" << std::endl;
-				std::cout << "[" << _cubes[j]._min_x << ", " \
-				<< _cubes[j]._max_x << "]" << std::endl;
-				std::cout << "[" << _cubes[j]._min_y << ", " \
-				<< _cubes[j]._max_y << "]" << std::endl;
-				std::cout << "[" << _cubes[j]._min_z << ", " \
-				<< _cubes[j]._max_z << "]" << std::endl;
-				*/
 			} else {
 				// overlap
-
-				/*
-				std::cout << "Cube " << i << " overlaps " << j << std::endl;
-				std::cout << "Cube " << i << ":" << std::endl;
-				std::cout << "[" << _cubes[i]._min_x << ", " \
-				<< _cubes[i]._max_x << "]" << std::endl;
-				std::cout << "[" << _cubes[i]._min_y << ", " \
-				<< _cubes[i]._max_y << "]" << std::endl;
-				std::cout << "[" << _cubes[i]._min_z << ", " \
-				<< _cubes[i]._max_z << "]" << std::endl;
-				std::cout << "Cube " << j << ":" << std::endl;
-				std::cout << "[" << _cubes[j]._min_x << ", " \
-				<< _cubes[j]._max_x << "]" << std::endl;
-				std::cout << "[" << _cubes[j]._min_y << ", " \
-				<< _cubes[j]._max_y << "]" << std::endl;
-				std::cout << "[" << _cubes[j]._min_z << ", " \
-				<< _cubes[j]._max_z << "]" << std::endl;
-				*/
 
 				unsigned int masses_count = _cubes[i]._end - _cubes[i]._start;
 
