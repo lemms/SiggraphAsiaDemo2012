@@ -48,7 +48,7 @@ SigAsiaDemo::SpringList springs;
 SigAsiaDemo::CubeList cubes;
 
 size_t frame = 0;
-float dt = 1e-5;
+float dt = 5e-5;
 bool play = false;
 bool ground_collision = true;
 
@@ -260,6 +260,7 @@ void SpecialKeys(int key, int x, int y)
 		cout << "Move camera x: q/a" << endl;
 		cout << "Move camera y: w/s" << endl;
 		cout << "Move camera z: e/d" << endl;
+		cout << "Toggle point rendering: p" << endl;
 		cout << "Play simulation: c" << endl;
 		cout << "Stop simulation: v" << endl;
 		cout << "Step simulation: z" << endl;
@@ -362,9 +363,9 @@ int main(int argc, char **argv)
 	cubes.push(SigAsiaDemo::Cube(
 		0.0, 40.0, 0.0,		// position
 		10, 10, 10,			// size
-		cube_spacing*0.5,	// spacing
+		cube_spacing,	// spacing
 		4.0,				// mass
-		cube_radius*0.5	// radius
+		cube_radius	// radius
 		));
 	cubes.push(SigAsiaDemo::Cube(
 		20.0, 50.0, 0.0,	// position
