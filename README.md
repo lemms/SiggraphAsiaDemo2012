@@ -1,6 +1,10 @@
 SiggraphAsiaDemo2012
 ====================
 
+Video: http://www.youtube.com/watch?v=YtexRdYiDIM
+
+====================
+
 This file is part of SigAsiaDemo2012.
 
 SigAsiaDemo2012 is free software: you can redistribute it and/or modify
