@@ -49,6 +49,8 @@ Copyright 2012 Laurence Emms
 #include "creator.h"
 #include "cube.h"
 
+using namespace std;
+
 SigAsiaDemo::Cube::Cube(
 	float x,
 	float y,
@@ -117,8 +119,9 @@ void SigAsiaDemo::Cube::create(
 					static_cast<float>(j)*_spacing + _y,
 					static_cast<float>(k)*_spacing + _z,
 					0.0, 0.0, 0.0,
-					0,
-					_radius));
+					0.0, 0.0, 0.0,
+					_radius,
+					0));
 			}
 		}
 	}
@@ -511,24 +514,24 @@ void SigAsiaDemo::CubeList::computeBounds(
 		float max_y = -FLT_MAX;
 		float max_z = -FLT_MAX;
 		for (unsigned int i = cube->_start; i < cube->_end; i++) {
-			Mass *mass = masses.getMass(i);
-			if (mass->_x - mass->_radius < min_x)
-				min_x = mass->_x - mass->_radius;
-			if (mass->_y - mass->_radius < min_y)
-				min_y = mass->_y - mass->_radius;
-			if (mass->_z - mass->_radius < min_z)
-				min_z = mass->_z - mass->_radius;
+			Mass mass = masses.getMass(i);
+			if (mass._x - mass._radius < min_x)
+				min_x = mass._x - mass._radius;
+			if (mass._y - mass._radius < min_y)
+				min_y = mass._y - mass._radius;
+			if (mass._z - mass._radius < min_z)
+				min_z = mass._z - mass._radius;
 
-			if (mass->_x + mass->_radius > max_x)
-				max_x = mass->_x + mass->_radius;
-			if (mass->_y + mass->_radius > max_y)
-				max_y = mass->_y + mass->_radius;
-			if (mass->_z + mass->_radius > max_z)
-				max_z = mass->_z + mass->_radius;
+			if (mass._x + mass._radius > max_x)
+				max_x = mass._x + mass._radius;
+			if (mass._y + mass._radius > max_y)
+				max_y = mass._y + mass._radius;
+			if (mass._z + mass._radius > max_z)
+				max_z = mass._z + mass._radius;
 
-			centroid_x += mass->_x;
-			centroid_y += mass->_y;
-			centroid_z += mass->_z;
+			centroid_x += mass._x;
+			centroid_y += mass._y;
+			centroid_z += mass._z;
 		}
 
 		float inv_size = 1.0 / static_cast<float>(cube->_end - cube->_start);
@@ -598,62 +601,62 @@ void SigAsiaDemo::CubeList::computeBounds(
 				size_t i10 = cube->_start + (i+1) + j * x_size;
 				size_t i01 = cube->_start + i + (j+1) * x_size;
 				size_t i11 = cube->_start + (i+1) + (j+1) * x_size;
-				Mass *mass00 = masses.getMass(i00);
-				Mass *mass10 = masses.getMass(i10);
-				Mass *mass01 = masses.getMass(i01);
-				Mass *mass11 = masses.getMass(i11);
+				Mass mass00 = masses.getMass(i00);
+				Mass mass10 = masses.getMass(i10);
+				Mass mass01 = masses.getMass(i01);
+				Mass mass11 = masses.getMass(i11);
 
 				// vector from centroid to mass00
-				float v00x = (mass00->_x - centroid_x);
-				float v00y = (mass00->_y - centroid_y);
-				float v00z = (mass00->_z - centroid_z);
+				float v00x = (mass00._x - centroid_x);
+				float v00y = (mass00._y - centroid_y);
+				float v00z = (mass00._z - centroid_z);
 				float v00_l = 1.0 / sqrt(v00x*v00x + v00y*v00y + v00z*v00z);
 				// normalize and scale by radius
 				v00x *= v00_l * cube->_radius * cube_scale;
 				v00y *= v00_l * cube->_radius * cube_scale;
 				v00z *= v00_l * cube->_radius * cube_scale;
-				float mass00x = mass00->_x + v00x;
-				float mass00y = mass00->_y + v00y;
-				float mass00z = mass00->_z + v00z;
+				float mass00x = mass00._x + v00x;
+				float mass00y = mass00._y + v00y;
+				float mass00z = mass00._z + v00z;
 
 				// vector from centroid to mass01
-				float v01x = (mass01->_x - centroid_x);
-				float v01y = (mass01->_y - centroid_y);
-				float v01z = (mass01->_z - centroid_z);
+				float v01x = (mass01._x - centroid_x);
+				float v01y = (mass01._y - centroid_y);
+				float v01z = (mass01._z - centroid_z);
 				float v01_l = 1.0 / sqrt(v01x*v01x + v01y*v01y + v01z*v01z);
 				// normalize and scale by radius
 				v01x *= v01_l * cube->_radius * cube_scale;
 				v01y *= v01_l * cube->_radius * cube_scale;
 				v01z *= v01_l * cube->_radius * cube_scale;
-				float mass01x = mass01->_x + v01x;
-				float mass01y = mass01->_y + v01y;
-				float mass01z = mass01->_z + v01z;
+				float mass01x = mass01._x + v01x;
+				float mass01y = mass01._y + v01y;
+				float mass01z = mass01._z + v01z;
 
 				// vector from centroid to mass10
-				float v10x = (mass10->_x - centroid_x);
-				float v10y = (mass10->_y - centroid_y);
-				float v10z = (mass10->_z - centroid_z);
+				float v10x = (mass10._x - centroid_x);
+				float v10y = (mass10._y - centroid_y);
+				float v10z = (mass10._z - centroid_z);
 				float v10_l = 1.0 / sqrt(v10x*v10x + v10y*v10y + v10z*v10z);
 				// normalize and scale by radius
 				v10x *= v10_l * cube->_radius * cube_scale;
 				v10y *= v10_l * cube->_radius * cube_scale;
 				v10z *= v10_l * cube->_radius * cube_scale;
-				float mass10x = mass10->_x + v10x;
-				float mass10y = mass10->_y + v10y;
-				float mass10z = mass10->_z + v10z;
+				float mass10x = mass10._x + v10x;
+				float mass10y = mass10._y + v10y;
+				float mass10z = mass10._z + v10z;
 
 				// vector from centroid to mass11
-				float v11x = (mass11->_x - centroid_x);
-				float v11y = (mass11->_y - centroid_y);
-				float v11z = (mass11->_z - centroid_z);
+				float v11x = (mass11._x - centroid_x);
+				float v11y = (mass11._y - centroid_y);
+				float v11z = (mass11._z - centroid_z);
 				float v11_l = 1.0 / sqrt(v11x*v11x + v11y*v11y + v11z*v11z);
 				// normalize and scale by radius
 				v11x *= v11_l * cube->_radius * cube_scale;
 				v11y *= v11_l * cube->_radius * cube_scale;
 				v11z *= v11_l * cube->_radius * cube_scale;
-				float mass11x = mass11->_x + v11x;
-				float mass11y = mass11->_y + v11y;
-				float mass11z = mass11->_z + v11z;
+				float mass11x = mass11._x + v11x;
+				float mass11y = mass11._y + v11y;
+				float mass11z = mass11._z + v11z;
 
 				float x1000 = mass10x - mass00x;
 				float y1000 = mass10y - mass00y;
@@ -736,62 +739,62 @@ void SigAsiaDemo::CubeList::computeBounds(
 				size_t i10 = cube->_start + (i+1) + j * x_size + (z_size-1) * xy_size;
 				size_t i01 = cube->_start + i + (j+1) * x_size + (z_size-1) * xy_size;
 				size_t i11 = cube->_start + (i+1) + (j+1) * x_size + (z_size-1) * xy_size;
-				Mass *mass00 = masses.getMass(i00);
-				Mass *mass10 = masses.getMass(i10);
-				Mass *mass01 = masses.getMass(i01);
-				Mass *mass11 = masses.getMass(i11);
+				Mass mass00 = masses.getMass(i00);
+				Mass mass10 = masses.getMass(i10);
+				Mass mass01 = masses.getMass(i01);
+				Mass mass11 = masses.getMass(i11);
 
 				// vector from centroid to mass00
-				float v00x = (mass00->_x - centroid_x);
-				float v00y = (mass00->_y - centroid_y);
-				float v00z = (mass00->_z - centroid_z);
+				float v00x = (mass00._x - centroid_x);
+				float v00y = (mass00._y - centroid_y);
+				float v00z = (mass00._z - centroid_z);
 				float v00_l = 1.0 / sqrt(v00x*v00x + v00y*v00y + v00z*v00z);
 				// normalize and scale by radius
 				v00x *= v00_l * cube->_radius * cube_scale;
 				v00y *= v00_l * cube->_radius * cube_scale;
 				v00z *= v00_l * cube->_radius * cube_scale;
-				float mass00x = mass00->_x + v00x;
-				float mass00y = mass00->_y + v00y;
-				float mass00z = mass00->_z + v00z;
+				float mass00x = mass00._x + v00x;
+				float mass00y = mass00._y + v00y;
+				float mass00z = mass00._z + v00z;
 
 				// vector from centroid to mass01
-				float v01x = (mass01->_x - centroid_x);
-				float v01y = (mass01->_y - centroid_y);
-				float v01z = (mass01->_z - centroid_z);
+				float v01x = (mass01._x - centroid_x);
+				float v01y = (mass01._y - centroid_y);
+				float v01z = (mass01._z - centroid_z);
 				float v01_l = 1.0 / sqrt(v01x*v01x + v01y*v01y + v01z*v01z);
 				// normalize and scale by radius
 				v01x *= v01_l * cube->_radius * cube_scale;
 				v01y *= v01_l * cube->_radius * cube_scale;
 				v01z *= v01_l * cube->_radius * cube_scale;
-				float mass01x = mass01->_x + v01x;
-				float mass01y = mass01->_y + v01y;
-				float mass01z = mass01->_z + v01z;
+				float mass01x = mass01._x + v01x;
+				float mass01y = mass01._y + v01y;
+				float mass01z = mass01._z + v01z;
 
 				// vector from centroid to mass10
-				float v10x = (mass10->_x - centroid_x);
-				float v10y = (mass10->_y - centroid_y);
-				float v10z = (mass10->_z - centroid_z);
+				float v10x = (mass10._x - centroid_x);
+				float v10y = (mass10._y - centroid_y);
+				float v10z = (mass10._z - centroid_z);
 				float v10_l = 1.0 / sqrt(v10x*v10x + v10y*v10y + v10z*v10z);
 				// normalize and scale by radius
 				v10x *= v10_l * cube->_radius * cube_scale;
 				v10y *= v10_l * cube->_radius * cube_scale;
 				v10z *= v10_l * cube->_radius * cube_scale;
-				float mass10x = mass10->_x + v10x;
-				float mass10y = mass10->_y + v10y;
-				float mass10z = mass10->_z + v10z;
+				float mass10x = mass10._x + v10x;
+				float mass10y = mass10._y + v10y;
+				float mass10z = mass10._z + v10z;
 
 				// vector from centroid to mass11
-				float v11x = (mass11->_x - centroid_x);
-				float v11y = (mass11->_y - centroid_y);
-				float v11z = (mass11->_z - centroid_z);
+				float v11x = (mass11._x - centroid_x);
+				float v11y = (mass11._y - centroid_y);
+				float v11z = (mass11._z - centroid_z);
 				float v11_l = 1.0 / sqrt(v11x*v11x + v11y*v11y + v11z*v11z);
 				// normalize and scale by radius
 				v11x *= v11_l * cube->_radius * cube_scale;
 				v11y *= v11_l * cube->_radius * cube_scale;
 				v11z *= v11_l * cube->_radius * cube_scale;
-				float mass11x = mass11->_x + v11x;
-				float mass11y = mass11->_y + v11y;
-				float mass11z = mass11->_z + v11z;
+				float mass11x = mass11._x + v11x;
+				float mass11y = mass11._y + v11y;
+				float mass11z = mass11._z + v11z;
 
 				float x1000 = mass10x - mass00x;
 				float y1000 = mass10y - mass00y;
@@ -876,62 +879,62 @@ void SigAsiaDemo::CubeList::computeBounds(
 					size_t i10 = cube->_start + (i+1) + k * xy_size;
 					size_t i01 = cube->_start + i + (k+1) * xy_size;
 					size_t i11 = cube->_start + (i+1) + (k+1) * xy_size;
-					Mass *mass00 = masses.getMass(i00);
-					Mass *mass10 = masses.getMass(i10);
-					Mass *mass01 = masses.getMass(i01);
-					Mass *mass11 = masses.getMass(i11);
+					Mass mass00 = masses.getMass(i00);
+					Mass mass10 = masses.getMass(i10);
+					Mass mass01 = masses.getMass(i01);
+					Mass mass11 = masses.getMass(i11);
 
 					// vector from centroid to mass00
-					float v00x = (mass00->_x - centroid_x);
-					float v00y = (mass00->_y - centroid_y);
-					float v00z = (mass00->_z - centroid_z);
+					float v00x = (mass00._x - centroid_x);
+					float v00y = (mass00._y - centroid_y);
+					float v00z = (mass00._z - centroid_z);
 					float v00_l = 1.0 / sqrt(v00x*v00x + v00y*v00y + v00z*v00z);
 					// normalize and scale by radius
 					v00x *= v00_l * cube->_radius * cube_scale;
 					v00y *= v00_l * cube->_radius * cube_scale;
 					v00z *= v00_l * cube->_radius * cube_scale;
-					float mass00x = mass00->_x + v00x;
-					float mass00y = mass00->_y + v00y;
-					float mass00z = mass00->_z + v00z;
+					float mass00x = mass00._x + v00x;
+					float mass00y = mass00._y + v00y;
+					float mass00z = mass00._z + v00z;
 
 					// vector from centroid to mass01
-					float v01x = (mass01->_x - centroid_x);
-					float v01y = (mass01->_y - centroid_y);
-					float v01z = (mass01->_z - centroid_z);
+					float v01x = (mass01._x - centroid_x);
+					float v01y = (mass01._y - centroid_y);
+					float v01z = (mass01._z - centroid_z);
 					float v01_l = 1.0 / sqrt(v01x*v01x + v01y*v01y + v01z*v01z);
 					// normalize and scale by radius
 					v01x *= v01_l * cube->_radius * cube_scale;
 					v01y *= v01_l * cube->_radius * cube_scale;
 					v01z *= v01_l * cube->_radius * cube_scale;
-					float mass01x = mass01->_x + v01x;
-					float mass01y = mass01->_y + v01y;
-					float mass01z = mass01->_z + v01z;
+					float mass01x = mass01._x + v01x;
+					float mass01y = mass01._y + v01y;
+					float mass01z = mass01._z + v01z;
 
 					// vector from centroid to mass10
-					float v10x = (mass10->_x - centroid_x);
-					float v10y = (mass10->_y - centroid_y);
-					float v10z = (mass10->_z - centroid_z);
+					float v10x = (mass10._x - centroid_x);
+					float v10y = (mass10._y - centroid_y);
+					float v10z = (mass10._z - centroid_z);
 					float v10_l = 1.0 / sqrt(v10x*v10x + v10y*v10y + v10z*v10z);
 					// normalize and scale by radius
 					v10x *= v10_l * cube->_radius * cube_scale;
 					v10y *= v10_l * cube->_radius * cube_scale;
 					v10z *= v10_l * cube->_radius * cube_scale;
-					float mass10x = mass10->_x + v10x;
-					float mass10y = mass10->_y + v10y;
-					float mass10z = mass10->_z + v10z;
+					float mass10x = mass10._x + v10x;
+					float mass10y = mass10._y + v10y;
+					float mass10z = mass10._z + v10z;
 
 					// vector from centroid to mass11
-					float v11x = (mass11->_x - centroid_x);
-					float v11y = (mass11->_y - centroid_y);
-					float v11z = (mass11->_z - centroid_z);
+					float v11x = (mass11._x - centroid_x);
+					float v11y = (mass11._y - centroid_y);
+					float v11z = (mass11._z - centroid_z);
 					float v11_l = 1.0 / sqrt(v11x*v11x + v11y*v11y + v11z*v11z);
 					// normalize and scale by radius
 					v11x *= v11_l * cube->_radius * cube_scale;
 					v11y *= v11_l * cube->_radius * cube_scale;
 					v11z *= v11_l * cube->_radius * cube_scale;
-					float mass11x = mass11->_x + v11x;
-					float mass11y = mass11->_y + v11y;
-					float mass11z = mass11->_z + v11z;
+					float mass11x = mass11._x + v11x;
+					float mass11y = mass11._y + v11y;
+					float mass11z = mass11._z + v11z;
 
 					float x1000 = mass10x - mass00x;
 					float y1000 = mass10y - mass00y;
@@ -1011,62 +1014,62 @@ void SigAsiaDemo::CubeList::computeBounds(
 					size_t i10 = cube->_start + (i+1) + (y_size-1) * x_size + k * xy_size;
 					size_t i01 = cube->_start + i + (y_size-1) * x_size + (k+1) * xy_size;
 					size_t i11 = cube->_start + (i+1) + (y_size-1) * x_size + (k+1) * xy_size;
-					Mass *mass00 = masses.getMass(i00);
-					Mass *mass10 = masses.getMass(i10);
-					Mass *mass01 = masses.getMass(i01);
-					Mass *mass11 = masses.getMass(i11);
+					Mass mass00 = masses.getMass(i00);
+					Mass mass10 = masses.getMass(i10);
+					Mass mass01 = masses.getMass(i01);
+					Mass mass11 = masses.getMass(i11);
 
 					// vector from centroid to mass00
-					float v00x = (mass00->_x - centroid_x);
-					float v00y = (mass00->_y - centroid_y);
-					float v00z = (mass00->_z - centroid_z);
+					float v00x = (mass00._x - centroid_x);
+					float v00y = (mass00._y - centroid_y);
+					float v00z = (mass00._z - centroid_z);
 					float v00_l = 1.0 / sqrt(v00x*v00x + v00y*v00y + v00z*v00z);
 					// normalize and scale by radius
 					v00x *= v00_l * cube->_radius * cube_scale;
 					v00y *= v00_l * cube->_radius * cube_scale;
 					v00z *= v00_l * cube->_radius * cube_scale;
-					float mass00x = mass00->_x + v00x;
-					float mass00y = mass00->_y + v00y;
-					float mass00z = mass00->_z + v00z;
+					float mass00x = mass00._x + v00x;
+					float mass00y = mass00._y + v00y;
+					float mass00z = mass00._z + v00z;
 
 					// vector from centroid to mass01
-					float v01x = (mass01->_x - centroid_x);
-					float v01y = (mass01->_y - centroid_y);
-					float v01z = (mass01->_z - centroid_z);
+					float v01x = (mass01._x - centroid_x);
+					float v01y = (mass01._y - centroid_y);
+					float v01z = (mass01._z - centroid_z);
 					float v01_l = 1.0 / sqrt(v01x*v01x + v01y*v01y + v01z*v01z);
 					// normalize and scale by radius
 					v01x *= v01_l * cube->_radius * cube_scale;
 					v01y *= v01_l * cube->_radius * cube_scale;
 					v01z *= v01_l * cube->_radius * cube_scale;
-					float mass01x = mass01->_x + v01x;
-					float mass01y = mass01->_y + v01y;
-					float mass01z = mass01->_z + v01z;
+					float mass01x = mass01._x + v01x;
+					float mass01y = mass01._y + v01y;
+					float mass01z = mass01._z + v01z;
 
 					// vector from centroid to mass10
-					float v10x = (mass10->_x - centroid_x);
-					float v10y = (mass10->_y - centroid_y);
-					float v10z = (mass10->_z - centroid_z);
+					float v10x = (mass10._x - centroid_x);
+					float v10y = (mass10._y - centroid_y);
+					float v10z = (mass10._z - centroid_z);
 					float v10_l = 1.0 / sqrt(v10x*v10x + v10y*v10y + v10z*v10z);
 					// normalize and scale by radius
 					v10x *= v10_l * cube->_radius * cube_scale;
 					v10y *= v10_l * cube->_radius * cube_scale;
 					v10z *= v10_l * cube->_radius * cube_scale;
-					float mass10x = mass10->_x + v10x;
-					float mass10y = mass10->_y + v10y;
-					float mass10z = mass10->_z + v10z;
+					float mass10x = mass10._x + v10x;
+					float mass10y = mass10._y + v10y;
+					float mass10z = mass10._z + v10z;
 
 					// vector from centroid to mass11
-					float v11x = (mass11->_x - centroid_x);
-					float v11y = (mass11->_y - centroid_y);
-					float v11z = (mass11->_z - centroid_z);
+					float v11x = (mass11._x - centroid_x);
+					float v11y = (mass11._y - centroid_y);
+					float v11z = (mass11._z - centroid_z);
 					float v11_l = 1.0 / sqrt(v11x*v11x + v11y*v11y + v11z*v11z);
 					// normalize and scale by radius
 					v11x *= v11_l * cube->_radius * cube_scale;
 					v11y *= v11_l * cube->_radius * cube_scale;
 					v11z *= v11_l * cube->_radius * cube_scale;
-					float mass11x = mass11->_x + v11x;
-					float mass11y = mass11->_y + v11y;
-					float mass11z = mass11->_z + v11z;
+					float mass11x = mass11._x + v11x;
+					float mass11y = mass11._y + v11y;
+					float mass11z = mass11._z + v11z;
 
 					float x1000 = mass10x - mass00x;
 					float y1000 = mass10y - mass00y;
@@ -1152,62 +1155,62 @@ void SigAsiaDemo::CubeList::computeBounds(
 					size_t i10 = cube->_start + (j+1)*x_size + k * xy_size;
 					size_t i01 = cube->_start + j*x_size + (k+1) * xy_size;
 					size_t i11 = cube->_start + (j+1)*x_size + (k+1) * xy_size;
-					Mass *mass00 = masses.getMass(i00);
-					Mass *mass10 = masses.getMass(i10);
-					Mass *mass01 = masses.getMass(i01);
-					Mass *mass11 = masses.getMass(i11);
+					Mass mass00 = masses.getMass(i00);
+					Mass mass10 = masses.getMass(i10);
+					Mass mass01 = masses.getMass(i01);
+					Mass mass11 = masses.getMass(i11);
 
 					// vector from centroid to mass00
-					float v00x = (mass00->_x - centroid_x);
-					float v00y = (mass00->_y - centroid_y);
-					float v00z = (mass00->_z - centroid_z);
+					float v00x = (mass00._x - centroid_x);
+					float v00y = (mass00._y - centroid_y);
+					float v00z = (mass00._z - centroid_z);
 					float v00_l = 1.0 / sqrt(v00x*v00x + v00y*v00y + v00z*v00z);
 					// normalize and scale by radius
 					v00x *= v00_l * cube->_radius * cube_scale;
 					v00y *= v00_l * cube->_radius * cube_scale;
 					v00z *= v00_l * cube->_radius * cube_scale;
-					float mass00x = mass00->_x + v00x;
-					float mass00y = mass00->_y + v00y;
-					float mass00z = mass00->_z + v00z;
+					float mass00x = mass00._x + v00x;
+					float mass00y = mass00._y + v00y;
+					float mass00z = mass00._z + v00z;
 
 					// vector from centroid to mass01
-					float v01x = (mass01->_x - centroid_x);
-					float v01y = (mass01->_y - centroid_y);
-					float v01z = (mass01->_z - centroid_z);
+					float v01x = (mass01._x - centroid_x);
+					float v01y = (mass01._y - centroid_y);
+					float v01z = (mass01._z - centroid_z);
 					float v01_l = 1.0 / sqrt(v01x*v01x + v01y*v01y + v01z*v01z);
 					// normalize and scale by radius
 					v01x *= v01_l * cube->_radius * cube_scale;
 					v01y *= v01_l * cube->_radius * cube_scale;
 					v01z *= v01_l * cube->_radius * cube_scale;
-					float mass01x = mass01->_x + v01x;
-					float mass01y = mass01->_y + v01y;
-					float mass01z = mass01->_z + v01z;
+					float mass01x = mass01._x + v01x;
+					float mass01y = mass01._y + v01y;
+					float mass01z = mass01._z + v01z;
 
 					// vector from centroid to mass10
-					float v10x = (mass10->_x - centroid_x);
-					float v10y = (mass10->_y - centroid_y);
-					float v10z = (mass10->_z - centroid_z);
+					float v10x = (mass10._x - centroid_x);
+					float v10y = (mass10._y - centroid_y);
+					float v10z = (mass10._z - centroid_z);
 					float v10_l = 1.0 / sqrt(v10x*v10x + v10y*v10y + v10z*v10z);
 					// normalize and scale by radius
 					v10x *= v10_l * cube->_radius * cube_scale;
 					v10y *= v10_l * cube->_radius * cube_scale;
 					v10z *= v10_l * cube->_radius * cube_scale;
-					float mass10x = mass10->_x + v10x;
-					float mass10y = mass10->_y + v10y;
-					float mass10z = mass10->_z + v10z;
+					float mass10x = mass10._x + v10x;
+					float mass10y = mass10._y + v10y;
+					float mass10z = mass10._z + v10z;
 
 					// vector from centroid to mass11
-					float v11x = (mass11->_x - centroid_x);
-					float v11y = (mass11->_y - centroid_y);
-					float v11z = (mass11->_z - centroid_z);
+					float v11x = (mass11._x - centroid_x);
+					float v11y = (mass11._y - centroid_y);
+					float v11z = (mass11._z - centroid_z);
 					float v11_l = 1.0 / sqrt(v11x*v11x + v11y*v11y + v11z*v11z);
 					// normalize and scale by radius
 					v11x *= v11_l * cube->_radius * cube_scale;
 					v11y *= v11_l * cube->_radius * cube_scale;
 					v11z *= v11_l * cube->_radius * cube_scale;
-					float mass11x = mass11->_x + v11x;
-					float mass11y = mass11->_y + v11y;
-					float mass11z = mass11->_z + v11z;
+					float mass11x = mass11._x + v11x;
+					float mass11y = mass11._y + v11y;
+					float mass11z = mass11._z + v11z;
 
 					float x1000 = mass10x - mass00x;
 					float y1000 = mass10y - mass00y;
@@ -1287,62 +1290,62 @@ void SigAsiaDemo::CubeList::computeBounds(
 					size_t i10 = cube->_start + x_size-1 +(j+1)*x_size + k * xy_size;
 					size_t i01 = cube->_start + x_size-1 +j*x_size + (k+1) * xy_size;
 					size_t i11 = cube->_start + x_size-1 +(j+1)*x_size + (k+1) * xy_size;
-					Mass *mass00 = masses.getMass(i00);
-					Mass *mass10 = masses.getMass(i10);
-					Mass *mass01 = masses.getMass(i01);
-					Mass *mass11 = masses.getMass(i11);
+					Mass mass00 = masses.getMass(i00);
+					Mass mass10 = masses.getMass(i10);
+					Mass mass01 = masses.getMass(i01);
+					Mass mass11 = masses.getMass(i11);
 
 					// vector from centroid to mass00
-					float v00x = (mass00->_x - centroid_x);
-					float v00y = (mass00->_y - centroid_y);
-					float v00z = (mass00->_z - centroid_z);
+					float v00x = (mass00._x - centroid_x);
+					float v00y = (mass00._y - centroid_y);
+					float v00z = (mass00._z - centroid_z);
 					float v00_l = 1.0 / sqrt(v00x*v00x + v00y*v00y + v00z*v00z);
 					// normalize and scale by radius
 					v00x *= v00_l * cube->_radius * cube_scale;
 					v00y *= v00_l * cube->_radius * cube_scale;
 					v00z *= v00_l * cube->_radius * cube_scale;
-					float mass00x = mass00->_x + v00x;
-					float mass00y = mass00->_y + v00y;
-					float mass00z = mass00->_z + v00z;
+					float mass00x = mass00._x + v00x;
+					float mass00y = mass00._y + v00y;
+					float mass00z = mass00._z + v00z;
 
 					// vector from centroid to mass01
-					float v01x = (mass01->_x - centroid_x);
-					float v01y = (mass01->_y - centroid_y);
-					float v01z = (mass01->_z - centroid_z);
+					float v01x = (mass01._x - centroid_x);
+					float v01y = (mass01._y - centroid_y);
+					float v01z = (mass01._z - centroid_z);
 					float v01_l = 1.0 / sqrt(v01x*v01x + v01y*v01y + v01z*v01z);
 					// normalize and scale by radius
 					v01x *= v01_l * cube->_radius * cube_scale;
 					v01y *= v01_l * cube->_radius * cube_scale;
 					v01z *= v01_l * cube->_radius * cube_scale;
-					float mass01x = mass01->_x + v01x;
-					float mass01y = mass01->_y + v01y;
-					float mass01z = mass01->_z + v01z;
+					float mass01x = mass01._x + v01x;
+					float mass01y = mass01._y + v01y;
+					float mass01z = mass01._z + v01z;
 
 					// vector from centroid to mass10
-					float v10x = (mass10->_x - centroid_x);
-					float v10y = (mass10->_y - centroid_y);
-					float v10z = (mass10->_z - centroid_z);
+					float v10x = (mass10._x - centroid_x);
+					float v10y = (mass10._y - centroid_y);
+					float v10z = (mass10._z - centroid_z);
 					float v10_l = 1.0 / sqrt(v10x*v10x + v10y*v10y + v10z*v10z);
 					// normalize and scale by radius
 					v10x *= v10_l * cube->_radius * cube_scale;
 					v10y *= v10_l * cube->_radius * cube_scale;
 					v10z *= v10_l * cube->_radius * cube_scale;
-					float mass10x = mass10->_x + v10x;
-					float mass10y = mass10->_y + v10y;
-					float mass10z = mass10->_z + v10z;
+					float mass10x = mass10._x + v10x;
+					float mass10y = mass10._y + v10y;
+					float mass10z = mass10._z + v10z;
 
 					// vector from centroid to mass11
-					float v11x = (mass11->_x - centroid_x);
-					float v11y = (mass11->_y - centroid_y);
-					float v11z = (mass11->_z - centroid_z);
+					float v11x = (mass11._x - centroid_x);
+					float v11y = (mass11._y - centroid_y);
+					float v11z = (mass11._z - centroid_z);
 					float v11_l = 1.0 / sqrt(v11x*v11x + v11y*v11y + v11z*v11z);
 					// normalize and scale by radius
 					v11x *= v11_l * cube->_radius * cube_scale;
 					v11y *= v11_l * cube->_radius * cube_scale;
 					v11z *= v11_l * cube->_radius * cube_scale;
-					float mass11x = mass11->_x + v11x;
-					float mass11y = mass11->_y + v11y;
-					float mass11z = mass11->_z + v11z;
+					float mass11x = mass11._x + v11x;
+					float mass11y = mass11._y + v11y;
+					float mass11z = mass11._z + v11z;
 
 					float x1000 = mass10x - mass00x;
 					float y1000 = mass10y - mass00y;
@@ -1486,21 +1489,47 @@ __global__ void deviceCollideCubes(
 	unsigned int collidee_start,
 	unsigned int collidee_end,
 	unsigned int masses_size,
-	SigAsiaDemo::Mass *masses)
+	SigAsiaDemo::MassDeviceArrays *masses)
 {
 	// compute collision forces
 	// as temporary springs
 	// O(N^2) comparison on the GPU
 
+	__shared__ float s_radius[128];
+	__shared__ float s_x[128];
+	__shared__ float s_y[128];
+	__shared__ float s_z[128];
+	__shared__ float s_vx[128];
+	__shared__ float s_vy[128];
+	__shared__ float s_vz[128];
+	__shared__ float s_tvx[128];
+	__shared__ float s_tvy[128];
+	__shared__ float s_tvz[128];
+
 	int tid = threadIdx.x + blockIdx.x * blockDim.x;
+	int cid = collider_start+tid;
+	if (tid < masses_count) {
+		s_radius[threadIdx.x] = masses->_radius[cid];
+		s_x[threadIdx.x] = masses->_x[cid];
+		s_y[threadIdx.x] = masses->_y[cid];
+		s_z[threadIdx.x] = masses->_z[cid];
+		s_vx[threadIdx.x] = masses->_vx[cid];
+		s_vy[threadIdx.x] = masses->_vy[cid];
+		s_vz[threadIdx.x] = masses->_vz[cid];
+		s_tvx[threadIdx.x] = masses->_tvx[cid];
+		s_tvy[threadIdx.x] = masses->_tvy[cid];
+		s_tvz[threadIdx.x] = masses->_tvz[cid];
+	}
+	__syncthreads();
+
 	if (tid < masses_count) {
 		for (unsigned int i = collidee_start; i < collidee_end; i++) {
-			float l0 = masses[collider_start+tid]._radius + masses[i]._radius;
+			float l0 = s_radius[threadIdx.x] + masses->_radius[i];
 			
 			// d contains the vector from mass 0 to mass 1
-			float dx = masses[i]._x - masses[collider_start+tid]._x;
-			float dy = masses[i]._y - masses[collider_start+tid]._y;
-			float dz = masses[i]._z - masses[collider_start+tid]._z;
+			float dx = masses->_x[i] - s_x[threadIdx.x];
+			float dy = masses->_y[i] - s_y[threadIdx.x];
+			float dz = masses->_z[i] - s_z[threadIdx.x];
 
 			// compute length of d
 			float ld = sqrt(dx*dx + dy*dy + dz*dz);
@@ -1508,11 +1537,11 @@ __global__ void deviceCollideCubes(
 			if (ld < l0) {
 				// velocity delta
 				float dvx =
-					masses[i]._vx - masses[collider_start+tid]._vx;
+					masses->_vx[i] - s_vx[threadIdx.x];
 				float dvy =
-					masses[i]._vy - masses[collider_start+tid]._vy;
+					masses->_vy[i] - s_vy[threadIdx.x];
 				float dvz =
-					masses[i]._vz - masses[collider_start+tid]._vz;
+					masses->_vz[i] - s_vz[threadIdx.x];
 
 				float rcp_ld = 1.0f;
 				if (ld != 0.0f) {
@@ -1538,14 +1567,25 @@ __global__ void deviceCollideCubes(
 				float i_z = impulse * udz;
 
 				// compute impulse for mass 0
-				masses[collider_start+tid]._vx += -i_x;
-				masses[collider_start+tid]._vy += -i_y;
-				masses[collider_start+tid]._vz += -i_z;
-				masses[collider_start+tid]._tvx += -i_x;
-				masses[collider_start+tid]._tvy += -i_y;
-				masses[collider_start+tid]._tvz += -i_z;
+				s_vx[threadIdx.x] += -i_x;
+				s_vy[threadIdx.x] += -i_y;
+				s_vz[threadIdx.x] += -i_z;
+				s_tvx[threadIdx.x] += -i_x;
+				s_tvy[threadIdx.x] += -i_y;
+				s_tvz[threadIdx.x] += -i_z;
 			}
 		}
+	}
+
+	__syncthreads();
+
+	if (tid < masses_count) {
+		masses->_vx[cid] = s_vx[threadIdx.x];
+		masses->_vy[cid] = s_vy[threadIdx.x];
+		masses->_vz[cid] = s_vz[threadIdx.x];
+		masses->_tvx[cid] = s_tvx[threadIdx.x];
+		masses->_tvy[cid] = s_tvy[threadIdx.x];
+		masses->_tvz[cid] = s_tvz[threadIdx.x];
 	}
 }
 
@@ -1566,38 +1606,50 @@ void SigAsiaDemo::CubeList::collideCubes(
 				// no overlap
 			} else {
 				// overlap
+				MassDeviceArrays *_device_masses = masses.getDeviceMasses();
+				MassDeviceArrays *_device_masses_ptr = masses.getDeviceMassesPtr();
+				if (_device_masses && !_device_masses->invalid() && _device_masses_ptr) {
+					unsigned int masses_count = _cubes[i]._end - _cubes[i]._start;
 
-				unsigned int masses_count = _cubes[i]._end - _cubes[i]._start;
+					deviceCollideCubes
+						<<<(masses_count+_threads-1)/_threads, _threads>>>(
+							dt,
+							_ks,
+							_kd,
+							masses_count,
+							_cubes[i]._start,
+							_cubes[j]._start,
+							_cubes[j]._end,
+							masses.size(),
+							_device_masses_ptr);
+					cudaThreadSynchronize();
+					cudaError_t result = cudaGetLastError();
+					if (result != cudaSuccess) {
+						cerr << "Error: deviceCollideCubes() failed with error: " << cudaGetErrorString(result) << endl;
+						terminate();
+					}
 
-				deviceCollideCubes
-					<<<(masses_count+_threads-1)/_threads, _threads>>>(
-						dt,
-						_ks,
-						_kd,
-						masses_count,
-						_cubes[i]._start,
-						_cubes[j]._start,
-						_cubes[j]._end,
-						masses.size(),
-						masses.getDeviceMasses());
-				cudaThreadSynchronize();
+					masses_count = _cubes[j]._end - _cubes[j]._start;
 
-				masses_count = _cubes[j]._end - _cubes[j]._start;
+					deviceCollideCubes
+						<<<(masses_count+_threads-1)/_threads, _threads>>>(
+							dt,
+							_ks,
+							_kd,
+							masses_count,
+							_cubes[j]._start,
+							_cubes[i]._start,
+							_cubes[i]._end,
+							masses.size(),
+							_device_masses_ptr);
 
-				deviceCollideCubes
-					<<<(masses_count+_threads-1)/_threads, _threads>>>(
-						dt,
-						_ks,
-						_kd,
-						masses_count,
-						_cubes[j]._start,
-						_cubes[i]._start,
-						_cubes[i]._end,
-						masses.size(),
-						masses.getDeviceMasses());
-
-				cudaThreadSynchronize();
-
+					cudaThreadSynchronize();
+					result = cudaGetLastError();
+					if (result != cudaSuccess) {
+						cerr << "Error: deviceCollideCubes() failed with error: " << cudaGetErrorString(result) << endl;
+						terminate();
+					}
+				}
 			}
 		}
 	}

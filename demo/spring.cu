@@ -60,19 +60,11 @@ SigAsiaDemo::Spring::Spring(
 		_fz1(0.0)
 {
 	// compute l0
-	Mass *m0 = masses.getMass(_mass0);
-	Mass *m1 = masses.getMass(_mass1);
-	if (!m0) {
-		cerr << "Spring pointing to null mass 0" << endl;
-		terminate();
-	}
-	if (!m1) {
-		cerr << "Spring pointing to null mass 1" << endl;
-		terminate();
-	}
-	float dx = m0->_x - m1->_x;
-	float dy = m0->_y - m1->_y;
-	float dz = m0->_z - m1->_z;
+	Mass m0 = masses.getMass(_mass0);
+	Mass m1 = masses.getMass(_mass1);
+	float dx = m0._x - m1._x;
+	float dy = m0._y - m1._y;
+	float dz = m0._z - m1._z;
 	_l0 = sqrt(dx*dx + dy*dy + dz*dz);
 }
 
@@ -181,11 +173,6 @@ void SigAsiaDemo::SpringList::upload(MassList &masses, CubeList &cubes)
 			cout << "masses: " << cube->_start << ", " << cube->_end << endl;
 			cout << "springs: " << cube->_spring_start << ", " << cube->_spring_end << endl;
 			for (size_t i = cube->_start; i < cube->_end; ++i) {
-				const Mass *m = masses.getMass(i);
-				if (!m) {
-					cerr << "Error: Failed to get mass " << i << endl;
-					terminate();
-				}
 				for (size_t j = cube->_spring_start; j < cube->_spring_end; ++j) {
 					if (_springs[j]._mass0 == i || _springs[j]._mass1 == i) {
 						if (_springs[j]._mass0 == i && _springs[j]._mass1 == i) {
@@ -323,7 +310,7 @@ __global__ void deviceComputeSpringForces(
 	unsigned int springs_size,
 	SigAsiaDemo::Spring *springs,
 	unsigned int masses_size,
-	SigAsiaDemo::Mass *masses)
+	SigAsiaDemo::MassDeviceArrays *masses)
 {
 	int tid = threadIdx.x + blockIdx.x * blockDim.x;
 	if (tid < springs_size) {
@@ -332,22 +319,22 @@ __global__ void deviceComputeSpringForces(
 
 		// position delta
 		float dx =
-			masses[springs[tid]._mass1]._tx - masses[springs[tid]._mass0]._tx;
+			masses->_tx[springs[tid]._mass1] - masses->_tx[springs[tid]._mass0];
 		float dy =
-			masses[springs[tid]._mass1]._ty - masses[springs[tid]._mass0]._ty;
+			masses->_ty[springs[tid]._mass1] - masses->_ty[springs[tid]._mass0];
 		float dz =
-			masses[springs[tid]._mass1]._tz - masses[springs[tid]._mass0]._tz;
+			masses->_tz[springs[tid]._mass1] - masses->_tz[springs[tid]._mass0];
 
 		// velocity delta
 		float dvx =
-			masses[springs[tid]._mass1]._tvx -
-			masses[springs[tid]._mass0]._tvx;
+			masses->_tvx[springs[tid]._mass1] -
+			masses->_tvx[springs[tid]._mass0];
 		float dvy =
-			masses[springs[tid]._mass1]._tvy -
-			masses[springs[tid]._mass0]._tvy;
+			masses->_tvy[springs[tid]._mass1] -
+			masses->_tvy[springs[tid]._mass0];
 		float dvz =
-			masses[springs[tid]._mass1]._tvz -
-			masses[springs[tid]._mass0]._tvz;
+			masses->_tvz[springs[tid]._mass1] -
+			masses->_tvz[springs[tid]._mass0];
 
 		// compute length of d
 		float ld = sqrt(dx*dx + dy*dy + dz*dz);
@@ -384,7 +371,7 @@ __global__ void deviceApplySpringForces(
 	unsigned int springs_size,
 	SigAsiaDemo::Spring *springs,
 	unsigned int masses_size,
-	SigAsiaDemo::Mass *masses,
+	SigAsiaDemo::MassDeviceArrays *masses,
 	unsigned int *mass_spring_counts,
 	unsigned int *mass_spring_indices)
 {
@@ -395,13 +382,13 @@ __global__ void deviceApplySpringForces(
 			++i) {
 			unsigned int s = mass_spring_indices[i];
 			if (tid == springs[s]._mass0) {
-				masses[tid]._fx += springs[s]._fx0;
-				masses[tid]._fy += springs[s]._fy0;
-				masses[tid]._fz += springs[s]._fz0;
+				masses->_fx[tid] += springs[s]._fx0;
+				masses->_fy[tid] += springs[s]._fy0;
+				masses->_fz[tid] += springs[s]._fz0;
 			} else if (tid == springs[s]._mass1) {
-				masses[tid]._fx += springs[s]._fx1;
-				masses[tid]._fy += springs[s]._fy1;
-				masses[tid]._fz += springs[s]._fz1;
+				masses->_fx[tid] += springs[s]._fx1;
+				masses->_fy[tid] += springs[s]._fy1;
+				masses->_fz[tid] += springs[s]._fz1;
 			}
 		}
 	}
@@ -410,24 +397,38 @@ __global__ void deviceApplySpringForces(
 void SigAsiaDemo::SpringList::applySpringForces(MassList &masses)
 {
 	if (_computing && !_springs.empty() && !masses.empty()) {
-		deviceComputeSpringForces
-			<<<(_springs.size()+_threads-1)/_threads, _threads>>>(
-				_ks,
-				_kd,
-				_springs.size(),
-				_device_springs,
-				masses.size(),
-				masses.getDeviceMasses());
-		cudaThreadSynchronize();
+		MassDeviceArrays *_device_masses = masses.getDeviceMasses();
+		MassDeviceArrays *_device_masses_ptr = masses.getDeviceMassesPtr();
+		if (_device_masses && !_device_masses->invalid() && _device_masses_ptr) {
+			deviceComputeSpringForces
+				<<<(_springs.size()+_threads-1)/_threads, _threads>>>(
+					_ks,
+					_kd,
+					_springs.size(),
+					_device_springs,
+					masses.size(),
+					_device_masses_ptr);
+			cudaThreadSynchronize();
+			cudaError_t result = cudaGetLastError();
+			if (result != cudaSuccess) {
+				cerr << "Error: deviceComputeSpringForces() failed with error: " << cudaGetErrorString(result) << endl;
+				terminate();
+			}
 
-		deviceApplySpringForces
-			<<<(masses.size()+_threads-1)/_threads, _threads>>>(
-				_springs.size(),
-				_device_springs,
-				masses.size(),
-				masses.getDeviceMasses(),
-				_device_mass_spring_counts,
-				_device_mass_spring_indices);
-		cudaThreadSynchronize();
+			deviceApplySpringForces
+				<<<(masses.size()+_threads-1)/_threads, _threads>>>(
+					_springs.size(),
+					_device_springs,
+					masses.size(),
+					_device_masses_ptr,
+					_device_mass_spring_counts,
+					_device_mass_spring_indices);
+			cudaThreadSynchronize();
+			result = cudaGetLastError();
+			if (result != cudaSuccess) {
+				cerr << "Error: deviceApplySpringForces() failed with error: " << cudaGetErrorString(result) << endl;
+				terminate();
+			}
+		}
 	}
 }

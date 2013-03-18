@@ -103,60 +103,67 @@ void ParseArgs(int argc, char **argv)
 	}
 }
 
-void PrintMassesAndSprings()
+void PrintMasses(int max = -1)
 {
+	max = (max > masses.size()) ? masses.size() : max;
+	max = (max < 0) ? masses.size() : max;
 	masses.download();
 
-	for (size_t i = 0; i < masses.size(); i++) {
-		SigAsiaDemo::Mass *mass = masses.getMass(i);
-		if (mass) {
-			cout << "Point Mass " << i << endl;
-			cout << "mass: " << mass->_mass << endl;
-			cout << "position: (";
-			cout << mass->_x << ", ";
-			cout << mass->_y << ", ";
-			cout << mass->_z << ")" << endl;
-			cout << "velocity: (";
-			cout << mass->_vx << ", ";
-			cout << mass->_vy << ", ";
-			cout << mass->_vz << ")" << endl;
-			cout << "temporary position: (";
-			cout << mass->_tx << ", ";
-			cout << mass->_ty << ", ";
-			cout << mass->_tz << ")" << endl;
-			cout << "temporary velocity: (";
-			cout << mass->_tvx << ", ";
-			cout << mass->_tvy << ", ";
-			cout << mass->_tvz << ")" << endl;
-			cout << "velocity k1: (";
-			cout << mass->_k1x << ", ";
-			cout << mass->_k1y << ", ";
-			cout << mass->_k1z << ")" << endl;
-			cout << "velocity k2: (";
-			cout << mass->_k2x << ", ";
-			cout << mass->_k2y << ", ";
-			cout << mass->_k2z << ")" << endl;
-			cout << "velocity k3: (";
-			cout << mass->_k3x << ", ";
-			cout << mass->_k3y << ", ";
-			cout << mass->_k3z << ")" << endl;
-			cout << "velocity k4: (";
-			cout << mass->_k4x << ", ";
-			cout << mass->_k4y << ", ";
-			cout << mass->_k4z << ")" << endl;
-			cout << "force: (";
-			cout << mass->_fx << ", ";
-			cout << mass->_fy << ", ";
-			cout << mass->_fz << ")" << endl;
-			cout << "radius: ";
-			cout << mass->_radius << endl;
-			cout <<endl;
-		}
+	for (size_t i = 0; i < max; i++) {
+		SigAsiaDemo::Mass mass = masses.getMass(i);
+		cout << "Point Mass " << i << endl;
+		cout << "mass: " << mass._mass << endl;
+		cout << "position: (";
+		cout << mass._x << ", ";
+		cout << mass._y << ", ";
+		cout << mass._z << ")" << endl;
+		cout << "velocity: (";
+		cout << mass._vx << ", ";
+		cout << mass._vy << ", ";
+		cout << mass._vz << ")" << endl;
+		cout << "temporary position: (";
+		cout << mass._tx << ", ";
+		cout << mass._ty << ", ";
+		cout << mass._tz << ")" << endl;
+		cout << "temporary velocity: (";
+		cout << mass._tvx << ", ";
+		cout << mass._tvy << ", ";
+		cout << mass._tvz << ")" << endl;
+		cout << "velocity k1: (";
+		cout << mass._k1x << ", ";
+		cout << mass._k1y << ", ";
+		cout << mass._k1z << ")" << endl;
+		cout << "velocity k2: (";
+		cout << mass._k2x << ", ";
+		cout << mass._k2y << ", ";
+		cout << mass._k2z << ")" << endl;
+		cout << "velocity k3: (";
+		cout << mass._k3x << ", ";
+		cout << mass._k3y << ", ";
+		cout << mass._k3z << ")" << endl;
+		cout << "velocity k4: (";
+		cout << mass._k4x << ", ";
+		cout << mass._k4y << ", ";
+		cout << mass._k4z << ")" << endl;
+		cout << "force: (";
+		cout << mass._fx << ", ";
+		cout << mass._fy << ", ";
+		cout << mass._fz << ")" << endl;
+		cout << "radius: ";
+		cout << mass._radius << endl;
+		cout << "state: ";
+		cout << mass._state << endl;
+		cout << endl;
 	}
+}
 
+void PrintSprings(int max = -1)
+{
+	max = (max > springs.size()) ? springs.size() : max;
+	max = (max < 0) ? springs.size() : max;
 	springs.download();
 
-	for (size_t i = 0; i < springs.size(); i++) {
+	for (size_t i = 0; i < max; i++) {
 		SigAsiaDemo::Spring *spring = springs.getSpring(i);
 		if (spring) {
 			cout << "Spring " << i << endl;
@@ -171,7 +178,7 @@ void PrintMassesAndSprings()
 			cout << spring->_fx1 << ", ";
 			cout << spring->_fy1 << ", ";
 			cout << spring->_fz1 << ")" << endl;
-			cout <<endl;
+			cout << endl;
 		}
 	}
 }
@@ -205,18 +212,30 @@ void Step()
 	masses.update(dt, ground_collision);
 	masses.endFrame();
 
-	//PrintMassesAndSprings();
+	//PrintMasses(1);
+	//PrintSprings(1);
 
 	frame++;
 }
 
+/*
 void Idle()
+{
+	if (play) {
+		glutPostRedisplay();
+	}
+}
+*/
+
+void Timer(int millisec)
 {
 	if (play) {
 		Step();
 		glutPostRedisplay();
 	}
+	glutTimerFunc(1, Timer, 1);
 }
+
 
 void Reshape(int width, int height)
 {
@@ -363,7 +382,7 @@ int main(int argc, char **argv)
 	springs.setConstants(ks, kd);
 	cubes.setConstants(ks, kd);
 
-	cout << "Setup cube." << endl;
+	cout << "Setup cubes." << endl;
 
 	cubes.push(SigAsiaDemo::Cube(
 		-40.0, 20.0, 0.0,	// position
@@ -594,7 +613,8 @@ int main(int argc, char **argv)
 
 	// register callbacks
 	cout << "Register callbacks." << endl;
-	glutIdleFunc(Idle);
+	//glutIdleFunc(Idle);
+	glutTimerFunc(1, Timer, 1);
 	glutDisplayFunc(Render);
 	glutReshapeFunc(Reshape);
 	glutKeyboardFunc(Keys);
